@@ -268,6 +268,7 @@ function App() {
       ...item.state,
       event: {
         ...item.state.event,
+        edition: item.state.event?.edition ?? 'Professional',
         organizerName: item.state.event?.organizerName ?? '',
         organizerLogoDataUrl: item.state.event?.organizerLogoDataUrl ?? '',
         includeSupportedBy: item.state.event?.includeSupportedBy ?? false,
@@ -387,6 +388,21 @@ function App() {
             </summary>
             <div className="section-block">
               <div className="form-grid single">
+                {isLumaCover && (
+                  <label>
+                    <span className="label-row">
+                      Event edition
+                      <small>Examples: Professional or Students</small>
+                    </span>
+                    <input
+                      type="text"
+                      maxLength={40}
+                      value={state.event.edition}
+                      onChange={(e) => updateEvent({ edition: e.target.value })}
+                      placeholder="Professional"
+                    />
+                  </label>
+                )}
                 <label>
                   City
                   <input
@@ -552,14 +568,14 @@ function App() {
           </details>
           )}
 
-          {isSocialPromo && (
+          {(isLumaCover || isSocialPromo) && (
           <details className="side-section" open>
             <summary>
               <span>Partners</span>
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
-              {(isSpeakerBanner || isSocialPromo) && (
+              {(isLumaCover || isSocialPromo) && (
                 <button
                   type="button"
                   className="resolution-toggle"
@@ -574,25 +590,28 @@ function App() {
                   </span>
                 </button>
               )}
-              {(isSpeakerBanner || isSocialPromo) && <p className="section-description">You can add up to 3 partner logos.</p>}
+              <p className="section-description">
+                Add up to 3 partner logos. On Luma covers they appear immediately above the date.
+              </p>
               <label>
                 Add logo
                 <input
                   type="file"
                   accept="image/*"
-                  disabled={(isSpeakerBanner || isSocialPromo) && state.partners.length >= 3}
+                  disabled={state.partners.length >= 3}
                   onChange={(event) => {
                     void (async () => {
                       try {
                         const file = event.target.files?.[0]
                         if (!file) return
-                        if ((isSpeakerBanner || isSocialPromo) && state.partners.length >= 3) {
-                          setError('You can upload up to 3 partner logos for Speaker Banner and Social Promo.')
+                        if (state.partners.length >= 3) {
+                          setError('You can upload up to 3 partner logos.')
                           return
                         }
                         const dataUrl = await handleFile(file)
                         setState((previous) => ({
                           ...previous,
+                          event: { ...previous.event, includeSupportedBy: true },
                           partners: [...previous.partners, { id: uid(), imageDataUrl: dataUrl }],
                         }))
                       } catch (fileError) {
@@ -602,13 +621,11 @@ function App() {
                   }}
                 />
               </label>
-              {(isSpeakerBanner || isSocialPromo) && (
-                <p className="section-description">
-                  {state.partners.length >= 3
-                    ? 'Partner logo limit reached (3/3). Remove one to upload another.'
-                    : `${3 - state.partners.length} slot(s) remaining.`}
-                </p>
-              )}
+              <p className="section-description">
+                {state.partners.length >= 3
+                  ? 'Partner logo limit reached (3/3). Remove one to upload another.'
+                  : `${3 - state.partners.length} slot(s) remaining.`}
+              </p>
 
               <div className="logos-grid">
                 {state.partners.map((partner) => (

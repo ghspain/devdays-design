@@ -8,7 +8,8 @@ export function buildDefaultState(): BannerState {
     colors: defaultColors,
     event: {
       title: fixedEventTitle,
-      city: 'San Francisco',
+      edition: 'Professional',
+      city: 'Madrid',
       dateTime: 'Apr 15 • 7:00 PM',
       location: 'North Convention Center',
       organizerName: 'GitHub Community Brasil',
