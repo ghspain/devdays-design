@@ -21,6 +21,7 @@ export interface PartnerLogo {
 
 export interface EventDetails {
   title: string
+  edition: string
   city: string
   dateTime: string
   location: string

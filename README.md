@@ -33,7 +33,8 @@ Want to test the app quickly on your machine? Follow the steps below.
 
 - **Live canvas rendering:** See banner updates in real time while editing (debounced for smooth typing).
 - **Ready-to-use formats:** Event Cover, Speaker Profile, Speaker Banner, Social Promo, and Luma Cover.
-- **Branding support:** Upload speaker photos, organization logo, and partner logos.
+- **Event variants:** Keep the city separate from an event edition such as Professional or Students.
+- **Branding support:** Upload speaker photos, organization logo, and up to three partner logos on Luma covers and social promos.
 - **Registration bar:** Add CTA + registration URL in Social Promo and Speaker Banner.
 - **Export pipeline:** Download in PNG/JPG with 1x or 2x scale.
 - **Local history:** Restore, delete, and manage recent generated banners (stored in `localStorage`).

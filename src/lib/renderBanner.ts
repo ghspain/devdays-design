@@ -82,6 +82,11 @@ export async function renderBanner(
     const labelSize = 36
     const labelColor = '#0CA334'
 
+    // Event edition distinguishes events in the same city without overloading
+    // the location field (for example, PROFESSIONAL or STUDENTS).
+    const editionSize = 30
+    const editionColor = '#57606a'
+
     // City name (black) — Mona Sans VF, display optical size at 135px
     const citySize = 72
     const cityColor = '#000000'
@@ -95,7 +100,12 @@ export async function renderBanner(
     ctx.textBaseline = 'alphabetic'
 
     ctx.font = `500 ${citySize}px "Mona Sans", sans-serif`
-    const cityLines = wrapText(ctx, state.event.city || 'City', textMaxWidth, 6)
+    const cityLines = wrapText(ctx, (state.event.city || 'City').toUpperCase(), textMaxWidth, 3)
+
+    ctx.font = `600 ${editionSize}px "Mona Sans Mono", monospace`
+    ctx.letterSpacing = '2px'
+    const editionLine = wrapText(ctx, (state.event.edition || 'Professional').toUpperCase(), textMaxWidth, 1)[0]
+    ctx.letterSpacing = '0px'
 
     const footerSource = (state.event.dateTime.trim() || 'Date/Time').toUpperCase()
     ctx.font = `500 ${footerSize}px "Mona Sans Mono", monospace`
@@ -104,9 +114,10 @@ export async function renderBanner(
     ctx.letterSpacing = '0px'
 
     // Extra vertical spacing between the text blocks
-    const textGap = 40
+    const textGap = 28
     const labelY = Math.round(height * 0.26) + 30
-    const cityTopY = labelY + Math.round(citySize * 0.9) + textGap
+    const editionY = labelY + labelSize + textGap
+    const cityTopY = editionY + Math.round(citySize * 0.9) + textGap
     const footerLastY = height - bottomInset - textGap
     const footerTopY = footerLastY - (footerLines.length - 1) * footerLineStep
 
@@ -117,12 +128,54 @@ export async function renderBanner(
     ctx.fillText(labelText, leftX, labelY)
     ctx.letterSpacing = '0px'
 
+    // Event edition: a separate semantic line between the Dev Days label and city.
+    ctx.fillStyle = editionColor
+    ctx.font = `600 ${editionSize}px "Mona Sans Mono", monospace`
+    ctx.letterSpacing = '2px'
+    ctx.fillText(editionLine, leftX, editionY)
+    ctx.letterSpacing = '0px'
+
     // Black city name: weight 500, 72px
     ctx.fillStyle = cityColor
     ctx.font = `500 ${citySize}px "Mona Sans", sans-serif`
     cityLines.forEach((line, index) => {
       ctx.fillText(line, leftX, cityTopY + index * cityLineStep)
     })
+
+    // Up to three sponsor logos are contained in equal slots above the date.
+    const sponsorLogos = state.event.includeSupportedBy ? state.partners.slice(0, 3) : []
+    if (sponsorLogos.length > 0) {
+      const sponsorHeadingY = footerTopY - 128
+      const logosTopY = sponsorHeadingY + 18
+      const logosAreaH = 76
+      const logoGap = 12
+      const slotWidth = (textMaxWidth - logoGap * (sponsorLogos.length - 1)) / sponsorLogos.length
+
+      ctx.fillStyle = footerColor
+      ctx.font = `600 18px "Mona Sans Mono", monospace`
+      ctx.letterSpacing = '2px'
+      ctx.fillText('SUPPORTED BY', leftX, sponsorHeadingY)
+      ctx.letterSpacing = '0px'
+
+      for (let index = 0; index < sponsorLogos.length; index += 1) {
+        try {
+          const logo = await loadImage(sponsorLogos[index].imageDataUrl)
+          const ratio = logo.width / logo.height
+          let targetW = Math.min(slotWidth, logosAreaH * ratio)
+          let targetH = targetW / ratio
+          if (targetH > logosAreaH) {
+            targetH = logosAreaH
+            targetW = targetH * ratio
+          }
+          const slotX = leftX + index * (slotWidth + logoGap)
+          const x = slotX + (slotWidth - targetW) / 2
+          const y = logosTopY + (logosAreaH - targetH) / 2
+          ctx.drawImage(logo, x, y, targetW, targetH)
+        } catch {
+          // Keep rendering the remaining logos and event information.
+        }
+      }
+    }
 
     // Footer text: weight 500, 48px, #77827A
     ctx.fillStyle = footerColor
