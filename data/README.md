@@ -16,10 +16,17 @@ Only include public data needed to create speaker assets:
 
 Do not copy email, private notes, social profiles, or full biographies here.
 
-## `sponsors.csv`
+## `participations.csv`
 
-The local sponsor catalogue contains only a public name, logo URL, and optional
-website. Logos can still be uploaded directly for one-off sponsors.
+Relates a person to an event and session. Speaker choices are composed by joining
+this file with `people.csv`; there is deliberately no duplicated `speakers.csv`.
+
+## `sponsors.csv` and `organizers.csv`
+
+These brand catalogues contain a public name, website, and transparent logo URLs
+for light and dark backgrounds. Logos can still be uploaded directly for one-off
+brands. When a brand does not publish both variants, both fields may temporarily
+point to the same official asset.
 
 ## `presets.json`
 

@@ -34,7 +34,7 @@ import { uid } from './lib/format'
 import { buildDefaultState, readBannerHistory, writeBannerHistory } from './lib/history'
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
-import { catalogPeople, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
+import { catalogOrganizers, catalogPeople, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
 
 function App() {
   const [backgroundFailed, setBackgroundFailed] = useState(false)
@@ -45,6 +45,7 @@ function App() {
   const [selectedPersonId, setSelectedPersonId] = useState('')
   const [selectedSpeakerIds, setSelectedSpeakerIds] = useState<string[]>([])
   const [selectedSponsorId, setSelectedSponsorId] = useState('')
+  const [selectedOrganizerId, setSelectedOrganizerId] = useState('')
   const [history, setHistory] = useState<BannerHistoryItem[]>(() => readBannerHistory())
   const [speakerPreviews, setSpeakerPreviews] = useState<Array<{ id: string; name: string; previewDataUrl: string }>>([])
   const [fontsReady, setFontsReady] = useState(() => typeof document === 'undefined' || !document.fonts)
@@ -212,8 +213,17 @@ function App() {
     setState((previous) => ({
       ...previous,
       event: { ...previous.event, includeSupportedBy: true },
-      partners: [...previous.partners, { id: uid(), imageDataUrl: sponsor.logoUrl, name: sponsor.name }],
+      partners: [...previous.partners, { id: uid(), imageDataUrl: sponsor.logoForDarkBackgroundUrl, name: sponsor.name }],
     }))
+  }
+
+  const applyCatalogOrganizer = () => {
+    const organizer = catalogOrganizers.find((item) => item.id === selectedOrganizerId)
+    if (!organizer) return
+    updateEvent({
+      organizerName: organizer.name,
+      organizerLogoDataUrl: organizer.logoForDarkBackgroundUrl,
+    })
   }
 
   const applyPreset = (presetId: string) => {
@@ -493,33 +503,6 @@ function App() {
                     />
                   </label>
                 )}
-                {(isSpeakerBanner || isSocialPromo) && (
-                  <>
-                    <label>
-                      <span className="label-row">
-                        Organizer logo
-                        <small>Upload the organization logo (shown on the banner).</small>
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => {
-                          void (async () => {
-                            try {
-                              const file = event.target.files?.[0]
-                              if (!file) return
-                              const dataUrl = await handleFile(file)
-                              updateEvent({ organizerLogoDataUrl: dataUrl })
-                            } catch (fileError) {
-                              setError(fileError instanceof Error ? fileError.message : 'Invalid file.')
-                            }
-                          })()
-                        }}
-                      />
-                    </label>
-                  </>
-                )}
-
                 {(isSocialPromo || isSpeakerBanner) && (
                   <>
                     <button
@@ -650,10 +633,41 @@ function App() {
           </details>
           )}
 
+          {(isSpeakerBanner || isSocialPromo) && (
+          <details className="side-section" open>
+            <summary>
+              <span>Organizer</span>
+              <ChevronDownIcon size={16} className="chevron" />
+            </summary>
+            <div className="section-block">
+              <label>
+                Select organizer
+                <select value={selectedOrganizerId} onChange={(e) => setSelectedOrganizerId(e.target.value)}>
+                  <option value="">Choose an organizer…</option>
+                  {catalogOrganizers.map((organizer) => <option key={organizer.id} value={organizer.id}>{organizer.name}</option>)}
+                </select>
+              </label>
+              <button type="button" className="secondary-button" disabled={!selectedOrganizerId} onClick={applyCatalogOrganizer}>Use selected organizer</button>
+              <label>
+                Or upload a logo
+                <input type="file" accept="image/*" onChange={(event) => { void (async () => {
+                  try {
+                    const file = event.target.files?.[0]
+                    if (!file) return
+                    updateEvent({ organizerLogoDataUrl: await handleFile(file) })
+                  } catch (fileError) {
+                    setError(fileError instanceof Error ? fileError.message : 'Invalid file.')
+                  }
+                })() }} />
+              </label>
+            </div>
+          </details>
+          )}
+
           {(isLumaCover || isSocialPromo) && (
           <details className="side-section" open>
             <summary>
-              <span>Partners</span>
+              <span>Sponsors and collaborators</span>
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
@@ -676,7 +690,7 @@ function App() {
                 Add up to 3 partner logos. On Luma covers they appear immediately above the date.
               </p>
               <label>
-                Add from sponsor catalogue
+                Add from sponsor or collaborator catalogue
                 <select value={selectedSponsorId} onChange={(e) => setSelectedSponsorId(e.target.value)} disabled={state.partners.length >= 3}>
                   <option value="">Choose a sponsor…</option>
                   {catalogSponsors.map((sponsor) => (
