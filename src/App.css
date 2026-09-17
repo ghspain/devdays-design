@@ -636,6 +636,12 @@ button.primary:hover:not(:disabled) {
   background: var(--app-primary-button-hover);
 }
 
+button.secondary-button {
+  width: 100%;
+  justify-content: center;
+  margin: 0.2rem 0 0.65rem;
+}
+
 button.danger {
   border-color: var(--vscode-danger);
   color: var(--vscode-danger);

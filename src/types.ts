@@ -17,6 +17,7 @@ export interface Speaker {
 export interface PartnerLogo {
   id: string
   imageDataUrl: string
+  name?: string
 }
 
 export interface EventDetails {
