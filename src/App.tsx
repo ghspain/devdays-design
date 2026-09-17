@@ -34,7 +34,7 @@ import { uid } from './lib/format'
 import { buildDefaultState, readBannerHistory, writeBannerHistory } from './lib/history'
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
-import { catalogOrganizers, catalogPeople, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
+import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
 
 function App() {
   const [backgroundFailed, setBackgroundFailed] = useState(false)
@@ -42,7 +42,6 @@ function App() {
   const [showHistory, setShowHistory] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [error, setError] = useState('')
-  const [selectedPersonId, setSelectedPersonId] = useState('')
   const [selectedSpeakerIds, setSelectedSpeakerIds] = useState<string[]>([])
   const [selectedSponsorId, setSelectedSponsorId] = useState('')
   const [selectedOrganizerId, setSelectedOrganizerId] = useState('')
@@ -184,13 +183,6 @@ function App() {
       speakers: prev.speakers.map((s) => (s.id === id ? { ...s, ...patch } : s)),
     }))
 
-  const addCatalogPerson = () => {
-    const person = catalogPeople.find((item) => item.id === selectedPersonId)
-    const speaker = state.speakers[0]
-    if (!person || !speaker) return
-    updateSpeaker(speaker.id, { name: person.name, role: person.role, photoDataUrl: person.avatarUrl || undefined })
-  }
-
   const applyCatalogSpeakers = () => {
     const selected = catalogSpeakers.filter((item) => selectedSpeakerIds.includes(item.speakerId)).slice(0, MAX_SPEAKERS)
     if (!selected.length) return
@@ -213,7 +205,7 @@ function App() {
     setState((previous) => ({
       ...previous,
       event: { ...previous.event, includeSupportedBy: true },
-      partners: [...previous.partners, { id: uid(), imageDataUrl: sponsor.logoForDarkBackgroundUrl, name: sponsor.name }],
+      partners: [...previous.partners, { id: uid(), imageDataUrl: sponsor.logoForLightBackgroundUrl, name: sponsor.name }],
     }))
   }
 
@@ -222,7 +214,7 @@ function App() {
     if (!organizer) return
     updateEvent({
       organizerName: organizer.name,
-      organizerLogoDataUrl: organizer.logoForDarkBackgroundUrl,
+      organizerLogoDataUrl: organizer.logoForLightBackgroundUrl,
     })
   }
 
@@ -564,7 +556,7 @@ function App() {
           {!isMinimalCover && !isSocialPromo && state.speakers[0] && (
           <details className="side-section" open>
             <summary>
-              <span>Speaker</span>
+              <span>Speakers</span>
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
@@ -580,18 +572,6 @@ function App() {
                 </div>
                 <button type="button" className="secondary-button" disabled={!selectedSpeakerIds.length} onClick={applyCatalogSpeakers}>Apply selected speakers ({selectedSpeakerIds.length}/{MAX_SPEAKERS})</button>
               </fieldset>
-              <label>
-                Add from People catalogue
-                <select value={selectedPersonId} onChange={(e) => setSelectedPersonId(e.target.value)}>
-                  <option value="">Choose a speaker…</option>
-                  {catalogPeople.map((person) => (
-                    <option key={person.id} value={person.id}>{person.name}</option>
-                  ))}
-                </select>
-              </label>
-              <button type="button" className="secondary-button" disabled={!selectedPersonId} onClick={addCatalogPerson}>
-                Use selected speaker
-              </button>
               <div className="form-grid single">
                 <label>
                   Name *
@@ -664,14 +644,14 @@ function App() {
           </details>
           )}
 
-          {(isLumaCover || isSocialPromo) && (
+          {(isLumaCover || isSocialPromo || isSpeakerBanner) && (
           <details className="side-section" open>
             <summary>
               <span>Sponsors and collaborators</span>
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
-              {(isLumaCover || isSocialPromo) && (
+              {(isLumaCover || isSocialPromo || isSpeakerBanner) && (
                 <button
                   type="button"
                   className="resolution-toggle"
@@ -687,7 +667,7 @@ function App() {
                 </button>
               )}
               <p className="section-description">
-                Add up to 3 partner logos. On Luma covers they appear immediately above the date.
+                Add up to 3 partner logos. On Speaker Banner they appear at the bottom-right.
               </p>
               <label>
                 Add from sponsor or collaborator catalogue

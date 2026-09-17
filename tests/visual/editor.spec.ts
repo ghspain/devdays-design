@@ -46,3 +46,41 @@ for (const format of formats) {
     })
   })
 }
+
+test('catalogue logos are packaged as readable transparent SVG assets', async ({ page }) => {
+  const logos = [
+    'logos/celonis-black.svg',
+    'logos/celonis-white.svg',
+    'logos/github-community-spain-black.svg',
+    'logos/github-community-spain-white.svg',
+    'logos/techriders-black.svg',
+    'logos/techriders-white.svg',
+  ]
+
+  for (const logo of logos) {
+    const response = await page.request.get(new URL(logo, page.url()).href)
+    expect(response.ok(), `${logo} should be available`).toBe(true)
+    expect(response.headers()['content-type']).toContain('image/svg+xml')
+    expect((await response.body()).byteLength).toBeGreaterThan(500)
+  }
+})
+
+test('speaker banner renders selected organizer and sponsor logos', async ({ page }, testInfo) => {
+  const failedLogoRequests: string[] = []
+  page.on('requestfailed', (request) => {
+    if (request.url().includes('logos/')) failedLogoRequests.push(request.url())
+  })
+
+  await page.locator('.format-bar select').selectOption('speaker_banner')
+  await page.getByLabel('Select organizer').selectOption('ghspain')
+  await page.getByRole('button', { name: 'Use selected organizer' }).click()
+  await page.getByLabel('Add from sponsor or collaborator catalogue').selectOption('celonis')
+  await page.getByRole('button', { name: 'Add selected sponsor' }).click()
+
+  await expect(page.getByText('2 slot(s) remaining.')).toBeVisible()
+  await expect.poll(() => failedLogoRequests).toEqual([])
+  await testInfo.attach(`catalogue-logos-${testInfo.project.name}`, {
+    body: await page.locator('.stage').screenshot(),
+    contentType: 'image/png',
+  })
+})
