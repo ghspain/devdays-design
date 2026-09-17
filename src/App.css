@@ -1003,3 +1003,153 @@ button.danger {
     grid-template-columns: 1fr;
   }
 }
+
+/* Mobile editor layout: controls and preview become a single vertical flow.
+   The desktop sidebar/canvas split is intentionally kept above this breakpoint. */
+@media (max-width: 760px) {
+  .editor-shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    min-height: 52px;
+  }
+
+  .topbar-history-btn span {
+    display: none;
+  }
+
+  .topbar-history-btn {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .editor-body {
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .sidebar,
+  .sidebar.collapsed {
+    width: 100%;
+    max-width: none;
+    border-right: 0;
+    border-bottom: 1px solid var(--vscode-border);
+  }
+
+  .sidebar-content {
+    max-height: none;
+    overflow: visible;
+    padding: 0.75rem;
+  }
+
+  .sidebar-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 8;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .sidebar-footer .download-main {
+    min-height: 42px;
+  }
+
+  .stage {
+    width: 100%;
+    min-height: 72dvh;
+    overflow: visible;
+    align-items: flex-start;
+  }
+
+  .stage-canvas {
+    min-height: 72dvh;
+    height: auto;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 1.25rem 0.75rem 5rem;
+  }
+
+  .stage .canvas-wrap {
+    width: min(calc(100vw - 1.5rem), 560px);
+    max-width: 100%;
+    margin: 0 auto;
+    transform: none;
+  }
+
+  .stage .speaker-preview-block {
+    width: 100%;
+  }
+
+  .stage-toolbar {
+    top: auto;
+    right: 50%;
+    bottom: 0.75rem;
+    transform: translateX(50%);
+    flex-direction: row;
+    align-items: center;
+    padding: 0.3rem;
+    border-radius: 10px;
+  }
+
+  .stage-toolbar .toolbar-divider {
+    width: 1px;
+    height: 22px;
+    margin: 0 0.15rem;
+  }
+
+  .history-drawer {
+    position: fixed;
+    inset: 52px 0 0;
+    width: auto;
+    max-height: none;
+    border-left: 0;
+    z-index: 30;
+  }
+
+  .history-item {
+    grid-template-columns: 96px 1fr auto;
+  }
+
+  .history-item img {
+    width: 96px;
+    height: 60px;
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar {
+    padding: 0 0.65rem;
+  }
+
+  .topbar h1 {
+    font-size: 0.92rem;
+  }
+
+  .sidebar-content {
+    padding: 0.55rem;
+  }
+
+  .side-section > summary {
+    padding: 0.65rem 0.7rem;
+  }
+
+  .side-section .section-block {
+    padding: 0 0.7rem 0.75rem;
+  }
+
+  .history-item {
+    grid-template-columns: 1fr;
+  }
+
+  .history-item img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+}
