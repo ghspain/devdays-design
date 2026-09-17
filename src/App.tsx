@@ -34,7 +34,7 @@ import { uid } from './lib/format'
 import { buildDefaultState, readBannerHistory, writeBannerHistory } from './lib/history'
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
-import { catalogPeople, catalogSponsors } from './lib/catalog'
+import { catalogPeople, catalogSponsors, eventPresets } from './lib/catalog'
 
 function App() {
   const [backgroundFailed, setBackgroundFailed] = useState(false)
@@ -196,6 +196,16 @@ function App() {
       ...previous,
       event: { ...previous.event, includeSupportedBy: true },
       partners: [...previous.partners, { id: uid(), imageDataUrl: sponsor.logoUrl, name: sponsor.name }],
+    }))
+  }
+
+  const applyPreset = (presetId: string) => {
+    const preset = eventPresets.find((item) => item.id === presetId)
+    if (!preset) return
+    setState((previous) => ({
+      ...previous,
+      format: preset.format as BannerFormat,
+      event: { ...previous.event, title: preset.seriesLabel, edition: preset.edition },
     }))
   }
 
@@ -407,7 +417,18 @@ function App() {
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
+              <label>
+                Event preset
+                <select defaultValue="" onChange={(e) => applyPreset(e.target.value)}>
+                  <option value="">Choose a preset…</option>
+                  {eventPresets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}
+                </select>
+              </label>
               <div className="form-grid single">
+                <label>
+                  Event title
+                  <input type="text" maxLength={80} value={state.event.title} onChange={(e) => updateEvent({ title: e.target.value })} />
+                </label>
                 {isLumaCover && (
                   <label>
                     <span className="label-row">
