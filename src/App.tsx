@@ -34,6 +34,7 @@ import { uid } from './lib/format'
 import { buildDefaultState, readBannerHistory, writeBannerHistory } from './lib/history'
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
+import { catalogPeople, catalogSponsors } from './lib/catalog'
 
 function App() {
   const [backgroundFailed, setBackgroundFailed] = useState(false)
@@ -41,6 +42,8 @@ function App() {
   const [showHistory, setShowHistory] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [error, setError] = useState('')
+  const [selectedPersonId, setSelectedPersonId] = useState('')
+  const [selectedSponsorId, setSelectedSponsorId] = useState('')
   const [history, setHistory] = useState<BannerHistoryItem[]>(() => readBannerHistory())
   const [speakerPreviews, setSpeakerPreviews] = useState<Array<{ id: string; name: string; previewDataUrl: string }>>([])
   const [fontsReady, setFontsReady] = useState(() => typeof document === 'undefined' || !document.fonts)
@@ -178,6 +181,23 @@ function App() {
       ...prev,
       speakers: prev.speakers.map((s) => (s.id === id ? { ...s, ...patch } : s)),
     }))
+
+  const addCatalogPerson = () => {
+    const person = catalogPeople.find((item) => item.id === selectedPersonId)
+    const speaker = state.speakers[0]
+    if (!person || !speaker) return
+    updateSpeaker(speaker.id, { name: person.name, role: person.role, photoDataUrl: person.avatarUrl || undefined })
+  }
+
+  const addCatalogSponsor = () => {
+    const sponsor = catalogSponsors.find((item) => item.id === selectedSponsorId)
+    if (!sponsor || state.partners.length >= 3) return
+    setState((previous) => ({
+      ...previous,
+      event: { ...previous.event, includeSupportedBy: true },
+      partners: [...previous.partners, { id: uid(), imageDataUrl: sponsor.logoUrl, name: sponsor.name }],
+    }))
+  }
 
   const resetAll = () => {
     setState(buildDefaultState())
@@ -527,6 +547,18 @@ function App() {
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
+              <label>
+                Add from People catalogue
+                <select value={selectedPersonId} onChange={(e) => setSelectedPersonId(e.target.value)}>
+                  <option value="">Choose a speaker…</option>
+                  {catalogPeople.map((person) => (
+                    <option key={person.id} value={person.id}>{person.name}</option>
+                  ))}
+                </select>
+              </label>
+              <button type="button" className="secondary-button" disabled={!selectedPersonId} onClick={addCatalogPerson}>
+                Use selected speaker
+              </button>
               <div className="form-grid single">
                 <label>
                   Name *
@@ -593,6 +625,18 @@ function App() {
               <p className="section-description">
                 Add up to 3 partner logos. On Luma covers they appear immediately above the date.
               </p>
+              <label>
+                Add from sponsor catalogue
+                <select value={selectedSponsorId} onChange={(e) => setSelectedSponsorId(e.target.value)} disabled={state.partners.length >= 3}>
+                  <option value="">Choose a sponsor…</option>
+                  {catalogSponsors.map((sponsor) => (
+                    <option key={sponsor.id} value={sponsor.id}>{sponsor.name}</option>
+                  ))}
+                </select>
+              </label>
+              <button type="button" className="secondary-button" disabled={!selectedSponsorId || state.partners.length >= 3} onClick={addCatalogSponsor}>
+                Add selected sponsor
+              </button>
               <label>
                 Add logo
                 <input
