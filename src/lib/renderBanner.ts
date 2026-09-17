@@ -692,6 +692,43 @@ export async function renderBanner(
     if (isSocialPromo) {
       await drawOrganizationPanel(infoY, infoH, 1)
     }
+
+    if (isSpeakerBanner && state.event.includeSupportedBy && state.partners.length > 0) {
+      const logos = state.partners.slice(0, 3)
+      const areaRight = width - padding
+      const areaWidth = Math.round(width * 0.34)
+      const logoGap = 12
+      const logoMaxH = 52
+      const headingY = height - 118
+      const logosTopY = headingY + 14
+      const slotWidth = (areaWidth - logoGap * (logos.length - 1)) / logos.length
+
+      ctx.fillStyle = lightAreaMutedColor
+      ctx.font = `600 18px "Mona Sans Mono", monospace`
+      ctx.letterSpacing = '2px'
+      ctx.textAlign = 'right'
+      ctx.fillText('SUPPORTED BY', areaRight, headingY)
+      ctx.textAlign = 'left'
+      ctx.letterSpacing = '0px'
+
+      for (let index = 0; index < logos.length; index += 1) {
+        try {
+          const logo = await loadImage(logos[index].imageDataUrl)
+          const ratio = logo.width / logo.height
+          let targetW = Math.min(slotWidth, logoMaxH * ratio)
+          let targetH = targetW / ratio
+          if (targetH > logoMaxH) {
+            targetH = logoMaxH
+            targetW = targetH * ratio
+          }
+          const slotX = areaRight - areaWidth + index * (slotWidth + logoGap)
+          const x = slotX + (slotWidth - targetW) / 2
+          ctx.drawImage(logo, x, logosTopY, targetW, targetH)
+        } catch {
+          continue
+        }
+      }
+    }
   }
 
   if (!isMinimalCover && !isSpeakerBanner && !isSocialPromo && state.partners.length > 0) {
