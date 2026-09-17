@@ -1,11 +1,7 @@
 import { expect, test } from '@playwright/test'
+import { formatOptions } from '../../src/constants'
 
-const formats = [
-  { id: 'speaker_square', width: 1080, height: 1080 },
-  { id: 'speaker_banner', width: 1600, height: 900 },
-  { id: 'luma_cover', width: 1080, height: 1350 },
-  { id: 'social_promo', width: 1080, height: 1350 },
-] as const
+const formats = formatOptions.map(({ id, width, height }) => ({ id, width, height }))
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
