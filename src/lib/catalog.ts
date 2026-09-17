@@ -1,5 +1,6 @@
 import peopleCsv from '../../data/people.csv?raw'
 import sponsorsCsv from '../../data/sponsors.csv?raw'
+import speakersCsv from '../../data/speakers.csv?raw'
 import presets from '../../data/presets.json'
 
 export interface CatalogPerson {
@@ -7,6 +8,14 @@ export interface CatalogPerson {
   name: string
   role: string
   avatarUrl: string
+}
+
+export interface CatalogSpeaker extends CatalogPerson {
+  speakerId: string
+  eventId: string
+  eventDate: string
+  sessionTitle: string
+  sessionTime: string
 }
 
 export interface CatalogSponsor {
@@ -76,5 +85,17 @@ export const catalogSponsors: CatalogSponsor[] = parseCsv(sponsorsCsv).map((spon
   logoUrl: sponsor.logo_url,
   website: sponsor.website,
 })).filter((sponsor) => sponsor.id && sponsor.name && sponsor.logoUrl)
+
+export const catalogSpeakers: CatalogSpeaker[] = parseCsv(speakersCsv).map((speaker) => ({
+  speakerId: speaker.speaker_id,
+  id: speaker.person_id,
+  name: speaker.name,
+  role: speaker.role,
+  avatarUrl: speaker.avatar_url,
+  eventId: speaker.event_id,
+  eventDate: speaker.event_date,
+  sessionTitle: speaker.session_title,
+  sessionTime: speaker.session_time,
+}))
 
 export const eventPresets = presets as EventPreset[]

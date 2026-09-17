@@ -34,7 +34,7 @@ import { uid } from './lib/format'
 import { buildDefaultState, readBannerHistory, writeBannerHistory } from './lib/history'
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
-import { catalogPeople, catalogSponsors, eventPresets } from './lib/catalog'
+import { catalogPeople, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
 
 function App() {
   const [backgroundFailed, setBackgroundFailed] = useState(false)
@@ -43,6 +43,7 @@ function App() {
   const [zoom, setZoom] = useState(1)
   const [error, setError] = useState('')
   const [selectedPersonId, setSelectedPersonId] = useState('')
+  const [selectedSpeakerIds, setSelectedSpeakerIds] = useState<string[]>([])
   const [selectedSponsorId, setSelectedSponsorId] = useState('')
   const [history, setHistory] = useState<BannerHistoryItem[]>(() => readBannerHistory())
   const [speakerPreviews, setSpeakerPreviews] = useState<Array<{ id: string; name: string; previewDataUrl: string }>>([])
@@ -187,6 +188,22 @@ function App() {
     const speaker = state.speakers[0]
     if (!person || !speaker) return
     updateSpeaker(speaker.id, { name: person.name, role: person.role, photoDataUrl: person.avatarUrl || undefined })
+  }
+
+  const applyCatalogSpeakers = () => {
+    const selected = catalogSpeakers.filter((item) => selectedSpeakerIds.includes(item.speakerId)).slice(0, MAX_SPEAKERS)
+    if (!selected.length) return
+    setState((previous) => ({
+      ...previous,
+      speakers: selected.map((item) => ({
+        id: uid(),
+        name: item.name,
+        role: item.role,
+        photoDataUrl: item.avatarUrl || undefined,
+        talkTitle: item.sessionTitle || undefined,
+        talkTime: item.sessionTime || undefined,
+      })),
+    }))
   }
 
   const addCatalogSponsor = () => {
@@ -568,6 +585,18 @@ function App() {
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
+              <fieldset className="catalog-picker">
+                <legend>Speakers from Planning</legend>
+                <div className="catalog-options">
+                  {catalogSpeakers.map((speaker) => (
+                    <label key={speaker.speakerId} className="catalog-option">
+                      <input type="checkbox" checked={selectedSpeakerIds.includes(speaker.speakerId)} onChange={(event) => setSelectedSpeakerIds((current) => event.target.checked ? [...current, speaker.speakerId].slice(-MAX_SPEAKERS) : current.filter((id) => id !== speaker.speakerId))} />
+                      <span><strong>{speaker.name}</strong><small>{speaker.sessionTitle || 'Session title pending'} · {speaker.eventDate}</small></span>
+                    </label>
+                  ))}
+                </div>
+                <button type="button" className="secondary-button" disabled={!selectedSpeakerIds.length} onClick={applyCatalogSpeakers}>Apply selected speakers ({selectedSpeakerIds.length}/{MAX_SPEAKERS})</button>
+              </fieldset>
               <label>
                 Add from People catalogue
                 <select value={selectedPersonId} onChange={(e) => setSelectedPersonId(e.target.value)}>

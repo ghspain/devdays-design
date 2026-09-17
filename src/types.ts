@@ -12,6 +12,8 @@ export interface Speaker {
   name: string
   role?: string
   photoDataUrl?: string
+  talkTitle?: string
+  talkTime?: string
 }
 
 export interface PartnerLogo {
