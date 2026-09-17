@@ -35,6 +35,7 @@ import { buildDefaultState, readBannerHistory, writeBannerHistory } from './lib/
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
 import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
+import { buildEventPack, type EventPackProgress } from './lib/exportPack'
 
 function App() {
   const [backgroundFailed, setBackgroundFailed] = useState(false)
@@ -48,6 +49,8 @@ function App() {
   const [history, setHistory] = useState<BannerHistoryItem[]>(() => readBannerHistory())
   const [speakerPreviews, setSpeakerPreviews] = useState<Array<{ id: string; name: string; previewDataUrl: string }>>([])
   const [fontsReady, setFontsReady] = useState(() => typeof document === 'undefined' || !document.fonts)
+  const [isExportingPack, setIsExportingPack] = useState(false)
+  const [packProgress, setPackProgress] = useState<EventPackProgress | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const [state, setState] = useState<BannerState>(() => buildDefaultState())
@@ -299,6 +302,27 @@ function App() {
       })
     } catch {
       setError('Could not export file.')
+    }
+  }
+
+  const exportEventPack = async () => {
+    setError('')
+    setIsExportingPack(true)
+    setPackProgress({ completed: 0, total: 0, label: 'Preparing' })
+
+    try {
+      const pack = await buildEventPack(state, setPackProgress)
+      const url = URL.createObjectURL(pack.blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = pack.fileName
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch {
+      setError('Could not create the event pack.')
+    } finally {
+      setIsExportingPack(false)
+      setPackProgress(null)
     }
   }
 
@@ -745,6 +769,25 @@ function App() {
             <button type="button" className="ghost" onClick={resetAll} title="Reset to defaults">
               Reset
             </button>
+            <div className="pack-download-block">
+              <button
+                type="button"
+                className="pack-download"
+                disabled={isExportingPack}
+                onClick={() => {
+                  void exportEventPack()
+                }}
+              >
+                <DownloadIcon size={16} />
+                <span>{isExportingPack ? 'Creating pack…' : 'Event pack (.zip)'}</span>
+              </button>
+              {packProgress && (
+                <small aria-live="polite">
+                  {packProgress.label}
+                  {packProgress.total > 0 ? ` ${packProgress.completed}/${packProgress.total}` : ''}
+                </small>
+              )}
+            </div>
             <div className="split-download">
               <button
                 type="button"

@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
+import JSZip from 'jszip'
 import { formatOptions } from '../../src/constants'
 
 const formats = formatOptions.map(({ id, width, height }) => ({ id, width, height }))
@@ -68,7 +70,7 @@ test('catalogue logos are packaged as readable transparent SVG assets', async ({
 test('speaker banner renders selected organizer and sponsor logos', async ({ page }, testInfo) => {
   const failedLogoRequests: string[] = []
   page.on('requestfailed', (request) => {
-    if (request.url().includes('logos/')) failedLogoRequests.push(request.url())
+    if (request.url().includes('/logos/')) failedLogoRequests.push(request.url())
   })
 
   await page.locator('.format-bar select').selectOption('speaker_banner')
@@ -83,4 +85,25 @@ test('speaker banner renders selected organizer and sponsor logos', async ({ pag
     body: await page.locator('.stage').screenshot(),
     contentType: 'image/png',
   })
+})
+
+test('event pack downloads every format in one ZIP', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile-chromium', 'The mobile project validates the responsive control layout.')
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Event pack (.zip)' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toBe('devdays-madrid-event-pack.zip')
+
+  const downloadPath = await download.path()
+  if (!downloadPath) throw new Error('The event pack download did not create a file.')
+  const zip = await JSZip.loadAsync(await readFile(downloadPath))
+  const files = Object.keys(zip.files).filter((path) => !zip.files[path].dir)
+
+  expect(files).toEqual([
+    'speaker-profile/speaker-profile-01-speaker-name.png',
+    'speaker-banner/speaker-banner-01-speaker-name.png',
+    'social-promo/social-promo-madrid.png',
+    'luma-cover/luma-cover-madrid.png',
+  ])
 })

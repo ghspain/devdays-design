@@ -310,13 +310,31 @@
   background: var(--app-header-bg);
 }
 
+.pack-download-block {
+  margin-left: auto;
+  display: grid;
+  justify-items: end;
+  gap: 0.2rem;
+}
+
+.pack-download-block small {
+  color: var(--vscode-text-muted);
+  font-size: 0.72rem;
+}
+
+.pack-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
 .sidebar-footer .ghost {
   border-radius: 6px;
   background: var(--vscode-bg-elev-2);
 }
 
 .split-download {
-  margin-left: auto;
   display: flex;
   align-items: stretch;
   position: relative;
@@ -1093,6 +1111,18 @@ button.danger {
     bottom: 0;
     z-index: 8;
     padding: 0.65rem 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .pack-download-block {
+    order: 3;
+    width: 100%;
+  }
+
+  .pack-download {
+    width: 100%;
+    min-height: 42px;
+    justify-content: center;
   }
 
   .sidebar-footer .download-main {
