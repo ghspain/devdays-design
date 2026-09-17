@@ -53,7 +53,7 @@ export const MAX_HISTORY_ITEMS = 20
 export const MAX_SPEAKERS = 12
 export const REPOSITORY_URL = 'https://github.com/ghspain/devdays-design'
 export const coverFormatIds: BannerFormat[] = ['luma_cover']
-export const socialFormatIds: BannerFormat[] = ['speaker_banner', 'social_promo']
+export const socialFormatIds: BannerFormat[] = ['speaker_square', 'speaker_banner', 'social_promo']
 export const filenamePrefixByFormat: Record<BannerFormat, string> = {
   luma_cover: 'luma',
   social_promo: 'social',
