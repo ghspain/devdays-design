@@ -47,18 +47,18 @@ for (const format of formats) {
   })
 }
 
-test('catalogue logos are packaged as readable transparent SVG assets', async ({ request }) => {
+test('catalogue logos are packaged as readable transparent SVG assets', async ({ page }) => {
   const logos = [
-    '/logos/celonis-black.svg',
-    '/logos/celonis-white.svg',
-    '/logos/github-community-spain-black.svg',
-    '/logos/github-community-spain-white.svg',
-    '/logos/techriders-black.svg',
-    '/logos/techriders-white.svg',
+    'logos/celonis-black.svg',
+    'logos/celonis-white.svg',
+    'logos/github-community-spain-black.svg',
+    'logos/github-community-spain-white.svg',
+    'logos/techriders-black.svg',
+    'logos/techriders-white.svg',
   ]
 
   for (const logo of logos) {
-    const response = await request.get(logo)
+    const response = await page.request.get(new URL(logo, page.url()).href)
     expect(response.ok(), `${logo} should be available`).toBe(true)
     expect(response.headers()['content-type']).toContain('image/svg+xml')
     expect((await response.body()).byteLength).toBeGreaterThan(500)
@@ -68,7 +68,7 @@ test('catalogue logos are packaged as readable transparent SVG assets', async ({
 test('speaker banner renders selected organizer and sponsor logos', async ({ page }, testInfo) => {
   const failedLogoRequests: string[] = []
   page.on('requestfailed', (request) => {
-    if (request.url().includes('/logos/')) failedLogoRequests.push(request.url())
+    if (request.url().includes('logos/')) failedLogoRequests.push(request.url())
   })
 
   await page.locator('.format-bar select').selectOption('speaker_banner')
