@@ -482,7 +482,8 @@ export async function renderBanner(
       const nameLines = wrapText(ctx, speaker.name || 'Speaker', textMaxWidth, 3)
       ctx.letterSpacing = '0px'
       ctx.font = `500 ${roleSize}px "Mona Sans", sans-serif`
-      const roleLines = speaker.role ? wrapText(ctx, speaker.role, textMaxWidth, 2) : []
+      const speakerMeta = [speaker.role, speaker.talkTitle, speaker.talkTime].filter(Boolean).join(' · ')
+      const roleLines = speakerMeta ? wrapText(ctx, speakerMeta, textMaxWidth, 3) : []
 
       const nameBlockHeight = nameLines.length * nameLineStep
       const roleBlockHeight = roleLines.length > 0 ? nameToRoleGap + roleLines.length * roleLineStep : 0
@@ -564,10 +565,11 @@ export async function renderBanner(
           ctx.fillText(line, cursorX, textY + idx * metaSize * 1.05)
         })
 
-        if (speaker.role) {
+        const speakerMeta = [speaker.role, speaker.talkTitle, speaker.talkTime].filter(Boolean).join(' · ')
+        if (speakerMeta) {
           ctx.fillStyle = state.colors.secondary
           ctx.font = `500 ${Math.round(metaSize * 0.85)}px "Mona Sans", sans-serif`
-          const roleLines = wrapText(ctx, speaker.role, avatarSize * 1.4, 2)
+          const roleLines = wrapText(ctx, speakerMeta, avatarSize * 1.4, 2)
           const roleStart = textY + nameLines.length * metaSize * 1.05 + metaSize * 0.9
           roleLines.forEach((line, idx) => {
             ctx.fillText(line, cursorX, roleStart + idx * metaSize * 0.92)
