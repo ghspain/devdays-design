@@ -1,0 +1,23 @@
+[
+  {
+    "id": "devdays",
+    "name": "Dev Days",
+    "seriesLabel": "DEV DAYS 2026",
+    "edition": "Professional",
+    "format": "luma_cover"
+  },
+  {
+    "id": "meetup",
+    "name": "Community Meetup",
+    "seriesLabel": "GITHUB COMMUNITY SPAIN",
+    "edition": "Meetup",
+    "format": "social_promo"
+  },
+  {
+    "id": "online",
+    "name": "Online event",
+    "seriesLabel": "GITHUB COMMUNITY SPAIN",
+    "edition": "Online",
+    "format": "social_promo"
+  }
+]

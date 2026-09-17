@@ -39,6 +39,10 @@ Want to test the app quickly on your machine? Follow the steps below.
 - **Export pipeline:** Download in PNG/JPG with 1x or 2x scale.
 - **Local history:** Restore, delete, and manage recent generated banners (stored in `localStorage`).
 
+## Local catalogues and presets
+
+The `data/` directory contains a deliberately reduced local catalogue for speakers, sponsors, and visual presets. It is intentionally separate from the richer canonical data in [ghspain/Planning](https://github.com/ghspain/Planning). See [ROADMAP.md](ROADMAP.md) for the bounded product scope.
+
 ## 🛠️ Tech Stack
 
 - ⚛️ **React 19** + **TypeScript**
