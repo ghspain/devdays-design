@@ -35,6 +35,7 @@ import { buildDefaultState, normalizeState, readBannerHistory, writeBannerHistor
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
 import { createRenderInfo, validateState, type ValidationFinding } from './lib/validate'
+import { checkRenderedCanvas } from './lib/pixelChecks'
 import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
 import { buildEventPack, type EventPackProgress } from './lib/exportPack'
 
@@ -114,31 +115,34 @@ function App() {
     const draw = async () => {
       if (cancelled) return
       const renderInfo = createRenderInfo()
+      let targetCanvas: HTMLCanvasElement | null = null
       if (showMultiSpeakerPreviewGrid) {
         // The visible canvas is unmounted while the per-speaker grid is shown.
         const ctx = canvasRef.current?.getContext('2d')
         if (ctx) ctx.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height)
         // Render once to an offscreen canvas so validation still reflects what
         // an export would show.
+        targetCanvas = document.createElement('canvas')
         try {
-          await renderBanner(document.createElement('canvas'), state, format, previewBackgroundFailed, 1, renderInfo)
+          await renderBanner(targetCanvas, state, format, previewBackgroundFailed, 1, renderInfo)
         } catch {
           return
         }
       } else {
         if (!canvasRef.current) return
+        targetCanvas = canvasRef.current
         try {
-          await renderBanner(canvasRef.current, state, format, previewBackgroundFailed, 1, renderInfo)
+          await renderBanner(targetCanvas, state, format, previewBackgroundFailed, 1, renderInfo)
         } catch {
           if (!cancelled) setError('Failed to render preview.')
           return
         }
       }
-      const findings = validateState(state, format.id, renderInfo)
+      const findings = [...validateState(state, format.id, renderInfo), ...checkRenderedCanvas(targetCanvas, renderInfo)]
       if (cancelled) return
       setValidationFindings(findings)
       // Exposed for Playwright visual-validation specs.
-      ;(window as unknown as { __devdaysValidation?: { findings: ValidationFinding[] } }).__devdaysValidation = { findings }
+      ;(window as unknown as { __devdaysValidation?: { findings: ValidationFinding[]; pixelChecks: typeof checkRenderedCanvas } }).__devdaysValidation = { findings, pixelChecks: checkRenderedCanvas }
     }
 
     // Coalesce rapid state changes into a single redraw on the next animation

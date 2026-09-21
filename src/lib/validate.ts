@@ -18,6 +18,18 @@ export interface ValidationFinding {
   field?: string
 }
 
+/** A drawn text block, recorded by the renderer so pixel checks know where
+ * to sample the canvas. Coordinates are in logical (pre-scale) canvas space. */
+export interface TextRegion {
+  field: string
+  x: number
+  y: number
+  w: number
+  h: number
+  /** CSS color the text was drawn with. */
+  color: string
+}
+
 /**
  * Facts collected while a banner renders: which text fields had to be
  * truncated and how many logo/speaker slots the format actually offers.
@@ -28,12 +40,14 @@ export interface RenderInfo {
   /** Max partner logos this format draws (Infinity when none were drawn). */
   logoCap: number
   speakerCap: number
+  textRegions: TextRegion[]
 }
 
 export const createRenderInfo = (): RenderInfo => ({
   truncatedFields: [],
   logoCap: Number.POSITIVE_INFINITY,
   speakerCap: MAX_SPEAKERS,
+  textRegions: [],
 })
 
 export function validateState(

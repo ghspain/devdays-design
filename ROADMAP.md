@@ -21,10 +21,10 @@ community CRM, event database, or social publishing system.
 
 ## Delivery order
 
-1. Load and select local speakers and sponsors.
-2. Apply and edit event presets.
-3. Add visual validation feedback before export.
-4. Generate a ZIP containing all selected event materials.
+1. Load and select local speakers and sponsors. ✅
+2. Apply and edit event presets. ✅
+3. Add visual validation feedback before export. ✅
+4. Generate a ZIP containing all selected event materials. ✅
 
 ## Coherence pass (epic #12)
 
@@ -37,6 +37,16 @@ of #6–#11. Tracked as an epic with one issue per phase:
 - Phase 3: #16 — coherent speaker management from the Planning catalogue.
 - Phase 4: #17 — align sidebar sections and format groups with the renderer.
 - Phase 5: #15 — full validation pass (lint, build, visual tests).
+
+## Visual validation (epic #26)
+
+Roadmap item 5 shipped as a spec-driven epic with one issue per phase:
+
+- Epic: ghspain/devdays-design#26 — visual validation before export.
+- Phase 1: #27 — detection engine (overflow/truncation and dropped-content flags).
+- Phase 2: #28 — pixel checks on the rendered canvas (WCAG contrast, safe area).
+- Phase 3: #29 — validation feedback panel in the sidebar.
+- Phase 4: #30 — full test pass (per-format coverage, stress runs) and roadmap update.
 
 The local files act as a stable, human-editable contract. A future integration
 may import from Planning, but the editor must remain usable without network

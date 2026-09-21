@@ -118,3 +118,85 @@ test('single featured speaker on speaker_banner is not reported as dropped', asy
     .poll(() => findings(page), { timeout: 10_000 })
     .toEqual(expect.not.arrayContaining([expect.objectContaining({ code: 'speakers-dropped' })]))
 })
+
+// --- Phase 2: pixel checks (contrast + safe area) ---------------------------
+
+interface PixelRegion {
+  field: string
+  x: number
+  y: number
+  w: number
+  h: number
+  color: string
+}
+
+function runPixelChecks(page: Page, background: string, regions: PixelRegion[]) {
+  return page.evaluate(
+    async ({ bg, regionList }) => {
+      const w = window as unknown as {
+        __devdaysValidation?: {
+          pixelChecks: (canvas: HTMLCanvasElement, info: { textRegions: PixelRegion[] }) => Finding[]
+        }
+      }
+      const deadline = Date.now() + 5_000
+      while (!w.__devdaysValidation?.pixelChecks && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 50))
+      }
+      if (!w.__devdaysValidation?.pixelChecks) throw new Error('pixelChecks hook missing')
+      const canvas = document.createElement('canvas')
+      canvas.width = 800
+      canvas.height = 400
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('no 2d context')
+      ctx.fillStyle = bg
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      return w.__devdaysValidation.pixelChecks(canvas, { textRegions: regionList })
+    },
+    { bg: background, regionList: regions },
+  )
+}
+
+test('near-invisible text (white on near-white) is reported as low-contrast error', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+
+  const result = await runPixelChecks(page, '#fdfdfd', [
+    { field: 'event title', x: 100, y: 100, w: 400, h: 60, color: '#ffffff' },
+  ])
+  expect(result).toEqual([
+    expect.objectContaining({ code: 'low-contrast', severity: 'error', field: 'event title' }),
+  ])
+})
+
+test('readable text on a light background raises no contrast finding', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+
+  const result = await runPixelChecks(page, '#fdfdfd', [
+    { field: 'event title', x: 100, y: 100, w: 400, h: 60, color: '#111111' },
+  ])
+  expect(result).toEqual([])
+})
+
+test('text hugging the canvas edge is reported as a safe-area warning', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+
+  const result = await runPixelChecks(page, '#fdfdfd', [
+    { field: 'city', x: 2, y: 100, w: 400, h: 60, color: '#111111' },
+  ])
+  expect(result).toEqual([expect.objectContaining({ code: 'safe-area', severity: 'warning', field: 'city' })])
+})
+
+for (const formatId of ['luma_cover', 'speaker_banner', 'social_promo', 'speaker_square']) {
+  test(`designed ${formatId} default render raises no contrast or safe-area findings`, async ({ page }) => {
+    await seedHistory(page, [historyItem({ format: formatId })])
+
+    // The all-clear panel proves the full findings list (which now includes
+    // pixel checks) stayed empty for the designed palette/background combo.
+    await expect(page.locator('.validation-panel')).toContainText('All checks passed', { timeout: 10_000 })
+    const codes = (await findings(page)).map((f) => f.code)
+    expect(codes).not.toContain('low-contrast')
+    expect(codes).not.toContain('safe-area')
+  })
+}
