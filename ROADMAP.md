@@ -26,7 +26,7 @@ community CRM, event database, or social publishing system.
 3. Add visual validation feedback before export.
 4. Generate a ZIP containing all selected event materials.
 
-## Coherence pass (GSD)
+## Coherence pass (epic #12)
 
 A spec-driven pass to align the editor's UI and behaviour after the rapid growth
 of #6–#11. Tracked as an epic with one issue per phase:
