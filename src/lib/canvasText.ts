@@ -6,7 +6,17 @@ export function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: 
   const lines: string[] = []
   let line = ''
 
-  for (const word of words) {
+  for (const rawWord of words) {
+    let word = rawWord
+    if (ctx.measureText(word).width > maxWidth) {
+      // Unbreakable token wider than the box: previously it overflowed
+      // silently (#32). Cut it to fit and flag the truncation.
+      if (truncated) truncated.value = true
+      while (word.length > 0 && ctx.measureText(`${word}...`).width > maxWidth) {
+        word = word.slice(0, -1)
+      }
+      word = `${word}...`
+    }
     const test = line ? `${line} ${word}` : word
     if (ctx.measureText(test).width <= maxWidth) {
       line = test

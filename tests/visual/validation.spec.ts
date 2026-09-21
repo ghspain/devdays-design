@@ -74,6 +74,43 @@ test('overlong city text is reported as truncated', async ({ page }) => {
   await expect(page.locator('.validation-panel')).toContainText('city')
 })
 
+test('a single unbreakable word wider than the box is reported as truncated', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+
+  // No spaces at all: wrapText used to emit it as one overflowing line with no flag (#32).
+  await page.getByLabel('City').fill('M'.repeat(200))
+
+  await expect
+    .poll(() => findings(page), { timeout: 10_000 })
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'text-truncated', field: 'city', severity: 'warning' }),
+      ]),
+    )
+})
+
+test('dense speaker_banner name contrast warning is a genuine measurement, not an estimation collapse', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+  await page.locator('.format-bar select').selectOption('speaker_banner')
+
+  // Investigation for #32: the "speaker name" warning on this format is the
+  // brand green (#0ca334) measuring 2.99:1 against the light background with
+  // ~90% of pixels clearly far from the text color — i.e. the far-pixel path,
+  // not the dense-region fallback. It must stay a warning (truthful) and must
+  // not be an error (that would mean the fallback collapsed onto the text).
+  await expect
+    .poll(() => findings(page), { timeout: 10_000 })
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'low-contrast', field: 'speaker name', severity: 'warning' }),
+      ]),
+    )
+  const list = await findings(page)
+  expect(list.filter((f) => f.code === 'low-contrast' && f.severity === 'error')).toEqual([])
+})
+
 test('export buttons show a findings badge that never blocks export', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()

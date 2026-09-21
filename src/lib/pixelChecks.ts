@@ -90,24 +90,38 @@ export function checkRenderedCanvas(
     if (x1 - x0 < 4 || y1 - y0 < 4) continue
 
     const data = ctx.getImageData(x0, y0, x1 - x0, y1 - y0).data
-    let allR = 0, allG = 0, allB = 0, allN = 0
-    let farR = 0, farG = 0, farB = 0, farN = 0
+    const distances: number[] = []
+    const pxR: number[] = []
+    const pxG: number[] = []
+    const pxB: number[] = []
     for (let i = 0; i < data.length; i += 4) {
       if (data[i + 3] < 128) continue
       const r = data[i], g = data[i + 1], b = data[i + 2]
-      allR += r; allG += g; allB += b; allN += 1
-      const distance = Math.abs(r - textColor[0]) + Math.abs(g - textColor[1]) + Math.abs(b - textColor[2])
-      if (distance >= TEXT_PIXEL_DISTANCE) {
-        farR += r; farG += g; farB += b; farN += 1
-      }
+      distances.push(Math.abs(r - textColor[0]) + Math.abs(g - textColor[1]) + Math.abs(b - textColor[2]))
+      pxR.push(r); pxG.push(g); pxB.push(b)
     }
+    const allN = distances.length
     if (allN === 0) continue
-    // Prefer the mean of non-text pixels; when the region is almost entirely
-    // the text color (invisible text), fall back to the overall mean.
+    const meanOf = (indices: number[]): [number, number, number] => {
+      let r = 0, g = 0, b = 0
+      for (const p of indices) { r += pxR[p]; g += pxG[p]; b += pxB[p] }
+      return [r / indices.length, g / indices.length, b / indices.length]
+    }
+    // Background = mean of pixels far from the text color. When clearly-far
+    // pixels are rare (< 5%) the region is dense text, so instead of the
+    // overall mean — which collapses toward the text color and fakes a ~1:1
+    // ratio (#32) — take the most-distant quartile. Truly invisible text
+    // still fails: its most-distant pixels remain close to the text color.
+    const farIndices: number[] = []
+    for (let p = 0; p < allN; p++) if (distances[p] >= TEXT_PIXEL_DISTANCE) farIndices.push(p)
     const background =
-      farN >= allN * 0.05
-        ? [farR / farN, farG / farN, farB / farN] as [number, number, number]
-        : [allR / allN, allG / allN, allB / allN] as [number, number, number]
+      farIndices.length >= allN * 0.05
+        ? meanOf(farIndices)
+        : meanOf(
+            [...Array(allN).keys()]
+              .sort((a, b) => distances[b] - distances[a])
+              .slice(0, Math.max(1, Math.ceil(allN * 0.25))),
+          )
     const ratio = contrastRatio(textColor, background)
     if (ratio < 3) {
       findings.push({

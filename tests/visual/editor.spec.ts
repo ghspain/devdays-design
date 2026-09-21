@@ -196,14 +196,27 @@ test('partner logos toggle hides and shows the square footer logos', async ({ pa
   // prove the logos appear, disappear and come back with identical footers.
   // Generous timeouts: the shared CI/dev box can starve the render under parallel load.
   const pollOptions = { timeout: 15_000 }
+  // Adaptive stability probe (#24): the settle window grows on each retry
+  // (200 → 400 → 800ms cap) so a slow app start gets progressively more
+  // time to render instead of burning the 15s budget on fixed 200ms samples.
+  const expectFooterStable = async () => {
+    let attempt = 0
+    await expect
+      .poll(
+        async () => {
+          const settleMs = Math.min(200 * 2 ** attempt, 800)
+          const before = await footerSignature()
+          await page.waitForTimeout(settleMs)
+          const stable = before === (await footerSignature())
+          if (!stable) attempt += 1
+          return stable
+        },
+        pollOptions,
+      )
+      .toBe(true)
+  }
   await toggle.click()
-  await expect
-    .poll(async () => {
-      const before = await footerSignature()
-      await page.waitForTimeout(200)
-      return before === (await footerSignature())
-    }, pollOptions)
-    .toBe(true)
+  await expectFooterStable()
   const withoutLogos = await footerSignature()
 
   await toggle.click()
