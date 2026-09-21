@@ -318,65 +318,13 @@
   border-top: 1px solid var(--vscode-border);
   background: var(--app-header-bg);
   font-size: 0.78rem;
-}
-
-.validation-panel p,
-.validation-panel ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
 }
 
-.validation-ok,
-.validation-item {
-  display: flex;
-  align-items: baseline;
-  gap: 0.45rem;
-  color: var(--vscode-descriptionForeground, #8a919e);
-}
-
-.validation-dot {
-  flex: none;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  align-self: center;
-}
-
-.validation-dot.ok {
-  background: #3fb950;
-}
-
-.validation-dot.warning {
-  background: #d29922;
-}
-
-.validation-dot.error {
-  background: #f85149;
-}
-
-.validation-item.warning .validation-dot {
-  background: #d29922;
-}
-
-.validation-item.error .validation-dot {
-  background: #f85149;
-}
-
-.validation-severity-label {
-  font-weight: 600;
-  text-transform: capitalize;
-}
-
-.validation-item.warning .validation-severity-label {
-  color: #d29922;
-}
-
-.validation-item.error .validation-severity-label {
-  color: #f85149;
+.validation-panel [data-component='Banner'] {
+  font-size: inherit;
 }
 
 .download-badge {
@@ -411,40 +359,10 @@
   font-size: 0.72rem;
 }
 
-.pack-download {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  white-space: nowrap;
-}
-
-.sidebar-footer .ghost {
-  border-radius: 6px;
-  background: var(--vscode-bg-elev-2);
-}
-
 .split-download {
   display: flex;
   align-items: stretch;
   position: relative;
-}
-
-.split-download .download-main {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.55rem 0.9rem;
-  border: 1px solid var(--app-download-border);
-  border-radius: 6px;
-  background: var(--app-download-bg);
-  color: #ffffff;
-  font-weight: 600;
-}
-
-.split-download .download-main:hover:not(:disabled) {
-  transform: none;
-  background: var(--app-download-hover);
-  border-color: var(--app-download-hover);
 }
 
 .stage {
@@ -613,17 +531,6 @@
   box-shadow: 0 0 0 1px var(--vscode-accent) inset;
 }
 
-.card-option.selected::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 12px;
-  bottom: 12px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--vscode-accent);
-}
-
 .swatch-row {
   display: flex;
   gap: 0.35rem;
@@ -712,7 +619,7 @@ input[type='file'] {
   padding: 0.4rem;
 }
 
-button {
+button:not([data-component]) {
   border-radius: 6px;
   border: 1px solid var(--vscode-border);
   background: var(--app-button-bg);
@@ -722,29 +629,29 @@ button {
   transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
-button:hover:not(:disabled) {
+button:not([data-component]):hover:not(:disabled) {
   transform: none;
   border-color: var(--vscode-text-muted);
   background: var(--vscode-bg-elev-1);
 }
 
-button:disabled {
+button:not([data-component]):disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-button.primary {
+button:not([data-component]).primary {
   border-color: transparent;
   background: var(--app-primary-button-bg);
   color: #ffffff;
   box-shadow: 0 1px 3px rgba(31, 35, 40, 0.2);
 }
 
-button.primary:hover:not(:disabled) {
+button:not([data-component]).primary:hover:not(:disabled) {
   background: var(--app-primary-button-hover);
 }
 
-button.secondary-button {
+button:not([data-component]).secondary-button {
   width: 100%;
   justify-content: center;
   margin: 0.2rem 0 0.65rem;
@@ -783,7 +690,7 @@ button.secondary-button {
 .catalog-option span { display: grid; gap: 0.1rem; }
 .catalog-option small { color: var(--vscode-text-muted); line-height: 1.3; }
 
-button.danger {
+button:not([data-component]).danger {
   border-color: var(--vscode-danger);
   color: var(--vscode-danger);
 }
