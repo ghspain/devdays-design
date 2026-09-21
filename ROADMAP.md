@@ -26,6 +26,18 @@ community CRM, event database, or social publishing system.
 3. Add visual validation feedback before export.
 4. Generate a ZIP containing all selected event materials.
 
+## Coherence pass (GSD)
+
+A spec-driven pass to align the editor's UI and behaviour after the rapid growth
+of #6–#11. Tracked as an epic with one issue per phase:
+
+- Epic: ghspain/devdays-design#12 — UI and functional coherence pass.
+- Phase 1: #14 — presets must not change the banner format.
+- Phase 2: #13 — Speaker Profile renders speakers inside the canvas.
+- Phase 3: #16 — coherent speaker management from the Planning catalogue.
+- Phase 4: #17 — align sidebar sections and format groups with the renderer.
+- Phase 5: #15 — full validation pass (lint, build, visual tests).
+
 The local files act as a stable, human-editable contract. A future integration
 may import from Planning, but the editor must remain usable without network
 access or external credentials.

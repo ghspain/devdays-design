@@ -35,7 +35,6 @@ export interface EventPreset {
   name: string
   seriesLabel: string
   edition: string
-  format: string
 }
 
 function parseCsv(source: string) {

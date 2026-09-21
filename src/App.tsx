@@ -14,13 +14,13 @@ import {
 } from '@primer/octicons-react'
 import './App.css'
 import {
-  coverFormatIds,
+  eventFormatIds,
   filenamePrefixByFormat,
   formatOptions,
   MAX_HISTORY_ITEMS,
   MAX_SPEAKERS,
   REPOSITORY_URL,
-  socialFormatIds,
+  speakerFormatIds,
 } from './constants'
 import type {
   BannerFormat,
@@ -31,7 +31,7 @@ import type {
   Speaker,
 } from './types'
 import { uid } from './lib/format'
-import { buildDefaultState, readBannerHistory, writeBannerHistory } from './lib/history'
+import { buildDefaultState, normalizeState, readBannerHistory, writeBannerHistory } from './lib/history'
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
 import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
@@ -44,6 +44,7 @@ function App() {
   const [zoom, setZoom] = useState(1)
   const [error, setError] = useState('')
   const [selectedSpeakerIds, setSelectedSpeakerIds] = useState<string[]>([])
+  const [catalogEventFilter, setCatalogEventFilter] = useState('')
   const [selectedSponsorId, setSelectedSponsorId] = useState('')
   const [selectedOrganizerId, setSelectedOrganizerId] = useState('')
   const [history, setHistory] = useState<BannerHistoryItem[]>(() => readBannerHistory())
@@ -72,6 +73,20 @@ function App() {
     [state.speakers],
   )
   const showMultiSpeakerPreviewGrid = isSpeakerPerBannerFormat && namedSpeakers.length > 1
+  const catalogEventOptions = useMemo(() => {
+    const labels = new Map<string, string>()
+    for (const item of catalogSpeakers) {
+      if (labels.has(item.eventId)) continue
+      const words = item.eventId.replace(/^\d{4}-\d{2}-\d{2}-/, '').split('-').filter(Boolean)
+      const label = words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || item.eventId
+      labels.set(item.eventId, `${label} (${item.eventDate})`)
+    }
+    return [...labels.entries()].map(([id, label]) => ({ id, label }))
+  }, [])
+  const visibleCatalogSpeakers = useMemo(
+    () => catalogSpeakers.filter((item) => !catalogEventFilter || item.eventId === catalogEventFilter),
+    [catalogEventFilter],
+  )
   const selectedBackgroundImage = useMemo(() => getBackgroundImage(state.format), [state.format])
   const previewBackgroundFailed = selectedBackgroundImage ? backgroundFailed : false
 
@@ -187,20 +202,36 @@ function App() {
     }))
 
   const applyCatalogSpeakers = () => {
-    const selected = catalogSpeakers.filter((item) => selectedSpeakerIds.includes(item.speakerId)).slice(0, MAX_SPEAKERS)
-    if (!selected.length) return
-    setState((previous) => ({
-      ...previous,
-      speakers: selected.map((item) => ({
-        id: uid(),
-        name: item.name,
-        role: item.role,
-        photoDataUrl: item.avatarUrl || undefined,
-        talkTitle: item.sessionTitle || undefined,
-        talkTime: item.sessionTime || undefined,
-      })),
-    }))
+    const chosen = catalogSpeakers.filter((item) => selectedSpeakerIds.includes(item.speakerId))
+    if (!chosen.length) return
+    setState((previous) => {
+      const existingCatalogIds = new Set(previous.speakers.map((speaker) => speaker.catalogId).filter(Boolean))
+      const additions = chosen
+        .filter((item) => !existingCatalogIds.has(item.speakerId))
+        .slice(0, Math.max(0, MAX_SPEAKERS - previous.speakers.length))
+        .map((item) => ({
+          id: uid(),
+          catalogId: item.speakerId,
+          name: item.name,
+          role: item.role,
+          photoDataUrl: item.avatarUrl || undefined,
+          talkTitle: item.sessionTitle || undefined,
+          talkTime: item.sessionTime || undefined,
+        }))
+      return { ...previous, speakers: [...previous.speakers, ...additions] }
+    })
+    setSelectedSpeakerIds([])
   }
+
+  const addManualSpeaker = () =>
+    setState((previous) =>
+      previous.speakers.length >= MAX_SPEAKERS
+        ? previous
+        : { ...previous, speakers: [...previous.speakers, { id: uid(), name: '' }] },
+    )
+
+  const removeSpeaker = (id: string) =>
+    setState((previous) => ({ ...previous, speakers: previous.speakers.filter((speaker) => speaker.id !== id) }))
 
   const addCatalogSponsor = () => {
     const sponsor = catalogSponsors.find((item) => item.id === selectedSponsorId)
@@ -224,9 +255,9 @@ function App() {
   const applyPreset = (presetId: string) => {
     const preset = eventPresets.find((item) => item.id === presetId)
     if (!preset) return
+    // Presets only set event content; the banner format is an explicit user choice.
     setState((previous) => ({
       ...previous,
-      format: preset.format as BannerFormat,
       event: { ...previous.event, title: preset.seriesLabel, edition: preset.edition },
     }))
   }
@@ -337,20 +368,7 @@ function App() {
   }
 
   const restoreBanner = (item: BannerHistoryItem) => {
-    setState({
-      ...item.state,
-      event: {
-        ...item.state.event,
-        edition: item.state.event?.edition ?? 'Professional',
-        organizerName: item.state.event?.organizerName ?? '',
-        organizerLogoDataUrl: item.state.event?.organizerLogoDataUrl ?? '',
-        includeSupportedBy: item.state.event?.includeSupportedBy ?? false,
-        registrationEnabled: item.state.event?.registrationEnabled ?? true,
-        registrationStyle: item.state.event?.registrationStyle ?? 'cta_url',
-        registrationText: item.state.event?.registrationText ?? 'Register now',
-        registrationUrl: item.state.event?.registrationUrl ?? 'gh.io/devdays',
-      },
-    })
+    setState(normalizeState(item.state))
     setShowHistory(false)
   }
 
@@ -430,8 +448,8 @@ function App() {
                 value={state.format}
                 onChange={(e) => setState((previous) => ({ ...previous, format: e.target.value as BannerFormat }))}
               >
-                <optgroup label="Event Cover">
-                  {coverFormatIds
+                <optgroup label="Event formats">
+                  {eventFormatIds
                     .map((id) => formatOptions.find((option) => option.id === id))
                     .filter((option): option is FormatOption => Boolean(option))
                     .map((option) => (
@@ -440,8 +458,8 @@ function App() {
                       </option>
                     ))}
                 </optgroup>
-                <optgroup label="Socials">
-                  {socialFormatIds
+                <optgroup label="Speaker formats">
+                  {speakerFormatIds
                     .map((id) => formatOptions.find((option) => option.id === id))
                     .filter((option): option is FormatOption => Boolean(option))
                     .map((option) => (
@@ -577,62 +595,108 @@ function App() {
             </div>
           </details>
 
-          {!isMinimalCover && !isSocialPromo && state.speakers[0] && (
+          {!isMinimalCover && !isSocialPromo && (
           <details className="side-section" open>
             <summary>
-              <span>Speakers</span>
+              <span>Speakers <small className="section-count">{state.speakers.length} / {MAX_SPEAKERS}</small></span>
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
               <fieldset className="catalog-picker">
                 <legend>Speakers from Planning</legend>
+                <label>
+                  Event
+                  <select value={catalogEventFilter} onChange={(e) => setCatalogEventFilter(e.target.value)}>
+                    <option value="">All events</option>
+                    {catalogEventOptions.map((event) => <option key={event.id} value={event.id}>{event.label}</option>)}
+                  </select>
+                </label>
                 <div className="catalog-options">
-                  {catalogSpeakers.map((speaker) => (
+                  {visibleCatalogSpeakers.map((speaker) => (
                     <label key={speaker.speakerId} className="catalog-option">
                       <input type="checkbox" checked={selectedSpeakerIds.includes(speaker.speakerId)} onChange={(event) => setSelectedSpeakerIds((current) => event.target.checked ? [...current, speaker.speakerId].slice(-MAX_SPEAKERS) : current.filter((id) => id !== speaker.speakerId))} />
                       <span><strong>{speaker.name}</strong><small>{speaker.sessionTitle || 'Session title pending'} · {speaker.eventDate}</small></span>
                     </label>
                   ))}
                 </div>
-                <button type="button" className="secondary-button" disabled={!selectedSpeakerIds.length} onClick={applyCatalogSpeakers}>Apply selected speakers ({selectedSpeakerIds.length}/{MAX_SPEAKERS})</button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={!selectedSpeakerIds.length || state.speakers.length >= MAX_SPEAKERS}
+                  onClick={applyCatalogSpeakers}
+                >
+                  {state.speakers.length >= MAX_SPEAKERS ? `Speaker limit reached (${MAX_SPEAKERS})` : `Add selected speakers (${selectedSpeakerIds.length})`}
+                </button>
               </fieldset>
-              <div className="form-grid single">
-                <label>
-                  Name *
-                  <input
-                    type="text"
-                    value={state.speakers[0].name}
-                    onChange={(e) => updateSpeaker(state.speakers[0].id, { name: e.target.value })}
-                  />
-                </label>
-                <label>
-                  Role
-                  <input
-                    type="text"
-                    value={state.speakers[0].role ?? ''}
-                    onChange={(e) => updateSpeaker(state.speakers[0].id, { role: e.target.value })}
-                  />
-                </label>
-                <label>
-                  Photo
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(event) => {
-                      void (async () => {
-                        try {
-                          const file = event.target.files?.[0]
-                          if (!file) return
-                          const dataUrl = await handleFile(file)
-                          updateSpeaker(state.speakers[0].id, { photoDataUrl: dataUrl })
-                        } catch (fileError) {
-                          setError(fileError instanceof Error ? fileError.message : 'Invalid file.')
-                        }
-                      })()
-                    }}
-                  />
-                </label>
-              </div>
+              {!state.speakers.length && (
+                <p className="section-description">No speakers yet. Add them from the Planning catalogue or create one manually.</p>
+              )}
+              {state.speakers.map((speaker, index) => {
+                const initials = speaker.name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word.charAt(0).toUpperCase()).join('') || '—'
+                return (
+                <div key={speaker.id} className="speaker-card">
+                  <div className="speaker-card-head">
+                    <span className="speaker-card-id">
+                      {speaker.photoDataUrl ? (
+                        <img className="speaker-card-avatar" src={speaker.photoDataUrl} alt="" />
+                      ) : (
+                        <span className="speaker-card-avatar speaker-card-avatar-initials" aria-hidden="true">{initials}</span>
+                      )}
+                      Speaker {index + 1}
+                    </span>
+                    <button type="button" className="danger" onClick={() => removeSpeaker(speaker.id)}>Remove</button>
+                  </div>
+                  <div className="form-grid single">
+                    <label>
+                      Name *
+                      <input
+                        type="text"
+                        value={speaker.name}
+                        onChange={(e) => updateSpeaker(speaker.id, { name: e.target.value })}
+                      />
+                    </label>
+                    <label>
+                      Role
+                      <input
+                        type="text"
+                        value={speaker.role ?? ''}
+                        onChange={(e) => updateSpeaker(speaker.id, { role: e.target.value })}
+                      />
+                    </label>
+                    <label>
+                      Photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => {
+                          void (async () => {
+                            try {
+                              const file = event.target.files?.[0]
+                              if (!file) return
+                              const dataUrl = await handleFile(file)
+                              updateSpeaker(speaker.id, { photoDataUrl: dataUrl })
+                            } catch (fileError) {
+                              setError(fileError instanceof Error ? fileError.message : 'Invalid file.')
+                            }
+                          })()
+                        }}
+                      />
+                    </label>
+                  </div>
+                  {!speaker.photoDataUrl && (
+                    <small className="speaker-card-hint">No photo yet: the banner will render the speaker initials.</small>
+                  )}
+                </div>
+                )
+              })}
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={state.speakers.length >= MAX_SPEAKERS}
+                onClick={addManualSpeaker}
+              >
+                Add speaker
+              </button>
             </div>
           </details>
           )}
@@ -668,30 +732,28 @@ function App() {
           </details>
           )}
 
-          {(isLumaCover || isSocialPromo || isSpeakerBanner) && (
+          {(isLumaCover || isSocialPromo || isSpeakerBanner || isSpeakerSquare) && (
           <details className="side-section" open>
             <summary>
               <span>Sponsors and collaborators</span>
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
-              {(isLumaCover || isSocialPromo || isSpeakerBanner) && (
-                <button
-                  type="button"
-                  className="resolution-toggle"
-                  onClick={() => updateEvent({ includeSupportedBy: !state.event.includeSupportedBy })}
-                >
-                  <div>
-                    <strong>Do you want to include partner logos?</strong>
-                    <span>Turn on to show the Supported by area when logos are uploaded.</span>
-                  </div>
-                  <span className={`switch ${state.event.includeSupportedBy ? 'on' : ''}`} aria-hidden="true">
-                    <span />
-                  </span>
-                </button>
-              )}
+              <button
+                type="button"
+                className="resolution-toggle"
+                onClick={() => updateEvent({ includeSupportedBy: !state.event.includeSupportedBy })}
+              >
+                <div>
+                  <strong>Do you want to include partner logos?</strong>
+                  <span>Turn on to show the Supported by area when logos are uploaded.</span>
+                </div>
+                <span className={`switch ${state.event.includeSupportedBy ? 'on' : ''}`} aria-hidden="true">
+                  <span />
+                </span>
+              </button>
               <p className="section-description">
-                Add up to 3 partner logos. On Speaker Banner they appear at the bottom-right.
+                Add up to 3 partner logos. They appear in the footer of the banner.
               </p>
               <label>
                 Add from sponsor or collaborator catalogue

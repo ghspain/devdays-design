@@ -87,6 +87,83 @@ test('speaker banner renders selected organizer and sponsor logos', async ({ pag
   })
 })
 
+test('applying an event preset keeps the selected banner format', async ({ page }) => {
+  await page.locator('.format-bar select').selectOption('speaker_square')
+  await page.getByLabel('Event preset').selectOption('meetup')
+  await expect(page.locator('.format-bar select')).toHaveValue('speaker_square')
+  await page.getByLabel('Event preset').selectOption('devdays')
+  await expect(page.locator('.format-bar select')).toHaveValue('speaker_square')
+})
+
+test('formats are grouped into event and speaker families', async ({ page }) => {
+  await expect(page.locator('.format-bar optgroup[label="Event formats"] option')).toHaveCount(2)
+  await expect(page.locator('.format-bar optgroup[label="Speaker formats"] option')).toHaveCount(2)
+})
+
+test('speaker avatars render inside the square canvas', async ({ page }) => {
+  await page.locator('.format-bar select').selectOption('speaker_square')
+  const canvas = page.getByLabel('Banner preview')
+  await expect
+    .poll(() =>
+      canvas.evaluate((element) => (element as HTMLCanvasElement).width),
+    )
+    .toBe(1080)
+
+  const countAccentPixels = () =>
+    canvas.evaluate((element) => {
+      const bannerCanvas = element as HTMLCanvasElement
+      const context = bannerCanvas.getContext('2d')
+      if (!context) return 0
+      const top = Math.round(bannerCanvas.height * 0.4)
+      const bandHeight = Math.round(bannerCanvas.height * 0.35)
+      const { data } = context.getImageData(0, top, bannerCanvas.width, bandHeight)
+      let count = 0
+      for (let index = 0; index < data.length; index += 4) {
+        if (Math.abs(data[index] - 10) < 8 && Math.abs(data[index + 1] - 191) < 8 && Math.abs(data[index + 2] - 64) < 8) count += 1
+      }
+      return count
+    })
+
+  while ((await page.locator('.speaker-card').count()) > 0) {
+    await page.locator('.speaker-card').first().getByRole('button', { name: 'Remove' }).click()
+  }
+  await expect(page.getByText('No speakers yet.')).toBeVisible()
+  const baseline = await countAccentPixels()
+
+  await page.getByRole('button', { name: 'Add speaker' }).click()
+  await expect.poll(countAccentPixels).toBeGreaterThan(baseline + 5000)
+})
+
+test('catalogue speaker selection adds cumulatively with dedupe and a counter', async ({ page }) => {
+  await page.locator('.format-bar select').selectOption('speaker_square')
+  const counter = page.locator('.section-count')
+  await expect(counter).toHaveText('1 / 12')
+
+  await page.locator('.catalog-picker select').selectOption('2026-04-17-copilot-dev-days-madrid')
+  const options = page.locator('.catalog-option')
+  await expect(options.first()).toBeVisible()
+
+  await options.nth(0).locator('input[type=checkbox]').check()
+  await options.nth(1).locator('input[type=checkbox]').check()
+  await page.getByRole('button', { name: 'Add selected speakers (2)' }).click()
+  await expect(counter).toHaveText('3 / 12')
+  await expect(page.locator('.speaker-card')).toHaveCount(3)
+  await expect(options.locator('input[type=checkbox]:checked')).toHaveCount(0)
+
+  await options.nth(0).locator('input[type=checkbox]').check()
+  await options.nth(1).locator('input[type=checkbox]').check()
+  await page.getByRole('button', { name: 'Add selected speakers (2)' }).click()
+  await expect(counter).toHaveText('3 / 12')
+
+  await page.locator('.speaker-card').first().getByRole('button', { name: 'Remove' }).click()
+  await expect(counter).toHaveText('2 / 12')
+})
+
+test('sponsors section is available on the speaker square format', async ({ page }) => {
+  await page.locator('.format-bar select').selectOption('speaker_square')
+  await expect(page.getByText('Sponsors and collaborators')).toBeVisible()
+})
+
 test('event pack downloads every format in one ZIP', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'mobile-chromium', 'The mobile project validates the responsive control layout.')
 
