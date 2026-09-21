@@ -34,6 +34,8 @@ import { uid } from './lib/format'
 import { buildDefaultState, normalizeState, readBannerHistory, writeBannerHistory } from './lib/history'
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
+import { createRenderInfo, validateState, type ValidationFinding } from './lib/validate'
+import { checkRenderedCanvas } from './lib/pixelChecks'
 import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
 import { buildEventPack, type EventPackProgress } from './lib/exportPack'
 
@@ -52,6 +54,13 @@ function App() {
   const [fontsReady, setFontsReady] = useState(() => typeof document === 'undefined' || !document.fonts)
   const [isExportingPack, setIsExportingPack] = useState(false)
   const [packProgress, setPackProgress] = useState<EventPackProgress | null>(null)
+  const [validationFindings, setValidationFindings] = useState<ValidationFinding[]>([])
+  const validationErrorCount = validationFindings.filter((f) => f.severity === 'error').length
+  const validationIssueCount = validationFindings.length
+  const exportFindingsLabel =
+    validationIssueCount > 0
+      ? `${validationErrorCount} error${validationErrorCount === 1 ? '' : 's'}, ${validationIssueCount - validationErrorCount} warning${validationIssueCount - validationErrorCount === 1 ? '' : 's'}`
+      : ''
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const [state, setState] = useState<BannerState>(() => buildDefaultState())
@@ -110,17 +119,36 @@ function App() {
     let cancelled = false
 
     const draw = async () => {
-      if (cancelled || !canvasRef.current) return
+      if (cancelled) return
+      const renderInfo = createRenderInfo()
+      let targetCanvas: HTMLCanvasElement | null = null
       if (showMultiSpeakerPreviewGrid) {
-        const ctx = canvasRef.current.getContext('2d')
-        if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
-        return
+        // The visible canvas is unmounted while the per-speaker grid is shown.
+        const ctx = canvasRef.current?.getContext('2d')
+        if (ctx) ctx.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height)
+        // Render once to an offscreen canvas so validation still reflects what
+        // an export would show.
+        targetCanvas = document.createElement('canvas')
+        try {
+          await renderBanner(targetCanvas, state, format, previewBackgroundFailed, 1, renderInfo)
+        } catch {
+          return
+        }
+      } else {
+        if (!canvasRef.current) return
+        targetCanvas = canvasRef.current
+        try {
+          await renderBanner(targetCanvas, state, format, previewBackgroundFailed, 1, renderInfo)
+        } catch {
+          if (!cancelled) setError('Failed to render preview.')
+          return
+        }
       }
-      try {
-        await renderBanner(canvasRef.current, state, format, previewBackgroundFailed, 1)
-      } catch {
-        if (!cancelled) setError('Failed to render preview.')
-      }
+      const findings = [...validateState(state, format.id, renderInfo), ...checkRenderedCanvas(targetCanvas, renderInfo)]
+      if (cancelled) return
+      setValidationFindings(findings)
+      // Exposed for Playwright visual-validation specs.
+      ;(window as unknown as { __devdaysValidation?: { findings: ValidationFinding[]; pixelChecks: typeof checkRenderedCanvas } }).__devdaysValidation = { findings, pixelChecks: checkRenderedCanvas }
     }
 
     // Coalesce rapid state changes into a single redraw on the next animation
@@ -827,6 +855,27 @@ function App() {
           {error && <p className="error">{error}</p>}
           </div>
 
+          <div className="validation-panel" aria-label="Validation findings">
+            {validationFindings.length === 0 ? (
+              <p className="validation-ok" role="status">
+                <span className="validation-dot ok" aria-hidden="true" />
+                All checks passed
+              </p>
+            ) : (
+              <ul className="validation-list">
+                {validationFindings.map((finding) => (
+                  <li key={`${finding.code}:${finding.field ?? ''}:${finding.message}`} className={`validation-item ${finding.severity}`}>
+                    <span className={`validation-dot ${finding.severity}`} aria-hidden="true" />
+                    <span>
+                      <span className="validation-severity-label">{finding.severity === 'error' ? 'Error' : 'Warning'}:</span>{' '}
+                      {finding.message}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           <div className="sidebar-footer">
             <button type="button" className="ghost" onClick={resetAll} title="Reset to defaults">
               Reset
@@ -839,9 +888,15 @@ function App() {
                 onClick={() => {
                   void exportEventPack()
                 }}
+                aria-label={exportFindingsLabel ? `Event pack (.zip). Findings: ${exportFindingsLabel}` : undefined}
               >
                 <DownloadIcon size={16} />
                 <span>{isExportingPack ? 'Creating pack…' : 'Event pack (.zip)'}</span>
+                {validationIssueCount > 0 && (
+                  <span className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`} aria-hidden="true">
+                    {validationIssueCount}
+                  </span>
+                )}
               </button>
               {packProgress && (
                 <small aria-live="polite">
@@ -857,9 +912,15 @@ function App() {
                 onClick={() => {
                   void exportBanner()
                 }}
+                aria-label={exportFindingsLabel ? `Download. Findings: ${exportFindingsLabel}` : undefined}
               >
                 <DownloadIcon size={16} />
                 <span>Download</span>
+                {validationIssueCount > 0 && (
+                  <span className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`} aria-hidden="true">
+                    {validationIssueCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>

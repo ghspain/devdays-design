@@ -8,7 +8,8 @@ import {
   MAX_SPEAKERS,
 } from '../constants'
 import type { BannerState, ExportScale, FormatOption } from '../types'
-import { wrapText, wrapTextWithBreaks, roundedRectPath } from './canvasText'
+import { wrapText, wrapTextWithBreaks, roundedRectPath, type TruncatedFlag } from './canvasText'
+import type { RenderInfo } from './validate'
 import { getInitials } from './format'
 import { getBackgroundImage, loadImage } from './image'
 
@@ -22,6 +23,7 @@ export async function renderBanner(
   format: FormatOption,
   backgroundFailed: boolean,
   scale: ExportScale,
+  renderInfo?: RenderInfo,
 ) {
   const width = format.width
   const height = format.height
@@ -37,6 +39,32 @@ export async function renderBanner(
   const generation = (renderGenerations.get(canvas) ?? 0) + 1
   renderGenerations.set(canvas, generation)
   const isStale = () => renderGenerations.get(canvas) !== generation
+
+  // Runs a wrapText call and records the field name when the text had to be
+  // cut, so the validation panel can warn about it.
+  const wrapTracked = (field: string, fn: (flag: TruncatedFlag) => string[]) => {
+    const flag: TruncatedFlag = { value: false }
+    const lines = fn(flag)
+    if (flag.value && renderInfo && !renderInfo.truncatedFields.includes(field)) {
+      renderInfo.truncatedFields.push(field)
+    }
+    return lines
+  }
+
+  // Records where a user-content text block was drawn (logical canvas units,
+  // converted to physical pixels) so pixel checks can sample contrast and
+  // safe area afterwards. First region per field wins.
+  const trackRegion = (field: string, color: string, x: number, yTop: number, w: number, h: number) => {
+    if (!renderInfo || renderInfo.textRegions.some((r) => r.field === field)) return
+    renderInfo.textRegions.push({
+      field,
+      color,
+      x: x * scale,
+      y: yTop * scale,
+      w: w * scale,
+      h: h * scale,
+    })
+  }
 
   const selectedBackgroundImage = getBackgroundImage(state.format)
 
@@ -76,6 +104,17 @@ export async function renderBanner(
   let socialPromoLocationBottomY = 0
   let speakerBannerProfileBottomY = 0
 
+  if (renderInfo) {
+    // Formats that draw a partner strip show at most 3 logos (covers/banners)
+    // or 8 (square footer). Formats without a speaker row report no cap.
+    renderInfo.logoCap = isLumaCover || isSpeakerBanner || isSocialPromo ? 3 : 8
+    // Only the row layout (speaker_square and generic formats) enforces the
+    // MAX_SPEAKERS cap; luma/social show no speakers and speaker_banner shows
+    // a single featured speaker by design.
+    const drawsSpeakerRow = !isLumaCover && !isSocialPromo && !isSpeakerBanner
+    renderInfo.speakerCap = drawsSpeakerRow ? MAX_SPEAKERS : Number.POSITIVE_INFINITY
+  }
+
   const titleSize = Math.max(36, Math.round(width * 0.04))
   const metaSize = Math.max(20, Math.round(width * 0.018))
   if (isMinimalCover) {
@@ -109,17 +148,17 @@ export async function renderBanner(
     ctx.textBaseline = 'alphabetic'
 
     ctx.font = `500 ${citySize}px "Mona Sans", sans-serif`
-    const cityLines = wrapText(ctx, (state.event.city || 'City').toUpperCase(), textMaxWidth, 3)
+    const cityLines = wrapTracked('city', (f) => wrapText(ctx, (state.event.city || 'City').toUpperCase(), textMaxWidth, 3, f))
 
     ctx.font = `600 ${editionSize}px "Mona Sans Mono", monospace`
     ctx.letterSpacing = '2px'
-    const editionLine = wrapText(ctx, (state.event.edition || 'Professional').toUpperCase(), textMaxWidth, 1)[0]
+    const editionLine = wrapTracked('edition', (f) => wrapText(ctx, (state.event.edition || 'Professional').toUpperCase(), textMaxWidth, 1, f))[0]
     ctx.letterSpacing = '0px'
 
     const footerSource = (state.event.dateTime.trim() || 'Date/Time').toUpperCase()
     ctx.font = `500 ${footerSize}px "Mona Sans Mono", monospace`
     ctx.letterSpacing = '3px'
-    const footerLines = wrapTextWithBreaks(ctx, footerSource, textMaxWidth, 2)
+    const footerLines = wrapTracked('date & time', (f) => wrapTextWithBreaks(ctx, footerSource, textMaxWidth, 2, f))
     ctx.letterSpacing = '0px'
 
     // Extra vertical spacing between the text blocks
@@ -143,6 +182,7 @@ export async function renderBanner(
     ctx.letterSpacing = '2px'
     ctx.fillText(editionLine, leftX, editionY)
     ctx.letterSpacing = '0px'
+    trackRegion('edition', editionColor, leftX, editionY - editionSize, textMaxWidth, editionSize)
 
     // Black city name: weight 500, 72px
     ctx.fillStyle = cityColor
@@ -150,6 +190,7 @@ export async function renderBanner(
     cityLines.forEach((line, index) => {
       ctx.fillText(line, leftX, cityTopY + index * cityLineStep)
     })
+    trackRegion('city', cityColor, leftX, cityTopY - citySize, textMaxWidth, cityLines.length * cityLineStep)
 
     // Up to three sponsor logos are contained in equal slots above the date.
     const sponsorLogos = state.event.includeSupportedBy ? state.partners.slice(0, 3) : []
@@ -195,6 +236,7 @@ export async function renderBanner(
       ctx.fillText(line, leftX, footerTopY + index * footerLineStep)
     })
     ctx.letterSpacing = '0px'
+    trackRegion('date & time', footerColor, leftX, footerTopY - footerSize, textMaxWidth, footerLines.length * footerLineStep)
   } else {
     if (isSpeakerFormat) {
       // Speaker Banner green label (fixed "DEV DAYS 2026"): font size in px.
@@ -222,12 +264,12 @@ export async function renderBanner(
       ctx.letterSpacing = '3px'
       // Green label source: Speaker Banner and Social Promo use the fixed Luma label, other formats use the city.
       const greenLabelText = (isSpeakerBanner || isSocialPromo ? fixedGreenLabel : state.event.city || 'City').toUpperCase()
-      const cityLines = wrapText(ctx, greenLabelText, textMaxWidth, 2)
+      const cityLines = wrapTracked('city', (f) => wrapText(ctx, greenLabelText, textMaxWidth, 2, f))
       const cityLineStep = citySize * 1.1
       const eventLineStep = eventTitleSize * 1.08
 
       ctx.font = `500 ${effectiveDateSize}px "Mona Sans Mono", monospace`
-      const dateLines = wrapText(ctx, (state.event.dateTime || 'Date/Time').toUpperCase(), textMaxWidth, 2)
+      const dateLines = wrapTracked('date & time', (f) => wrapText(ctx, (state.event.dateTime || 'Date/Time').toUpperCase(), textMaxWidth, 2, f))
       const dateLineStep = effectiveDateSize * 1.25
       ctx.letterSpacing = '0px'
 
@@ -258,6 +300,12 @@ export async function renderBanner(
         ctx.fillText(line, textX, cityY + greenLabelRaise + index * cityLineStep)
       })
       ctx.letterSpacing = '0px'
+      if (!useBannerPositioning) {
+        // speaker_square green label carries the user-entered city.
+        // Box top uses ~0.8em ascent above the baseline (not the full em) so the
+        // designed label near the top edge isn't falsely flagged as cropped.
+        trackRegion('city', lumaCityColor, textX, cityY + greenLabelRaise - citySize * 0.8, textMaxWidth, cityLines.length * cityLineStep)
+      }
 
       if (isSpeakerBanner || isSocialPromo) {
         // Main title is the user-entered city name — same size/formatting as the Luma cover (Mona Sans, 72px).
@@ -265,10 +313,11 @@ export async function renderBanner(
         const titleCityLineStep = titleCitySize * 1.02
         ctx.font = `500 ${titleCitySize}px "Mona Sans", sans-serif`
         ctx.fillStyle = lightAreaTitleColor
-        const titleCityLines = wrapText(ctx, state.event.city || 'City', textMaxWidth, 2)
+        const titleCityLines = wrapTracked('city', (f) => wrapText(ctx, state.event.city || 'City', textMaxWidth, 2, f))
         titleCityLines.forEach((line, index) => {
           ctx.fillText(line, textX, eventTitleY + index * titleCityLineStep)
         })
+        trackRegion('city', lightAreaTitleColor, textX, eventTitleY - titleCitySize, textMaxWidth, titleCityLines.length * titleCityLineStep)
 
         // Social Promo: location name right after the city, styled like the speaker role.
         const cityBottomY = eventTitleY + (titleCityLines.length - 1) * titleCityLineStep
@@ -277,10 +326,11 @@ export async function renderBanner(
           const locationTopY = cityBottomY + Math.round(locationRoleSize * 1.4) + 25
           ctx.fillStyle = lightAreaMutedColor
           ctx.font = `500 ${locationRoleSize}px "Mona Sans", sans-serif`
-          const locationLines = wrapTextWithBreaks(ctx, state.event.location.trim(), textMaxWidth, 2)
+          const locationLines = wrapTracked('location', (f) => wrapTextWithBreaks(ctx, state.event.location.trim(), textMaxWidth, 2, f))
           locationLines.forEach((line, index) => {
             ctx.fillText(line, textX, locationTopY + index * locationRoleSize * 1.16)
           })
+          trackRegion('location', lightAreaMutedColor, textX, locationTopY - locationRoleSize, textMaxWidth, locationLines.length * locationRoleSize * 1.16)
           socialPromoLocationBottomY =
             locationTopY + (locationLines.length - 1) * locationRoleSize * 1.16 + Math.round(locationRoleSize * 0.35)
         } else if (isSocialPromo) {
@@ -303,11 +353,13 @@ export async function renderBanner(
         ctx.fillStyle = '#ffffff'
         ctx.fillText(dateText, textX, dateY)
         ctx.textBaseline = 'alphabetic'
+        trackRegion('date & time', '#ffffff', textX, dateY - effectiveDateSize / 2, textMaxWidth, effectiveDateSize)
       } else {
         ctx.fillStyle = dateColor
         dateLines.forEach((line, index) => {
           ctx.fillText(line, textX, dateY + index * dateLineStep)
         })
+        trackRegion('date & time', dateColor, textX, dateY - effectiveDateSize, textMaxWidth, dateLines.length * dateLineStep)
       }
       ctx.letterSpacing = '0px'
     } else {
@@ -319,19 +371,21 @@ export async function renderBanner(
         titleTop = height * 0.42
       }
 
-      const titleLines = wrapText(ctx, state.event.title || 'Event Title', width - padding * 2, 3)
+      const titleLines = wrapTracked('event title', (f) => wrapText(ctx, state.event.title || 'Event Title', width - padding * 2, 3, f))
       titleLines.forEach((line, index) => {
         ctx.fillText(line, padding, titleTop + index * titleSize * 1.15)
       })
+      trackRegion('event title', state.colors.primary, padding, titleTop - titleSize, width - padding * 2, titleLines.length * titleSize * 1.15)
 
       ctx.fillStyle = state.colors.secondary
       ctx.font = `500 ${metaSize}px "Mona Sans", sans-serif`
       const metaY = titleTop + titleLines.length * titleSize * 1.15 + metaSize * 1.3
       const metaText = [state.event.city, state.event.dateTime, state.event.location].filter(Boolean).join(' • ') || 'City • Date/Time • Location'
-      const metaLines = wrapText(ctx, metaText, width - padding * 2, 2)
+      const metaLines = wrapTracked('event details', (f) => wrapText(ctx, metaText, width - padding * 2, 2, f))
       metaLines.forEach((line, index) => {
         ctx.fillText(line, padding, metaY + index * metaSize * 1.25)
       })
+      trackRegion('event details', state.colors.secondary, padding, metaY - metaSize, width - padding * 2, metaLines.length * metaSize * 1.25)
     }
   }
 
@@ -495,11 +549,11 @@ export async function renderBanner(
 
       ctx.font = `500 ${nameSize}px "Mona Sans Mono", monospace`
       ctx.letterSpacing = '3px'
-      const nameLines = wrapText(ctx, speaker.name || 'Speaker', textMaxWidth, 3)
+      const nameLines = wrapTracked('speaker name', (f) => wrapText(ctx, speaker.name || 'Speaker', textMaxWidth, 3, f))
       ctx.letterSpacing = '0px'
       ctx.font = `500 ${roleSize}px "Mona Sans", sans-serif`
       const speakerMeta = [speaker.role, speaker.talkTitle, speaker.talkTime].filter(Boolean).join(' · ')
-      const roleLines = speakerMeta ? wrapText(ctx, speakerMeta, textMaxWidth, 3) : []
+      const roleLines = speakerMeta ? wrapTracked('speaker role', (f) => wrapText(ctx, speakerMeta, textMaxWidth, 3, f)) : []
 
       const nameBlockHeight = nameLines.length * nameLineStep
       const roleBlockHeight = roleLines.length > 0 ? nameToRoleGap + roleLines.length * roleLineStep : 0
@@ -515,6 +569,7 @@ export async function renderBanner(
         ctx.fillText(line, textX, textBlockTop + idx * nameLineStep)
       })
       ctx.letterSpacing = '0px'
+      trackRegion('speaker name', '#0CA334', textX, textBlockTop, textMaxWidth, nameBlockHeight)
 
       if (roleLines.length > 0) {
         ctx.fillStyle = lightAreaMutedColor
@@ -523,6 +578,7 @@ export async function renderBanner(
         roleLines.forEach((line, idx) => {
           ctx.fillText(line, textX, roleStartY + idx * roleLineStep)
         })
+        trackRegion('speaker role', lightAreaMutedColor, textX, roleStartY, textMaxWidth, roleLines.length * roleLineStep)
       }
 
       ctx.textBaseline = 'alphabetic'
@@ -582,20 +638,22 @@ export async function renderBanner(
         const textY = avatarY + avatarSize + metaSize * 1.3
         ctx.fillStyle = state.colors.primary
         ctx.font = `700 ${Math.round(metaSize * (isFeatured ? 1.2 : 1))}px "Mona Sans", sans-serif`
-        const nameLines = wrapText(ctx, speaker.name || 'Speaker', avatarSize * 1.4, 2)
+        const nameLines = wrapTracked('speaker name', (f) => wrapText(ctx, speaker.name || 'Speaker', avatarSize * 1.4, 2, f))
         nameLines.forEach((line, idx) => {
           ctx.fillText(line, cursorX, textY + idx * metaSize * 1.05)
         })
+        trackRegion('speaker name', state.colors.primary, cursorX, textY - Math.round(metaSize * (isFeatured ? 1.2 : 1)), avatarSize * 1.4, nameLines.length * metaSize * 1.05)
 
         const speakerMeta = [speaker.role, speaker.talkTitle, speaker.talkTime].filter(Boolean).join(' · ')
         if (speakerMeta) {
           ctx.fillStyle = state.colors.secondary
           ctx.font = `500 ${Math.round(metaSize * 0.85)}px "Mona Sans", sans-serif`
-          const roleLines = wrapText(ctx, speakerMeta, avatarSize * 1.4, 2)
+          const roleLines = wrapTracked('speaker role', (f) => wrapText(ctx, speakerMeta, avatarSize * 1.4, 2, f))
           const roleStart = textY + nameLines.length * metaSize * 1.05 + metaSize * 0.9
           roleLines.forEach((line, idx) => {
             ctx.fillText(line, cursorX, roleStart + idx * metaSize * 0.92)
           })
+          trackRegion('speaker role', state.colors.secondary, cursorX, roleStart - Math.round(metaSize * 0.85), avatarSize * 1.4, roleLines.length * metaSize * 0.92)
         }
 
         cursorX += avatarSize + rowGap
@@ -666,7 +724,7 @@ export async function renderBanner(
         // CTA style: label + short link inside a green pill with white text.
         const registrationPillColor = '#000000'
         ctx.font = `500 ${labelSize}px "Mona Sans", sans-serif`
-        const label = wrapText(ctx, `${ctaText}:`, maxUrlW * 0.5, 1)[0] || `${ctaText}:`
+        const label = wrapTracked('registration label', (f) => wrapText(ctx, `${ctaText}:`, maxUrlW * 0.5, 1, f))[0] || `${ctaText}:`
         const labelWidth = ctx.measureText(label).width
 
         // Horizontal / vertical padding inside the green pill.
@@ -674,7 +732,7 @@ export async function renderBanner(
         const padV = Math.round(labelSize * 0.55)
         const availableUrlW = Math.max(80, maxUrlW - labelWidth - registerGap - padH * 2)
         ctx.font = `600 ${urlSize}px "Mona Sans", sans-serif`
-        const shortUrl = wrapText(ctx, urlText, availableUrlW, 1)[0] || urlText
+        const shortUrl = wrapTracked('registration URL', (f) => wrapText(ctx, urlText, availableUrlW, 1, f))[0] || urlText
         const urlWidth = ctx.measureText(shortUrl).width
 
         const contentW = labelWidth + registerGap + urlWidth
@@ -694,11 +752,13 @@ export async function renderBanner(
         ctx.fillText(label, textStartX, lineY)
         ctx.font = `600 ${urlSize}px "Mona Sans", sans-serif`
         ctx.fillText(shortUrl, textStartX + labelWidth + registerGap, lineY)
+        trackRegion('registration CTA', '#ffffff', textStartX, lineY - lineSize / 2, contentW, lineSize)
       } else {
         ctx.fillStyle = registerUrlColor
         ctx.font = `500 ${Math.max(urlSize, labelSize)}px "Mona Sans", sans-serif`
-        const shortUrl = wrapText(ctx, urlText, Math.max(100, urlRightX - labelX), 1)[0] || urlText
+        const shortUrl = wrapTracked('registration URL', (f) => wrapText(ctx, urlText, Math.max(100, urlRightX - labelX), 1, f))[0] || urlText
         ctx.fillText(shortUrl, labelX, lineY)
+        trackRegion('registration URL', registerUrlColor, labelX, lineY - lineSize / 2, urlRightX - labelX, lineSize)
       }
       ctx.textBaseline = 'alphabetic'
 
