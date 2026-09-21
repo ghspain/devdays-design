@@ -25,19 +25,22 @@ for (const format of formats) {
       )
       .toEqual({ width: format.width, height: format.height })
 
-    const renderedPixels = await canvas.evaluate((element) => {
-      const bannerCanvas = element as HTMLCanvasElement
-      const context = bannerCanvas.getContext('2d')
-      if (!context) return 0
-      const pixels = context.getImageData(0, 0, bannerCanvas.width, bannerCanvas.height).data
-      let populated = 0
-      const step = Math.max(4, Math.floor(pixels.length / 4000 / 4) * 4)
-      for (let index = 3; index < pixels.length; index += step) {
-        if (pixels[index] > 0) populated += 1
-      }
-      return populated
-    })
-    expect(renderedPixels).toBeGreaterThan(500)
+    await expect
+      .poll(() =>
+        canvas.evaluate((element) => {
+          const bannerCanvas = element as HTMLCanvasElement
+          const context = bannerCanvas.getContext('2d')
+          if (!context) return 0
+          const pixels = context.getImageData(0, 0, bannerCanvas.width, bannerCanvas.height).data
+          let populated = 0
+          const step = Math.max(4, Math.floor(pixels.length / 4000 / 4) * 4)
+          for (let index = 3; index < pixels.length; index += step) {
+            if (pixels[index] > 0) populated += 1
+          }
+          return populated
+        }),
+      )
+      .toBeGreaterThan(500)
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     expect(overflow).toBeLessThanOrEqual(1)
@@ -162,6 +165,56 @@ test('catalogue speaker selection adds cumulatively with dedupe and a counter', 
 test('sponsors section is available on the speaker square format', async ({ page }) => {
   await page.locator('.format-bar select').selectOption('speaker_square')
   await expect(page.getByText('Sponsors and collaborators')).toBeVisible()
+})
+
+test('partner logos toggle hides and shows the square footer logos', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.locator('.format-bar select').selectOption('speaker_square')
+  const canvas = page.getByLabel('Banner preview')
+  await expect.poll(() => canvas.evaluate((element) => (element as HTMLCanvasElement).width)).toBe(1080)
+
+  await page.getByLabel('Add from sponsor or collaborator catalogue').selectOption('celonis')
+  await page.getByRole('button', { name: 'Add selected sponsor' }).click()
+  await expect(page.getByText('2 slot(s) remaining.')).toBeVisible()
+
+  const footerSignature = () =>
+    canvas.evaluate((element) => {
+      const bannerCanvas = element as HTMLCanvasElement
+      const context = bannerCanvas.getContext('2d')
+      if (!context) return ''
+      const top = Math.round(bannerCanvas.height * 0.86)
+      const { data } = context.getImageData(0, top, bannerCanvas.width, bannerCanvas.height - top)
+      let hash = 0
+      for (let index = 0; index < data.length; index += 4) {
+        hash = (hash * 31 + data[index] + data[index + 1] * 3 + data[index + 2] * 7) % 2147483647
+      }
+      return String(hash)
+    })
+
+  const toggle = page.getByRole('button', { name: /include partner logos/i })
+  // Start from the deterministic no-logos state (no async image involved), then
+  // prove the logos appear, disappear and come back with identical footers.
+  // Generous timeouts: the shared CI/dev box can starve the render under parallel load.
+  const pollOptions = { timeout: 15_000 }
+  await toggle.click()
+  await expect
+    .poll(async () => {
+      const before = await footerSignature()
+      await page.waitForTimeout(200)
+      return before === (await footerSignature())
+    }, pollOptions)
+    .toBe(true)
+  const withoutLogos = await footerSignature()
+
+  await toggle.click()
+  await expect.poll(footerSignature, pollOptions).not.toBe(withoutLogos)
+  const withLogos = await footerSignature()
+
+  await toggle.click()
+  await expect.poll(footerSignature, pollOptions).toBe(withoutLogos)
+
+  await toggle.click()
+  await expect.poll(footerSignature, pollOptions).toBe(withLogos)
 })
 
 test('event pack downloads every format in one ZIP', async ({ page }, testInfo) => {

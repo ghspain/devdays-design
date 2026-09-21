@@ -12,6 +12,10 @@ import { wrapText, wrapTextWithBreaks, roundedRectPath } from './canvasText'
 import { getInitials } from './format'
 import { getBackgroundImage, loadImage } from './image'
 
+// A render becomes stale when a newer render starts on the same canvas while it
+// is still awaiting async images; stale continuations must not draw over it.
+const renderGenerations = new WeakMap<HTMLCanvasElement, number>()
+
 export async function renderBanner(
   canvas: HTMLCanvasElement,
   state: BannerState,
@@ -30,11 +34,16 @@ export async function renderBanner(
   ctx.setTransform(scale, 0, 0, scale, 0, 0)
   ctx.clearRect(0, 0, width, height)
 
+  const generation = (renderGenerations.get(canvas) ?? 0) + 1
+  renderGenerations.set(canvas, generation)
+  const isStale = () => renderGenerations.get(canvas) !== generation
+
   const selectedBackgroundImage = getBackgroundImage(state.format)
 
   if (!backgroundFailed && selectedBackgroundImage) {
     try {
       const bg = await loadImage(selectedBackgroundImage)
+      if (isStale()) return
       ctx.drawImage(bg, 0, 0, width, height)
     } catch {
       const gradient = ctx.createLinearGradient(0, 0, width, height)
@@ -160,6 +169,7 @@ export async function renderBanner(
       for (let index = 0; index < sponsorLogos.length; index += 1) {
         try {
           const logo = await loadImage(sponsorLogos[index].imageDataUrl)
+          if (isStale()) return
           const ratio = logo.width / logo.height
           let targetW = Math.min(slotWidth, logosAreaH * ratio)
           let targetH = targetW / ratio
@@ -358,6 +368,7 @@ export async function renderBanner(
       if (showOrganizerLogo && state.event.organizerLogoDataUrl) {
         try {
           const organizerLogo = await loadImage(state.event.organizerLogoDataUrl)
+          if (isStale()) return
           const logoMaxH = infoH - (contentTopY - infoY) - bottomInset
           const logoMaxW = leftW - horizontalInset * 2
           const ratio = organizerLogo.width / organizerLogo.height
@@ -393,6 +404,7 @@ export async function renderBanner(
       for (let i = 0; i < logos.length; i += 1) {
         try {
           const logo = await loadImage(logos[i].imageDataUrl)
+          if (isStale()) return
           const ratio = logo.width / logo.height
           const col = i
           const row = 0
@@ -443,6 +455,7 @@ export async function renderBanner(
       if (speaker.photoDataUrl) {
         try {
           const photo = await loadImage(speaker.photoDataUrl)
+          if (isStale()) return
           const sx = photo.width > photo.height ? (photo.width - photo.height) / 2 : 0
           const sy = photo.height > photo.width ? (photo.height - photo.width) / 2 : 0
           const side = Math.min(photo.width, photo.height)
@@ -542,6 +555,7 @@ export async function renderBanner(
         if (speaker.photoDataUrl) {
           try {
             const photo = await loadImage(speaker.photoDataUrl)
+            if (isStale()) return
             const sx = photo.width > photo.height ? (photo.width - photo.height) / 2 : 0
             const sy = photo.height > photo.width ? (photo.height - photo.width) / 2 : 0
             const side = Math.min(photo.width, photo.height)
@@ -593,6 +607,7 @@ export async function renderBanner(
   if ((isSpeakerBanner || isSocialPromo) && state.event.organizerLogoDataUrl) {
     try {
       const orgLogo = await loadImage(state.event.organizerLogoDataUrl)
+      if (isStale()) return
       // Top edge of the logo, measured from the top of the banner.
       const orgLogoTopY = 385
       // Max size box for the logo.
@@ -699,6 +714,7 @@ export async function renderBanner(
     const infoY = isSocialPromo ? maxInfoY - 40 : Math.min(nextSectionStartY, maxInfoY)
     if (isSocialPromo) {
       await drawOrganizationPanel(infoY, infoH, 1)
+      if (isStale()) return
     }
 
     if (isSpeakerBanner && state.event.includeSupportedBy && state.partners.length > 0) {
@@ -722,6 +738,7 @@ export async function renderBanner(
       for (let index = 0; index < logos.length; index += 1) {
         try {
           const logo = await loadImage(logos[index].imageDataUrl)
+          if (isStale()) return
           const ratio = logo.width / logo.height
           let targetW = Math.min(slotWidth, logoMaxH * ratio)
           let targetH = targetW / ratio
@@ -739,7 +756,7 @@ export async function renderBanner(
     }
   }
 
-  if (!isMinimalCover && !isSpeakerBanner && !isSocialPromo && state.partners.length > 0) {
+  if (!isMinimalCover && !isSpeakerBanner && !isSocialPromo && state.event.includeSupportedBy && state.partners.length > 0) {
     const logos = state.partners.slice(0, 8)
     const footerHeight = Math.round(height * 0.13)
     const footerY = height - footerHeight - padding * 0.25
@@ -754,6 +771,7 @@ export async function renderBanner(
     for (let i = 0; i < logos.length; i += 1) {
       try {
         const logo = await loadImage(logos[i].imageDataUrl)
+        if (isStale()) return
         const ratio = logo.width / logo.height
         const targetH = Math.min(logoMaxH, slotWidth * 0.5)
         const targetW = targetH * ratio
