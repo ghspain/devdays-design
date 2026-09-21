@@ -74,6 +74,7 @@ export async function renderBanner(
       if (isStale()) return
       ctx.drawImage(bg, 0, 0, width, height)
     } catch {
+      if (isStale()) return
       const gradient = ctx.createLinearGradient(0, 0, width, height)
       gradient.addColorStop(0, state.colors.background)
       gradient.addColorStop(1, '#1f2937')
@@ -515,6 +516,7 @@ export async function renderBanner(
           const side = Math.min(photo.width, photo.height)
           ctx.drawImage(photo, sx, sy, side, side, rowX, rowY, avatarSize, avatarSize)
         } catch {
+          if (isStale()) return
           ctx.fillStyle = state.colors.accent
           ctx.fillRect(rowX, rowY, avatarSize, avatarSize)
         }
@@ -617,6 +619,7 @@ export async function renderBanner(
             const side = Math.min(photo.width, photo.height)
             ctx.drawImage(photo, sx, sy, side, side, cursorX, avatarY, avatarSize, avatarSize)
           } catch {
+            if (isStale()) return
             ctx.fillStyle = state.colors.accent
             ctx.fillRect(cursorX, avatarY, avatarSize, avatarSize)
           }

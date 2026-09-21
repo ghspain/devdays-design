@@ -74,6 +74,40 @@ test('overlong city text is reported as truncated', async ({ page }) => {
   await expect(page.locator('.validation-panel')).toContainText('city')
 })
 
+test('a single unbreakable word wider than the box is reported as truncated', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+
+  // No spaces at all: wrapText used to emit it as one overflowing line with no flag (#32).
+  await page.getByLabel('City').fill('M'.repeat(200))
+
+  await expect
+    .poll(() => findings(page), { timeout: 10_000 })
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'text-truncated', field: 'city', severity: 'warning' }),
+      ]),
+    )
+})
+
+test('speaker_banner name contrast never collapses into a false error-severity finding', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+  await page.locator('.format-bar select').selectOption('speaker_banner')
+  // Let the render + validation settle.
+  await page.waitForTimeout(2_000)
+
+  // Investigation for #32: "speaker name" measures ~2.99:1 locally (brand
+  // green on light bg) but ~3.0:1 on CI runners, so the warning's presence is
+  // environment-dependent. The invariant that must hold everywhere is that
+  // the background estimate does not collapse onto the text color, which
+  // would fake a ~1:1 ratio and report severity "error".
+  const list = await findings(page)
+  expect(list.filter((f) => f.code === 'low-contrast' && f.severity === 'error')).toEqual([])
+  const nameFindings = list.filter((f) => f.code === 'low-contrast' && f.field === 'speaker name')
+  for (const f of nameFindings) expect(f.severity).toBe('warning')
+})
+
 test('export buttons show a findings badge that never blocks export', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
