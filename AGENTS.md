@@ -16,6 +16,11 @@ Each PR gets an independent reviewer sub-agent (`glm5.3-flash`) that validates t
 the diff, the gates and the live UI before approving; coding sub-agents run on
 `qwen3.8-flash`. Merge only after reviewer approval.
 
+When working autonomously, any ambiguous design choice takes the most conservative
+reversible option and is documented in the issue/PR with the searchable marker
+`🧭 DECISION` (question, options, investigation, decision, how to revert). See
+skill section 3.6.
+
 ## Validation gates
 
 ```bash

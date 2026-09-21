@@ -79,6 +79,26 @@ Coding and review are done by **different agents** so no one grades their own ho
   APPROVE. Do not merge a phase without the reviewer's approval. Record the verdict by
   commenting the review summary on the phase issue.
 
+## 3.6 Autonomous decisions (🧭 DECISION marker)
+
+When the requester is absent (autopilot) and a design ambiguity has several defensible
+options, do not stall and do not silently pick one. Take the **most conservative,
+easily reversible** option and document it in the relevant issue or PR body using the
+searchable marker `🧭 DECISION`:
+
+```markdown
+🧭 DECISION — <short topic>
+- **Question**: <the ambiguity being resolved>
+- **Options**: <A / B / C, with one-line trade-off each>
+- **Investigation**: <evidence: code paths, reproduction, prior art>
+- **Decision**: <chosen option + why>
+- **To revert**: <what to change if the maintainer disagrees>
+```
+
+- One marker per decision; put it near the top of the PR body or in a dedicated issue comment.
+- Reviewers must check `🧭 DECISION` entries and may escalate them to the maintainer.
+- Audit trail: `gh search issues "🧭 DECISION" --repo <repo>` or grep PR bodies.
+
 ## 4. Validate before opening the PR
 
 Run the project gates and a Playwright spec **per acceptance criterion** added in `tests/visual/`:
@@ -106,6 +126,7 @@ $env:E2E_PORT='4188'; npm run test:visual   # 4173 may be squatted by another se
 - [ ] Epic + phase issues created, labelled, sub-issue linked, jargon-free titles
 - [ ] Acceptance criteria written as testable bullets
 - [ ] lint + build + targeted Playwright specs green
+- [ ] Autonomous design choices documented with `🧭 DECISION` (question/options/investigation/decision/revert)
 - [ ] Reviewer sub-agent (glm5.3-flash) APPROVED the PR after driving the real UI
 - [ ] PR with `Closes #...` per phase, link commented on epic
 - [ ] `ROADMAP.md` updated
