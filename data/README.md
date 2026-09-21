@@ -24,8 +24,14 @@ this file with `people.csv`; there is deliberately no duplicated `speakers.csv`.
 ## `sponsors.csv` and `organizers.csv`
 
 These brand catalogues contain a public name, website, and transparent logo URLs
-for light and dark backgrounds. Logos can still be uploaded directly for one-off
-brands. When a brand does not publish both variants, both fields may temporarily
+for light and dark backgrounds. Each brand provides six logo variants:
+
+- **Full** (`logo_for_light_bg_url` / `logo_for_dark_bg_url`): complete logo with wordmark and icon.
+- **Short** (`logo_short_for_light_bg_url` / `logo_short_for_dark_bg_url`): compact horizontal wordmark for narrow spaces (e.g. banner edges).
+- **Icon** (`logo_icon_for_light_bg_url` / `logo_icon_for_dark_bg_url`): small square-ish mark for tiny displays (e.g. thumbnails, badges).
+
+Use the black variant on light artwork and the white variant on dark artwork.
+When a brand does not publish both variants, both fields may temporarily
 point to the same official asset.
 
 ## `presets.json`

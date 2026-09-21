@@ -24,6 +24,10 @@ export interface CatalogOrganization {
   name: string
   logoForLightBackgroundUrl: string
   logoForDarkBackgroundUrl: string
+  logoShortForLightBackgroundUrl: string
+  logoShortForDarkBackgroundUrl: string
+  logoIconForLightBackgroundUrl: string
+  logoIconForDarkBackgroundUrl: string
   website: string
 }
 
@@ -88,6 +92,10 @@ export const catalogSponsors: CatalogSponsor[] = parseCsv(sponsorsCsv).map((spon
   name: sponsor.name,
   logoForLightBackgroundUrl: sponsor.logo_for_light_bg_url,
   logoForDarkBackgroundUrl: sponsor.logo_for_dark_bg_url,
+  logoShortForLightBackgroundUrl: sponsor.logo_short_for_light_bg_url,
+  logoShortForDarkBackgroundUrl: sponsor.logo_short_for_dark_bg_url,
+  logoIconForLightBackgroundUrl: sponsor.logo_icon_for_light_bg_url,
+  logoIconForDarkBackgroundUrl: sponsor.logo_icon_for_dark_bg_url,
   website: sponsor.website,
 })).filter((sponsor) => sponsor.id && sponsor.name && sponsor.logoForLightBackgroundUrl)
 
@@ -113,6 +121,10 @@ export const catalogOrganizers: CatalogOrganizer[] = parseCsv(organizersCsv).map
   name: organizer.name,
   logoForLightBackgroundUrl: organizer.logo_for_light_bg_url,
   logoForDarkBackgroundUrl: organizer.logo_for_dark_bg_url,
+  logoShortForLightBackgroundUrl: organizer.logo_short_for_light_bg_url,
+  logoShortForDarkBackgroundUrl: organizer.logo_short_for_dark_bg_url,
+  logoIconForLightBackgroundUrl: organizer.logo_icon_for_light_bg_url,
+  logoIconForDarkBackgroundUrl: organizer.logo_icon_for_dark_bg_url,
   website: organizer.website,
 })).filter((organizer) => organizer.id && organizer.name && organizer.logoForLightBackgroundUrl)
 

@@ -1,2 +1,2 @@
-sponsor_id,name,logo_for_light_bg_url,logo_for_dark_bg_url,website
-celonis,Celonis,logos/celonis-black.svg,logos/celonis-white.svg,https://www.celonis.com/
+sponsor_id,name,logo_for_light_bg_url,logo_for_dark_bg_url,logo_short_for_light_bg_url,logo_short_for_dark_bg_url,logo_icon_for_light_bg_url,logo_icon_for_dark_bg_url,website
+celonis,Celonis,logos/celonis-black.svg,logos/celonis-white.svg,logos/celonis-short-black.svg,logos/celonis-short-white.svg,logos/celonis-icon-black.svg,logos/celonis-icon-white.svg,https://www.celonis.com/
