@@ -142,9 +142,9 @@ export async function renderBanner(
     const cityLineStep = citySize * 1.02
 
     // Footer text
-    const footerSize = 32
+    const footerSize = 36
     const footerColor = '#77827A'
-    const footerLineStep = footerSize * 1.2
+    const footerLineStep = footerSize * 1.3
 
     ctx.textBaseline = 'alphabetic'
 
@@ -196,7 +196,7 @@ export async function renderBanner(
     // Up to three sponsor logos are contained in equal slots above the date.
     const sponsorLogos = state.event.includeSupportedBy ? state.partners.slice(0, 3) : []
     if (sponsorLogos.length > 0) {
-      const sponsorHeadingY = footerTopY - 128
+      const sponsorHeadingY = footerTopY - 150
       const logosTopY = sponsorHeadingY + 18
       const logosAreaH = 76
       const logoGap = 12
