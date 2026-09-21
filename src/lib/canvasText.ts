@@ -1,4 +1,7 @@
-export function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number) {
+/** Optional out-flag: set when the text did not fit and had to be cut. */
+export type TruncatedFlag = { value: boolean }
+
+export function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number, truncated?: TruncatedFlag) {
   const words = text.split(/\s+/).filter(Boolean)
   const lines: string[] = []
   let line = ''
@@ -16,15 +19,16 @@ export function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: 
   if (line) lines.push(line)
   if (lines.length <= maxLines) return lines
 
-  const truncated = lines.slice(0, maxLines)
-  while (ctx.measureText(`${truncated[maxLines - 1]}...`).width > maxWidth && truncated[maxLines - 1].length > 0) {
-    truncated[maxLines - 1] = truncated[maxLines - 1].slice(0, -1)
+  if (truncated) truncated.value = true
+  const kept = lines.slice(0, maxLines)
+  while (ctx.measureText(`${kept[maxLines - 1]}...`).width > maxWidth && kept[maxLines - 1].length > 0) {
+    kept[maxLines - 1] = kept[maxLines - 1].slice(0, -1)
   }
-  truncated[maxLines - 1] = `${truncated[maxLines - 1]}...`
-  return truncated
+  kept[maxLines - 1] = `${kept[maxLines - 1]}...`
+  return kept
 }
 
-export function wrapTextWithBreaks(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number) {
+export function wrapTextWithBreaks(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number, truncated?: TruncatedFlag) {
   const chunks = text
     .split(/\r?\n/)
     .map((part) => part.trim())
@@ -35,9 +39,14 @@ export function wrapTextWithBreaks(ctx: CanvasRenderingContext2D, text: string, 
   const lines: string[] = []
   for (const chunk of chunks) {
     const remaining = maxLines - lines.length
-    if (remaining <= 0) break
-    const wrapped = wrapText(ctx, chunk, maxWidth, remaining)
+    if (remaining <= 0) {
+      if (truncated) truncated.value = true
+      break
+    }
+    const inner: TruncatedFlag = { value: false }
+    const wrapped = wrapText(ctx, chunk, maxWidth, remaining, inner)
     lines.push(...wrapped)
+    if (inner.value && truncated) truncated.value = true
   }
 
   return lines.slice(0, maxLines)

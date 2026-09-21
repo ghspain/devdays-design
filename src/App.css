@@ -310,6 +310,62 @@
   background: var(--app-header-bg);
 }
 
+.validation-panel {
+  flex: none;
+  max-height: 9.5rem;
+  overflow-y: auto;
+  padding: 0.55rem 0.9rem;
+  border-top: 1px solid var(--vscode-border);
+  background: var(--app-header-bg);
+  font-size: 0.78rem;
+}
+
+.validation-panel p,
+.validation-panel ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.validation-ok,
+.validation-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  color: var(--vscode-descriptionForeground, #8a919e);
+}
+
+.validation-dot {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  align-self: center;
+}
+
+.validation-dot.ok {
+  background: #3fb950;
+}
+
+.validation-dot.warning {
+  background: #d29922;
+}
+
+.validation-dot.error {
+  background: #f85149;
+}
+
+.validation-item.warning .validation-dot {
+  background: #d29922;
+}
+
+.validation-item.error .validation-dot {
+  background: #f85149;
+}
+
 .pack-download-block {
   margin-left: auto;
   display: grid;

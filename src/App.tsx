@@ -34,6 +34,7 @@ import { uid } from './lib/format'
 import { buildDefaultState, normalizeState, readBannerHistory, writeBannerHistory } from './lib/history'
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
+import { createRenderInfo, validateState, type ValidationFinding } from './lib/validate'
 import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
 import { buildEventPack, type EventPackProgress } from './lib/exportPack'
 
@@ -52,6 +53,7 @@ function App() {
   const [fontsReady, setFontsReady] = useState(() => typeof document === 'undefined' || !document.fonts)
   const [isExportingPack, setIsExportingPack] = useState(false)
   const [packProgress, setPackProgress] = useState<EventPackProgress | null>(null)
+  const [validationFindings, setValidationFindings] = useState<ValidationFinding[]>([])
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const [state, setState] = useState<BannerState>(() => buildDefaultState())
@@ -110,17 +112,33 @@ function App() {
     let cancelled = false
 
     const draw = async () => {
-      if (cancelled || !canvasRef.current) return
+      if (cancelled) return
+      const renderInfo = createRenderInfo()
       if (showMultiSpeakerPreviewGrid) {
-        const ctx = canvasRef.current.getContext('2d')
-        if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
-        return
+        // The visible canvas is unmounted while the per-speaker grid is shown.
+        const ctx = canvasRef.current?.getContext('2d')
+        if (ctx) ctx.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height)
+        // Render once to an offscreen canvas so validation still reflects what
+        // an export would show.
+        try {
+          await renderBanner(document.createElement('canvas'), state, format, previewBackgroundFailed, 1, renderInfo)
+        } catch {
+          return
+        }
+      } else {
+        if (!canvasRef.current) return
+        try {
+          await renderBanner(canvasRef.current, state, format, previewBackgroundFailed, 1, renderInfo)
+        } catch {
+          if (!cancelled) setError('Failed to render preview.')
+          return
+        }
       }
-      try {
-        await renderBanner(canvasRef.current, state, format, previewBackgroundFailed, 1)
-      } catch {
-        if (!cancelled) setError('Failed to render preview.')
-      }
+      const findings = validateState(state, format.id, renderInfo)
+      if (cancelled) return
+      setValidationFindings(findings)
+      // Exposed for Playwright visual-validation specs.
+      ;(window as unknown as { __devdaysValidation?: { findings: ValidationFinding[] } }).__devdaysValidation = { findings }
     }
 
     // Coalesce rapid state changes into a single redraw on the next animation
@@ -825,6 +843,24 @@ function App() {
           )}
 
           {error && <p className="error">{error}</p>}
+          </div>
+
+          <div className="validation-panel" aria-label="Validation findings">
+            {validationFindings.length === 0 ? (
+              <p className="validation-ok" role="status">
+                <span className="validation-dot ok" aria-hidden="true" />
+                All checks passed
+              </p>
+            ) : (
+              <ul className="validation-list">
+                {validationFindings.map((finding) => (
+                  <li key={`${finding.code}:${finding.field ?? ''}:${finding.message}`} className={`validation-item ${finding.severity}`}>
+                    <span className={`validation-dot ${finding.severity}`} aria-hidden="true" />
+                    <span>{finding.message}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="sidebar-footer">
