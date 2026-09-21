@@ -23,3 +23,10 @@ pnpm-debug.log*
 
 # Test coverage
 coverage/
+
+# Playwright output
+playwright-report/
+test-results/
+
+# Impeccable design tooling
+.impeccable/

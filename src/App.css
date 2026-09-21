@@ -698,6 +698,71 @@ button.danger {
   color: var(--vscode-danger);
 }
 
+.section-count {
+  margin-left: 0.4rem;
+  font-weight: 400;
+  color: var(--vscode-text-muted);
+  font-size: 0.85em;
+}
+
+.speaker-card {
+  border: 1px solid var(--vscode-border);
+  border-radius: 10px;
+  background: var(--app-side-section-bg);
+  padding: 0.65rem 0.75rem 0.75rem;
+  margin: 0 0 0.65rem;
+}
+
+.speaker-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--vscode-text-muted);
+  font-size: 0.85rem;
+}
+
+.speaker-card-head button {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.8rem;
+}
+
+.speaker-card-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.speaker-card-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--vscode-border);
+}
+
+.speaker-card-avatar-initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vscode-bg-elev-1);
+  color: var(--vscode-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.speaker-card-hint {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--vscode-text-muted);
+  line-height: 1.35;
+}
+
+.speaker-card .form-grid {
+  margin-top: 0.55rem;
+}
+
 .stack {
   margin-top: 0.85rem;
   display: grid;

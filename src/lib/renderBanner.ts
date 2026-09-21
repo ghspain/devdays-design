@@ -414,9 +414,12 @@ export async function renderBanner(
     }
   }
 
-  const speakerBaseY = isSpeakerProfile ? height * 2 : height * 1.5
-  const speakerSize = isSpeakerProfile ? width * 0.19 : width * 0.1
+  // Only speaker_square reaches this branch (luma_cover/social_promo skip speakers,
+  // speaker_banner has its own layout). Keep the row inside the canvas, above the
+  // partners footer, which starts at ~height * 0.87.
+  const speakerBaseY = Math.round(height * 0.46)
   const speakerGap = width * 0.04
+  const speakerSize = isSpeakerProfile ? width * 0.19 : width * 0.1
 
   if (hasSpeakers) {
     if (isSpeakerBanner) {
@@ -518,12 +521,17 @@ export async function renderBanner(
         const size = isSpeakerProfile && index === 0 ? speakerSize * 1.25 : speakerSize
         return sum + size
       }, 0) + speakerGap * Math.max(visibleSpeakers.length - 1, 0)
+      // Shrink the row so many speakers still fit inside the canvas.
+      const maxRowWidth = width - padding * 2
+      const rowScale = totalWidth > maxRowWidth ? maxRowWidth / totalWidth : 1
+      const avatarUnit = speakerSize * rowScale
+      const rowGap = speakerGap * rowScale
 
-      let cursorX = (width - totalWidth) / 2
+      let cursorX = (width - Math.min(totalWidth, maxRowWidth)) / 2
       for (let i = 0; i < visibleSpeakers.length; i += 1) {
         const speaker = visibleSpeakers[i]
         const isFeatured = isSpeakerProfile && i === 0
-        const avatarSize = isFeatured ? speakerSize * 1.25 : speakerSize
+        const avatarSize = isFeatured ? avatarUnit * 1.25 : avatarUnit
         const avatarY = speakerBaseY
 
         ctx.save()
@@ -576,7 +584,7 @@ export async function renderBanner(
           })
         }
 
-        cursorX += avatarSize + speakerGap
+        cursorX += avatarSize + rowGap
       }
     }
   }

@@ -9,6 +9,8 @@ export type ExportScale = 1 | 2
 
 export interface Speaker {
   id: string
+  /** Participation id from the Planning catalogue, used to dedupe additions. */
+  catalogId?: string
   name: string
   role?: string
   photoDataUrl?: string
