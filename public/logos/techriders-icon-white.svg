@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- TechRiders brand icon - stylized rider on motorcycle silhouette - white variant -->
+  <circle cx="24" cy="10" r="6" fill="#ffffff"/>
+  <path d="M14 42 L20 20 L24 26 L28 20 L34 42 Z" fill="#ffffff"/>
+  <path d="M24 26 L24 34" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+  <rect x="8" y="40" width="32" height="4" rx="2" fill="#ffffff"/>
+  <circle cx="12" cy="42" r="4" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+  <circle cx="36" cy="42" r="4" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+</svg>

@@ -56,10 +56,22 @@ test('catalogue logos are packaged as readable transparent SVG assets', async ({
   const logos = [
     'logos/celonis-black.svg',
     'logos/celonis-white.svg',
+    'logos/celonis-short-black.svg',
+    'logos/celonis-short-white.svg',
+    'logos/celonis-icon-black.svg',
+    'logos/celonis-icon-white.svg',
     'logos/github-community-spain-black.svg',
     'logos/github-community-spain-white.svg',
+    'logos/github-community-spain-short-black.svg',
+    'logos/github-community-spain-short-white.svg',
+    'logos/github-community-spain-icon-black.svg',
+    'logos/github-community-spain-icon-white.svg',
     'logos/techriders-black.svg',
     'logos/techriders-white.svg',
+    'logos/techriders-short-black.svg',
+    'logos/techriders-short-white.svg',
+    'logos/techriders-icon-black.svg',
+    'logos/techriders-icon-white.svg',
   ]
 
   for (const logo of logos) {

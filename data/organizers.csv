@@ -1,3 +1,3 @@
-organizer_id,name,logo_for_light_bg_url,logo_for_dark_bg_url,website
-ghspain,GitHub Community Spain,logos/github-community-spain-black.svg,logos/github-community-spain-white.svg,https://githubcommunity.es/
-techriders,TechRiders,logos/techriders-black.svg,logos/techriders-white.svg,https://techriders.tajamar.es/
+organizer_id,name,logo_for_light_bg_url,logo_for_dark_bg_url,logo_short_for_light_bg_url,logo_short_for_dark_bg_url,logo_icon_for_light_bg_url,logo_icon_for_dark_bg_url,website
+ghspain,GitHub Community Spain,logos/github-community-spain-black.svg,logos/github-community-spain-white.svg,logos/github-community-spain-short-black.svg,logos/github-community-spain-short-white.svg,logos/github-community-spain-icon-black.svg,logos/github-community-spain-icon-white.svg,https://githubcommunity.es/
+techriders,TechRiders,logos/techriders-black.svg,logos/techriders-white.svg,logos/techriders-short-black.svg,logos/techriders-short-white.svg,logos/techriders-icon-black.svg,logos/techriders-icon-white.svg,https://techriders.tajamar.es/

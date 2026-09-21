@@ -1,17 +1,17 @@
 participation_id,person_id,event_id,event_date,participation_type,session_title,session_time,status
 2026-04-17-sergio-valverde,sergio-valverde,2026-04-17-copilot-dev-days-madrid,2026-04-17,speaker,Afilando el hacha: tunea GitHub Copilot,,completed
 2026-04-17-luis-fraile,luis-fraile,2026-04-17-copilot-dev-days-madrid,2026-04-17,speaker,Afilando el hacha: tunea GitHub Copilot,,completed
-2026-04-17-alberto-diaz,alberto-diaz-martin,2026-04-17-copilot-dev-days-madrid,2026-04-17,speaker,El desarrollador del futuro hoy,,completed
-2026-04-17-rodrigo-liberoff,rodrigo-liberoff,2026-04-17-copilot-dev-days-madrid,2026-04-17,speaker,SDD: GitHub Spec Kit para construir proyectos con IA,,completed
-2026-04-17-borja-piris,borja-piris-de-castro,2026-04-17-copilot-dev-days-madrid,2026-04-17,speaker,SDD: GitHub Spec Kit para construir proyectos con IA,,completed
+2026-04-17-alberto-diaz,alberto-diaz-martin,2026-04-17-copilot-dev-days-madrid,2026-04-17,speaker,"El desarrollador del futuro, hoy",,completed
+2026-04-17-rodrigo-liberoff,rodrigo-liberoff,2026-04-17-copilot-dev-days-madrid,2026-04-17,speaker,"SDD - GitHub Spec Kit para crear gestionar y construir proyectos con IA",,completed
+2026-04-17-borja-piris,borja-piris-de-castro,2026-04-17-copilot-dev-days-madrid,2026-04-17,speaker,"SDD - GitHub Spec Kit para crear gestionar y construir proyectos con IA",,completed
 2026-04-17-jorge-fernandez,jorge-fernandez-sanchez,2026-04-17-copilot-dev-days-madrid,2026-04-17,speaker,Get Shit Done con IA: menos prompts más commits,,completed
 2026-04-17-ramon-palomares,ramon-palomares,2026-04-17-copilot-dev-days-madrid,2026-04-17,speaker,Get Shit Done con IA: menos prompts más commits,,completed
-2026-04-17-erika-cepeda,erika-cepeda,2026-04-17-copilot-dev-days-madrid,2026-04-17,speaker,Entrenando con Bulma: mejora tus agentes,,completed
+2026-04-17-erika-cepeda,erika-cepeda,2026-04-17-copilot-dev-days-madrid,2026-04-17,speaker,"Entrenando con Bulma: mejora tus agentes de Copilot Studio con GitHub Copilot en VS Code",,completed
 2026-05-23-alba-catoira,alba-catoira,2026-05-23-coruna,2026-05-23,speaker,Azure DevOps + GitHub Actions,,completed
-2026-05-23-unai-zorrilla,unai-zorrilla,2026-05-23-coruna,2026-05-23,speaker,Automatizando flujos con GitHub Copilot SDK,,completed
-2026-05-23-diego-loira,diego-loira,2026-05-23-coruna,2026-05-23,speaker,Automatizando flujos con GitHub Copilot SDK,,completed
-2026-05-23-diego-varela,diego-varela,2026-05-23-coruna,2026-05-23,speaker,Sube de nivel con GitHub Copilot,,completed
-2026-05-23-luis-fraile,luis-fraile,2026-05-23-coruna,2026-05-23,speaker,Sube de nivel con GitHub Copilot,,completed
+2026-05-23-unai-zorrilla,unai-zorrilla,2026-05-23-coruna,2026-05-23,speaker,Automatizando flujos de trabajo con GitHub Copilot SDK,,completed
+2026-05-23-diego-loira,diego-loira,2026-05-23-coruna,2026-05-23,speaker,Automatizando flujos de trabajo con GitHub Copilot SDK,,completed
+2026-05-23-diego-varela,diego-varela,2026-05-23-coruna,2026-05-23,speaker,Sube de nivel con GitHub Copilot: desarrollo con la seguridad en mente,,completed
+2026-05-23-luis-fraile,luis-fraile,2026-05-23-coruna,2026-05-23,speaker,Sube de nivel con GitHub Copilot: desarrollo con la seguridad en mente,,completed
 2026-06-20-bruno-capuano,bruno-capuano,2026-06-20-agentsday,2026-06-20,speaker,AgentsDay,,completed
 2026-06-20-roberto-arocha,roberto-arocha,2026-06-20-agentsday,2026-06-20,speaker,AgentsDay,,completed
 2026-06-20-roberto-navarro,roberto-navarro-matesanz,2026-06-20-agentsday,2026-06-20,speaker,AgentsDay,,completed

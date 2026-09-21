@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Celonis brand mark - concentric rings representing the distinctive "c" -->
+  <defs>
+    <clipPath id="ring-clip-w">
+      <circle cx="24" cy="24" r="22"/>
+    </clipPath>
+  </defs>
+  <circle cx="24" cy="24" r="22" fill="#ffffff"/>
+  <circle cx="24" cy="24" r="16" fill="#000000"/>
+  <circle cx="24" cy="24" r="10" fill="#ffffff"/>
+  <circle cx="24" cy="24" r="4" fill="#000000"/>
+  <circle cx="24" cy="24" r="1" fill="#ffffff"/>
+</svg>
