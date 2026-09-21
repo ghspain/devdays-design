@@ -1,9 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-  <!-- TechRiders brand icon - stylized rider on motorcycle silhouette -->
-  <circle cx="24" cy="10" r="6" fill="#000000"/>
-  <path d="M14 42 L20 20 L24 26 L28 20 L34 42 Z" fill="#000000"/>
-  <path d="M24 26 L24 34" stroke="#000000" stroke-width="3.5" stroke-linecap="round"/>
-  <rect x="8" y="40" width="32" height="4" rx="2" fill="#000000"/>
-  <circle cx="12" cy="42" r="4" fill="none" stroke="#000000" stroke-width="1.5"/>
-  <circle cx="36" cy="42" r="4" fill="none" stroke="#000000" stroke-width="1.5"/>
+  <!-- TechRiders icon - stylized motorcycle rider silhouette -->
+  <g transform="translate(0,2)">
+    <!-- Motorcycle body -->
+    <path d="M6 30 C6 30, 10 22, 18 20 C26 18, 30 24, 32 26 C34 28, 34 30, 32 32 L6 32 Z" fill="#1a1a1a"/>
+    <!-- Rider torso -->
+    <path d="M12 20 C12 16, 16 10, 20 10 L24 10 C26 10, 28 12, 28 14 L28 20 Z" fill="#1a1a1a"/>
+    <!-- Rider head/helmet -->
+    <circle cx="24" cy="6" r="5" fill="#1a1a1a"/>
+    <!-- Front wheel -->
+    <circle cx="6" cy="34" r="6" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+    <circle cx="6" cy="34" r="1.5" fill="#1a1a1a"/>
+    <!-- Rear wheel -->
+    <circle cx="32" cy="34" r="6" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+    <circle cx="32" cy="34" r="1.5" fill="#1a1a1a"/>
+    <!-- Wheel spokes front -->
+    <line x1="6" y1="28" x2="6" y2="40" stroke="#1a1a1a" stroke-width="0.8"/>
+    <line x1="0" y1="34" x2="12" y2="34" stroke="#1a1a1a" stroke-width="0.8"/>
+    <!-- Wheel spokes rear -->
+    <line x1="32" y1="28" x2="32" y2="40" stroke="#1a1a1a" stroke-width="0.8"/>
+    <line x1="26" y1="34" x2="38" y2="34" stroke="#1a1a1a" stroke-width="0.8"/>
+  </g>
 </svg>
