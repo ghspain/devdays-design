@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { Banner, Button, CounterLabel } from '@primer/react'
 import {
   ChevronDownIcon,
   CopilotIcon,
@@ -857,47 +858,48 @@ function App() {
 
           <div className="validation-panel" aria-label="Validation findings">
             {validationFindings.length === 0 ? (
-              <p className="validation-ok" role="status">
-                <span className="validation-dot ok" aria-hidden="true" />
-                All checks passed
-              </p>
+              <div role="status">
+                <Banner variant="success" layout="compact" flush title="All checks passed" />
+              </div>
             ) : (
-              <ul className="validation-list">
-                {validationFindings.map((finding) => (
-                  <li key={`${finding.code}:${finding.field ?? ''}:${finding.message}`} className={`validation-item ${finding.severity}`}>
-                    <span className={`validation-dot ${finding.severity}`} aria-hidden="true" />
-                    <span>
-                      <span className="validation-severity-label">{finding.severity === 'error' ? 'Error' : 'Warning'}:</span>{' '}
-                      {finding.message}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              validationFindings.map((finding) => (
+                <Banner
+                  key={`${finding.code}:${finding.field ?? ''}:${finding.message}`}
+                  variant={finding.severity === 'error' ? 'critical' : 'warning'}
+                  layout="compact"
+                  flush
+                  title={`${finding.severity === 'error' ? 'Error' : 'Warning'}: ${finding.message}`}
+                />
+              ))
             )}
           </div>
 
           <div className="sidebar-footer">
-            <button type="button" className="ghost" onClick={resetAll} title="Reset to defaults">
+            <Button variant="invisible" onClick={resetAll} title="Reset to defaults">
               Reset
-            </button>
+            </Button>
             <div className="pack-download-block">
-              <button
-                type="button"
+              <Button
                 className="pack-download"
-                disabled={isExportingPack}
+                loading={isExportingPack}
+                leadingVisual={DownloadIcon}
+                trailingVisual={
+                  validationIssueCount > 0 ? (
+                    <CounterLabel
+                      className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
+                      aria-hidden="true"
+                    >
+                      {validationIssueCount}
+                    </CounterLabel>
+                  ) : null
+                }
                 onClick={() => {
                   void exportEventPack()
                 }}
                 aria-label={exportFindingsLabel ? `Event pack (.zip). Findings: ${exportFindingsLabel}` : undefined}
               >
-                <DownloadIcon size={16} />
-                <span>{isExportingPack ? 'Creating pack…' : 'Event pack (.zip)'}</span>
-                {validationIssueCount > 0 && (
-                  <span className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`} aria-hidden="true">
-                    {validationIssueCount}
-                  </span>
-                )}
-              </button>
+                Event pack (.zip)
+              </Button>
               {packProgress && (
                 <small aria-live="polite">
                   {packProgress.label}
@@ -906,22 +908,27 @@ function App() {
               )}
             </div>
             <div className="split-download">
-              <button
-                type="button"
+              <Button
                 className="download-main"
+                variant="primary"
+                leadingVisual={DownloadIcon}
+                trailingVisual={
+                  validationIssueCount > 0 ? (
+                    <CounterLabel
+                      className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
+                      aria-hidden="true"
+                    >
+                      {validationIssueCount}
+                    </CounterLabel>
+                  ) : null
+                }
                 onClick={() => {
                   void exportBanner()
                 }}
                 aria-label={exportFindingsLabel ? `Download. Findings: ${exportFindingsLabel}` : undefined}
               >
-                <DownloadIcon size={16} />
-                <span>Download</span>
-                {validationIssueCount > 0 && (
-                  <span className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`} aria-hidden="true">
-                    {validationIssueCount}
-                  </span>
-                )}
-              </button>
+                Download
+              </Button>
             </div>
           </div>
         </aside>
