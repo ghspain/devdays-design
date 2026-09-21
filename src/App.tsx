@@ -865,7 +865,6 @@ function App() {
               validationFindings.map((finding) => (
                 <Banner
                   key={`${finding.code}:${finding.field ?? ''}:${finding.message}`}
-                  className={`validation-item ${finding.severity}`}
                   variant={finding.severity === 'error' ? 'critical' : 'warning'}
                   layout="compact"
                   flush
@@ -882,7 +881,6 @@ function App() {
             <div className="pack-download-block">
               <Button
                 className="pack-download"
-                disabled={isExportingPack}
                 loading={isExportingPack}
                 leadingVisual={DownloadIcon}
                 trailingVisual={
@@ -949,7 +947,7 @@ function App() {
             {showMultiSpeakerPreviewGrid && speakerPreviews.length > 0 && (
               <div className="speaker-preview-block">
                 <div className="history-header">
-                  <h3>{isSpeakerSquare ? 'Speaker profiles' : 'Speaker banners'}</h3>
+                  <h3>Speaker banners</h3>
                   <span>{speakerPreviews.length} real-time preview(s)</span>
                 </div>
                 <div className="speaker-preview-grid">
