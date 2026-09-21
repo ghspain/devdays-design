@@ -62,6 +62,23 @@ gh api -X POST repos/ghspain/devdays-design/issues/<epic>/sub_issues -F sub_issu
 - Commit per logical unit; always end commit messages with the `Co-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>` trailer.
 - Do not silently change scope: if a phase reveals a new bug, add a new phase issue instead of absorbing it.
 
+## 3.5 Two-agent loop: implementer + reviewer
+
+Coding and review are done by **different agents** so no one grades their own homework:
+
+- **Implementer** sub-agent runs on model `qwen3.8-flash`: reproduces the issue, codes the phase,
+  adds the Playwright spec per acceptance criterion, opens/updates the PR.
+- **Reviewer** sub-agent runs on model `glm5.3-flash` and is launched **once the PR exists**.
+  It never trusts the implementer's claims; it independently:
+  1. reads the phase issue and its acceptance criteria,
+  2. reviews the PR diff against `main` (correctness, regressions, scope creep),
+  3. runs the gates itself: `npm run lint`, `npm run build`, targeted Playwright specs,
+  4. drives the real app UI (preview server + Playwright) checking each acceptance criterion,
+  5. posts a PR review: **APPROVE** or **REQUEST CHANGES** with an actionable findings list.
+- On REQUEST CHANGES the implementer fixes, pushes, and the reviewer re-checks. Loop until
+  APPROVE. Do not merge a phase without the reviewer's approval. Record the verdict by
+  commenting the review summary on the phase issue.
+
 ## 4. Validate before opening the PR
 
 Run the project gates and a Playwright spec **per acceptance criterion** added in `tests/visual/`:
@@ -89,5 +106,6 @@ $env:E2E_PORT='4188'; npm run test:visual   # 4173 may be squatted by another se
 - [ ] Epic + phase issues created, labelled, sub-issue linked, jargon-free titles
 - [ ] Acceptance criteria written as testable bullets
 - [ ] lint + build + targeted Playwright specs green
+- [ ] Reviewer sub-agent (glm5.3-flash) APPROVED the PR after driving the real UI
 - [ ] PR with `Closes #...` per phase, link commented on epic
 - [ ] `ROADMAP.md` updated
