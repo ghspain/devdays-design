@@ -47,6 +47,9 @@ Roadmap item 5 shipped as a spec-driven epic with one issue per phase:
 - Phase 2: #28 — pixel checks on the rendered canvas (WCAG contrast, safe area).
 - Phase 3: #29 — validation feedback panel in the sidebar.
 - Phase 4: #30 — full test pass (per-format coverage, stress runs) and roadmap update.
+- Hardening follow-ups (PR #33): #23 — staleness guards in the async banner renderer; #24 —
+  adaptive settle probe in the footer regression test; #32 — unbreakable-word truncation and a
+  more robust background estimate for the contrast check.
 
 The local files act as a stable, human-editable contract. A future integration
 may import from Planning, but the editor must remain usable without network
