@@ -366,6 +366,39 @@
   background: #f85149;
 }
 
+.validation-severity-label {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.validation-item.warning .validation-severity-label {
+  color: #d29922;
+}
+
+.validation-item.error .validation-severity-label {
+  color: #f85149;
+}
+
+.download-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.28rem;
+  margin-left: 0.15rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  background: #d29922;
+}
+
+.download-badge.error {
+  background: #f85149;
+}
+
 .pack-download-block {
   margin-left: auto;
   display: grid;

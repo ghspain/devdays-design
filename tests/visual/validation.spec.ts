@@ -74,6 +74,32 @@ test('overlong city text is reported as truncated', async ({ page }) => {
   await expect(page.locator('.validation-panel')).toContainText('city')
 })
 
+test('export buttons show a findings badge that never blocks export', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+  await expect(page.locator('.download-badge')).toHaveCount(0)
+
+  await page.getByLabel('City').fill('Buenos Aires Capital Federal Extendiiiisima')
+  await expect
+    .poll(() => findings(page), { timeout: 10_000 })
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'text-truncated', field: 'city', severity: 'warning' }),
+      ]),
+    )
+
+  // Both export buttons get a warning-styled badge with the finding count.
+  const badges = page.locator('.download-badge')
+  await expect(badges).toHaveCount(2)
+  await expect(badges.first()).toHaveClass(/warning/)
+  await expect(badges.first()).not.toHaveText('0')
+
+  // Export stays clickable despite findings.
+  const download = page.locator('.download-main')
+  await expect(download).toBeEnabled()
+  await expect(download).toHaveAttribute('aria-label', /Findings/)
+})
+
 test('partner logos beyond the format cap are reported as dropped', async ({ page }) => {
   await seedHistory(page, [historyItem({ partners: [1, 2, 3, 4, 5].map(partner) })])
 

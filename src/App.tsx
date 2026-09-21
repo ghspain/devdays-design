@@ -55,6 +55,12 @@ function App() {
   const [isExportingPack, setIsExportingPack] = useState(false)
   const [packProgress, setPackProgress] = useState<EventPackProgress | null>(null)
   const [validationFindings, setValidationFindings] = useState<ValidationFinding[]>([])
+  const validationErrorCount = validationFindings.filter((f) => f.severity === 'error').length
+  const validationIssueCount = validationFindings.length
+  const exportFindingsLabel =
+    validationIssueCount > 0
+      ? `${validationErrorCount} error${validationErrorCount === 1 ? '' : 's'}, ${validationIssueCount - validationErrorCount} warning${validationIssueCount - validationErrorCount === 1 ? '' : 's'}`
+      : ''
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const [state, setState] = useState<BannerState>(() => buildDefaultState())
@@ -860,7 +866,10 @@ function App() {
                 {validationFindings.map((finding) => (
                   <li key={`${finding.code}:${finding.field ?? ''}:${finding.message}`} className={`validation-item ${finding.severity}`}>
                     <span className={`validation-dot ${finding.severity}`} aria-hidden="true" />
-                    <span>{finding.message}</span>
+                    <span>
+                      <span className="validation-severity-label">{finding.severity === 'error' ? 'Error' : 'Warning'}:</span>{' '}
+                      {finding.message}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -879,9 +888,15 @@ function App() {
                 onClick={() => {
                   void exportEventPack()
                 }}
+                aria-label={exportFindingsLabel ? `Event pack (.zip). Findings: ${exportFindingsLabel}` : undefined}
               >
                 <DownloadIcon size={16} />
                 <span>{isExportingPack ? 'Creating pack…' : 'Event pack (.zip)'}</span>
+                {validationIssueCount > 0 && (
+                  <span className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`} aria-hidden="true">
+                    {validationIssueCount}
+                  </span>
+                )}
               </button>
               {packProgress && (
                 <small aria-live="polite">
@@ -897,9 +912,15 @@ function App() {
                 onClick={() => {
                   void exportBanner()
                 }}
+                aria-label={exportFindingsLabel ? `Download. Findings: ${exportFindingsLabel}` : undefined}
               >
                 <DownloadIcon size={16} />
                 <span>Download</span>
+                {validationIssueCount > 0 && (
+                  <span className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`} aria-hidden="true">
+                    {validationIssueCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>
