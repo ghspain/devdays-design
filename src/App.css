@@ -493,10 +493,6 @@
   flex: none;
 }
 
-.format-select-label select {
-  margin-top: 0.1rem;
-}
-
 .format-grid-pair {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -588,9 +584,9 @@ button {
   font: inherit;
 }
 
-input,
-select,
-textarea {
+input:not([data-component]),
+select:not([data-component]),
+textarea:not([data-component]) {
   border-radius: 6px;
   border: 1px solid var(--vscode-border);
   background: var(--app-surface-input);
@@ -603,13 +599,13 @@ textarea {
   max-width: 100%;
 }
 
-textarea {
+textarea:not([data-component]) {
   resize: vertical;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
+input:not([data-component]):focus,
+select:not([data-component]):focus,
+textarea:not([data-component]):focus {
   outline: none;
   border-color: var(--vscode-accent);
   box-shadow: 0 0 0 1px var(--vscode-accent);
@@ -619,7 +615,7 @@ input[type='file'] {
   padding: 0.4rem;
 }
 
-button:not([data-component]) {
+button:not([data-component]):not([class*='prc-']) {
   border-radius: 6px;
   border: 1px solid var(--vscode-border);
   background: var(--app-button-bg);
@@ -629,13 +625,13 @@ button:not([data-component]) {
   transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
-button:not([data-component]):hover:not(:disabled) {
+button:not([data-component]):not([class*='prc-']):hover:not(:disabled) {
   transform: none;
   border-color: var(--vscode-text-muted);
   background: var(--vscode-bg-elev-1);
 }
 
-button:not([data-component]):disabled {
+button:not([data-component]):not([class*='prc-']):disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
@@ -867,7 +863,7 @@ button:not([data-component]).danger {
   gap: 0.22rem;
 }
 
-.resolution-toggle span {
+.resolution-toggle > div:not([class*="prc-"]) span {
   color: var(--vscode-text-muted);
 }
 
@@ -989,6 +985,24 @@ button:not([data-component]).danger {
 .speaker-preview-item strong {
   font-size: 0.9rem;
   line-height: 1.2;
+}
+
+.speaker-preview-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  color: var(--app-warning);
+  background: rgba(210, 153, 34, 0.12);
+  border: 1px solid rgba(210, 153, 34, 0.4);
+  border-radius: 6px;
+  padding: 0.3rem 0.4rem;
+}
+
+.speaker-preview-warning svg {
+  flex: none;
+  margin-top: 1px;
 }
 
 .history-block {
