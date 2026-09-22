@@ -716,8 +716,7 @@ button:not([data-component]).danger {
   font-size: 0.85rem;
 }
 
-.speaker-card-head button {
-  padding: 0.25rem 0.55rem;
+.speaker-card-head [class*="prc-Button"] {
   font-size: 0.8rem;
 }
 
