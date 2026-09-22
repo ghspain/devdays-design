@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { Banner, Button, CounterLabel } from '@primer/react'
+import { Banner, Button, CounterLabel, FormControl, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
 import {
   ChevronDownIcon,
   CopilotIcon,
@@ -469,36 +469,36 @@ function App() {
           {backgroundFailed && <p className="warning">Background image unavailable: using gradient fallback for preview.</p>}
 
           <div className="format-bar">
-            <label className="format-select-label">
-              <span className="label-row">
-                Format
-              </span>
-              <select
+            <FormControl id="format" className="format-select-label">
+              <FormControl.Label>Format</FormControl.Label>
+              <Select
+                id="format"
+                block
                 value={state.format}
                 onChange={(e) => setState((previous) => ({ ...previous, format: e.target.value as BannerFormat }))}
               >
-                <optgroup label="Event formats">
+                <Select.OptGroup label="Event formats">
                   {eventFormatIds
                     .map((id) => formatOptions.find((option) => option.id === id))
                     .filter((option): option is FormatOption => Boolean(option))
                     .map((option) => (
-                      <option key={option.id} value={option.id}>
+                      <Select.Option key={option.id} value={option.id}>
                         {option.name} — {option.width}x{option.height}
-                      </option>
+                      </Select.Option>
                     ))}
-                </optgroup>
-                <optgroup label="Speaker formats">
+                </Select.OptGroup>
+                <Select.OptGroup label="Speaker formats">
                   {speakerFormatIds
                     .map((id) => formatOptions.find((option) => option.id === id))
                     .filter((option): option is FormatOption => Boolean(option))
                     .map((option) => (
-                      <option key={option.id} value={option.id}>
+                      <Select.Option key={option.id} value={option.id}>
                         {option.name} — {option.width}x{option.height}
-                      </option>
+                      </Select.Option>
                     ))}
-                </optgroup>
-              </select>
-            </label>
+                </Select.OptGroup>
+              </Select>
+            </FormControl>
           </div>
 
           <details className="side-section" open>
@@ -507,115 +507,123 @@ function App() {
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
-              <label>
-                Event preset
-                <select defaultValue="" onChange={(e) => applyPreset(e.target.value)}>
-                  <option value="">Choose a preset…</option>
-                  {eventPresets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}
-                </select>
-              </label>
+              <FormControl id="event-preset">
+                <FormControl.Label>Event preset</FormControl.Label>
+                <Select id="event-preset" block defaultValue="" onChange={(e) => applyPreset(e.target.value)}>
+                  <Select.Option value="">Choose a preset…</Select.Option>
+                  {eventPresets.map((preset) => <Select.Option key={preset.id} value={preset.id}>{preset.name}</Select.Option>)}
+                </Select>
+              </FormControl>
               <div className="form-grid single">
-                <label>
-                  Event title
-                  <input type="text" maxLength={80} value={state.event.title} onChange={(e) => updateEvent({ title: e.target.value })} />
-                </label>
+                <FormControl id="event-title">
+                  <FormControl.Label>Event title</FormControl.Label>
+                  <TextInput
+                    id="event-title"
+                    block
+                    maxLength={80}
+                    value={state.event.title}
+                    onChange={(e) => updateEvent({ title: e.target.value })}
+                  />
+                </FormControl>
                 {isLumaCover && (
-                  <label>
-                    <span className="label-row">
-                      Event edition
-                      <small>Examples: Professional or Students</small>
-                    </span>
-                    <input
-                      type="text"
+                  <FormControl id="event-edition">
+                    <FormControl.Label>Event edition</FormControl.Label>
+                    <TextInput
+                      id="event-edition"
+                      block
                       maxLength={40}
                       value={state.event.edition}
                       onChange={(e) => updateEvent({ edition: e.target.value })}
                       placeholder="Professional"
                     />
-                  </label>
+                    <FormControl.Caption>Examples: Professional or Students</FormControl.Caption>
+                  </FormControl>
                 )}
-                <label>
-                  City
-                  <input
-                    type="text"
+                <FormControl id="event-city">
+                  <FormControl.Label>City</FormControl.Label>
+                  <TextInput
+                    id="event-city"
+                    block
                     value={state.event.city}
                     onChange={(e) => updateEvent({ city: e.target.value })}
                   />
-                </label>
-                <label>
-                  <span className="label-row">
-                    Date and time
-                    <small>Example: Apr 15 • 7:00 PM</small>
-                  </span>
-                  <input
-                    type="text"
+                </FormControl>
+                <FormControl id="event-datetime">
+                  <FormControl.Label>Date and time</FormControl.Label>
+                  <TextInput
+                    id="event-datetime"
+                    block
                     value={state.event.dateTime}
                     onChange={(e) => updateEvent({ dateTime: e.target.value })}
                   />
-                </label>
+                  <FormControl.Caption>Example: Apr 15 • 7:00 PM</FormControl.Caption>
+                </FormControl>
                 {isSocialPromo && (
-                  <label>
-                    <span className="label-row">
-                      Location
-                      <small>Can wrap to 2 lines in Social Promo</small>
-                    </span>
-                    <textarea
+                  <FormControl id="event-location">
+                    <FormControl.Label>Location</FormControl.Label>
+                    <Textarea
+                      id="event-location"
+                      block
                       rows={2}
                       value={state.event.location}
                       onChange={(e) => updateEvent({ location: e.target.value })}
                     />
-                  </label>
+                    <FormControl.Caption>Can wrap to 2 lines in Social Promo</FormControl.Caption>
+                  </FormControl>
                 )}
                 {(isSocialPromo || isSpeakerBanner) && (
                   <>
-                    <button
-                      type="button"
-                      className="resolution-toggle"
-                      onClick={() => updateEvent({ registrationEnabled: !state.event.registrationEnabled })}
-                    >
+                    <div className="resolution-toggle">
                       <div>
-                        <strong>Show registration footer bar</strong>
+                        <strong id="registration-bar-label">Show registration footer bar</strong>
                         <span>Adds a CTA + short URL strip at the bottom of the banner.</span>
                       </div>
-                      <span className={`switch ${state.event.registrationEnabled ? 'on' : ''}`} aria-hidden="true">
-                        <span />
-                      </span>
-                    </button>
+                      <ToggleSwitch
+                        aria-labelledby="registration-bar-label"
+                        checked={state.event.registrationEnabled}
+                        onChange={(checked) => updateEvent({ registrationEnabled: checked })}
+                      />
+                    </div>
 
                     {state.event.registrationEnabled && (
                       <>
-                        <label>
-                          Registration bar style
-                          <select
+                        <FormControl id="registration-style">
+                          <FormControl.Label>Registration bar style</FormControl.Label>
+                          <Select
+                            id="registration-style"
+                            block
                             value={state.event.registrationStyle}
                             onChange={(e) =>
                               updateEvent({ registrationStyle: e.target.value as EventDetails['registrationStyle'] })
                             }
                           >
-                            <option value="cta_url">CTA + URL</option>
-                            <option value="url_only">URL only</option>
-                          </select>
-                        </label>
+                            <Select.Option value="cta_url">CTA + URL</Select.Option>
+                            <Select.Option value="url_only">URL only</Select.Option>
+                          </Select>
+                        </FormControl>
 
-                        <label>
-                          CTA text
-                          <input
-                            type="text"
+                        <FormControl id="registration-text">
+                          <FormControl.Label>CTA text</FormControl.Label>
+                          <TextInput
+                            id="registration-text"
+                            block
                             value={state.event.registrationText}
                             onChange={(e) => updateEvent({ registrationText: e.target.value })}
                             placeholder="Register now"
                           />
-                        </label>
+                        </FormControl>
 
-                        <label>
-                          Registration URL *
-                          <input
-                            type="text"
+                        <FormControl id="registration-url" required>
+                          <FormControl.Label>Registration URL</FormControl.Label>
+                          <TextInput
+                            id="registration-url"
+                            block
+                            required
                             value={state.event.registrationUrl}
                             onChange={(e) => updateEvent({ registrationUrl: e.target.value })}
                             placeholder="gh.io/devdays"
                           />
-                        </label>
+                        </FormControl>
                       </>
                     )}
                   </>
