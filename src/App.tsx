@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Banner, Button, CounterLabel, FormControl, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
 import {
+  AlertIcon,
   ChevronDownIcon,
   CopilotIcon,
   DownloadIcon,
@@ -51,7 +52,7 @@ function App() {
   const [selectedSponsorId, setSelectedSponsorId] = useState('')
   const [selectedOrganizerId, setSelectedOrganizerId] = useState('')
   const [history, setHistory] = useState<BannerHistoryItem[]>(() => readBannerHistory())
-  const [speakerPreviews, setSpeakerPreviews] = useState<Array<{ id: string; name: string; previewDataUrl: string }>>([])
+  const [speakerPreviews, setSpeakerPreviews] = useState<Array<{ id: string; name: string; previewDataUrl: string; warnings: ValidationFinding[] }>>([])
   const [fontsReady, setFontsReady] = useState(() => typeof document === 'undefined' || !document.fonts)
   const [isExportingPack, setIsExportingPack] = useState(false)
   const [packProgress, setPackProgress] = useState<EventPackProgress | null>(null)
@@ -173,7 +174,7 @@ function App() {
         return
       }
 
-      const previews: Array<{ id: string; name: string; previewDataUrl: string }> = []
+      const previews: Array<{ id: string; name: string; previewDataUrl: string; warnings: ValidationFinding[] }> = []
 
       for (const speaker of namedSpeakers) {
         const previewCanvas = document.createElement('canvas')
@@ -181,11 +182,16 @@ function App() {
           ...state,
           speakers: [speaker],
         }
-        await renderBanner(previewCanvas, previewState, format, previewBackgroundFailed, 1)
+        const previewInfo = createRenderInfo()
+        await renderBanner(previewCanvas, previewState, format, previewBackgroundFailed, 1, previewInfo)
+        // Keep only the findings that concern this speaker's own text blocks so
+        // each square shows exactly what is wrong with it.
+        const warnings = validateState(previewState, format.id, previewInfo).filter((f) => f.field?.startsWith('speaker'))
         previews.push({
           id: speaker.id,
           name: speaker.name,
           previewDataUrl: previewCanvas.toDataURL('image/jpeg', 0.8),
+          warnings,
         })
       }
 
@@ -955,7 +961,7 @@ function App() {
             {showMultiSpeakerPreviewGrid && speakerPreviews.length > 0 && (
               <div className="speaker-preview-block">
                 <div className="history-header">
-                  <h3>Speaker banners</h3>
+                  <h3>{isSpeakerSquare ? 'Speaker profiles' : 'Speaker banners'}</h3>
                   <span>{speakerPreviews.length} real-time preview(s)</span>
                 </div>
                 <div className="speaker-preview-grid">
@@ -963,6 +969,17 @@ function App() {
                     <article key={item.id} className="speaker-preview-item">
                       <img src={item.previewDataUrl} alt={`Preview banner for ${item.name}`} />
                       <strong>{item.name}</strong>
+                      {item.warnings.length > 0 && (
+                        <small
+                          className="speaker-preview-warning"
+                          title={item.warnings.map((w) => w.message).join('\n')}
+                        >
+                          <AlertIcon size={12} />
+                          {item.warnings
+                            .map((w) => (w.code === 'text-truncated' ? `"${w.field}" truncated` : w.message))
+                            .join(', ')}
+                        </small>
+                      )}
                     </article>
                   ))}
                 </div>
