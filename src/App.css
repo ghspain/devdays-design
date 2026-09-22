@@ -20,11 +20,6 @@
   --app-brand-color: #ffffff;
   --app-panel-bg: #f6f8fa;
   --app-repo-bg: #ffffff;
-  --app-button-bg: #ffffff;
-  --app-primary-button-bg: #1f2328;
-  --app-primary-button-hover: #32383f;
-  --app-switch-track: #d1d9e0;
-  --app-switch-thumb: #ffffff;
   --app-resolution-card-bg: #ffffff;
   /* Canvas stays dark, as requested */
   --app-canvas-bg: #010409;
@@ -36,9 +31,6 @@
   --app-shadow-soft: rgba(31, 35, 40, 0.04);
   --app-shadow-medium: rgba(31, 35, 40, 0.08);
   --app-shadow-strong: rgba(31, 35, 40, 0.12);
-  --app-download-bg: #1f2328;
-  --app-download-hover: #32383f;
-  --app-download-border: transparent;
 }
 
 /* Canvas / stage keeps the original dark theme by re-declaring the
@@ -115,85 +107,6 @@
   gap: 0.35rem;
 }
 
-.icon-btn {
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  display: inline-grid;
-  place-items: center;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--vscode-text-muted);
-  cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
-}
-
-.icon-btn:hover:not(:disabled) {
-  transform: none;
-  color: var(--vscode-text);
-  background: var(--vscode-bg-elev-1);
-  border-color: var(--vscode-border);
-}
-
-.icon-btn.active {
-  color: var(--vscode-accent);
-  background: var(--app-copilot-tint);
-  border-color: transparent;
-}
-
-.topbar-history-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  height: 34px;
-  padding: 0 0.7rem;
-  border-radius: 6px;
-  border: 1px solid var(--vscode-border);
-  background: var(--app-button-bg);
-  color: var(--vscode-text);
-  font-size: 0.86rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
-}
-
-.topbar-history-btn svg {
-  display: block;
-  color: var(--vscode-text-muted);
-}
-
-.topbar-history-btn:hover:not(:disabled) {
-  transform: none;
-  background: var(--vscode-bg-elev-1);
-  border-color: var(--vscode-text-muted);
-}
-
-.topbar-history-btn.active {
-  color: var(--vscode-accent);
-  background: var(--app-copilot-tint);
-  border-color: var(--vscode-accent);
-}
-
-.topbar-history-btn.active svg {
-  color: var(--vscode-accent);
-}
-
-.icon-btn svg {
-  display: block;
-}
-
-.icon-btn.download {
-  color: #ffffff;
-  background: var(--app-download-bg);
-  border-color: var(--app-download-border);
-}
-
-.icon-btn.download:hover:not(:disabled) {
-  background: var(--app-download-hover);
-  border-color: var(--app-download-hover);
-}
-
 .editor-body {
   flex: 1;
   min-height: 0;
@@ -241,10 +154,6 @@
 .sidebar.collapsed .sidebar-header {
   justify-content: center;
   padding: 0;
-}
-
-.sidebar.collapsed .sidebar-header > .icon-btn:last-child {
-  display: none;
 }
 
 .sidebar-content {
@@ -421,6 +330,22 @@
   height: 1px;
   margin: 0.15rem 0.3rem;
   background: var(--vscode-border);
+}
+
+/* The stage toolbar floats over the dark canvas, so its IconButtons need
+   inverted colors (v38 Primer has no sx prop). */
+.stage-toolbar .stage-icon-btn {
+  color: #e6edf3;
+}
+
+.stage-toolbar .stage-icon-btn:hover:not(:disabled) {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.topbar-history-toggle.active {
+  color: var(--vscode-accent);
+  background-color: var(--app-copilot-tint);
 }
 
 .history-drawer {
@@ -615,44 +540,6 @@ input[type='file'] {
   padding: 0.4rem;
 }
 
-button:not([data-component]):not([class*='prc-']) {
-  border-radius: 6px;
-  border: 1px solid var(--vscode-border);
-  background: var(--app-button-bg);
-  color: var(--vscode-text);
-  padding: 0.55rem 0.85rem;
-  cursor: pointer;
-  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
-}
-
-button:not([data-component]):not([class*='prc-']):hover:not(:disabled) {
-  transform: none;
-  border-color: var(--vscode-text-muted);
-  background: var(--vscode-bg-elev-1);
-}
-
-button:not([data-component]):not([class*='prc-']):disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-button:not([data-component]).primary {
-  border-color: transparent;
-  background: var(--app-primary-button-bg);
-  color: #ffffff;
-  box-shadow: 0 1px 3px rgba(31, 35, 40, 0.2);
-}
-
-button:not([data-component]).primary:hover:not(:disabled) {
-  background: var(--app-primary-button-hover);
-}
-
-button:not([data-component]).secondary-button {
-  width: 100%;
-  justify-content: center;
-  margin: 0.2rem 0 0.65rem;
-}
-
 .catalog-picker {
   border: 1px solid var(--vscode-border);
   border-radius: 10px;
@@ -685,11 +572,6 @@ button:not([data-component]).secondary-button {
 .catalog-option input { width: auto; margin-top: 0.2rem; }
 .catalog-option span { display: grid; gap: 0.1rem; }
 .catalog-option small { color: var(--vscode-text-muted); line-height: 1.3; }
-
-button:not([data-component]).danger {
-  border-color: var(--vscode-danger);
-  color: var(--vscode-danger);
-}
 
 .section-count {
   margin-left: 0.4rem;
@@ -864,36 +746,6 @@ button:not([data-component]).danger {
 
 .resolution-toggle > div:not([class*="prc-"]) span {
   color: var(--vscode-text-muted);
-}
-
-.switch {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  box-sizing: border-box;
-  width: 42px;
-  height: 24px;
-  border-radius: 999px;
-  background: var(--app-switch-track);
-  padding: 3px;
-}
-
-.switch > span {
-  width: 18px;
-  height: 18px;
-  background: var(--app-switch-thumb);
-  border-radius: 50%;
-  display: block;
-  flex: none;
-  transition: transform 150ms ease;
-}
-
-.switch.on {
-  background: var(--vscode-accent);
-}
-
-.switch.on > span {
-  transform: translateX(18px);
 }
 
 .resolution-card {
@@ -1135,16 +987,6 @@ button:not([data-component]).danger {
     top: 0;
     z-index: 20;
     min-height: 52px;
-  }
-
-  .topbar-history-btn span {
-    display: none;
-  }
-
-  .topbar-history-btn {
-    width: 34px;
-    padding: 0;
-    justify-content: center;
   }
 
   .editor-body {
