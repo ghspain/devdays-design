@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { Banner, Button, CounterLabel, FormControl, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
+import { Banner, Button, Checkbox, CounterLabel, FormControl, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
 import {
   ChevronDownIcon,
   CopilotIcon,
@@ -641,29 +641,31 @@ function App() {
             <div className="section-block">
               <fieldset className="catalog-picker">
                 <legend>Speakers from Planning</legend>
-                <label>
-                  Event
-                  <select value={catalogEventFilter} onChange={(e) => setCatalogEventFilter(e.target.value)}>
-                    <option value="">All events</option>
-                    {catalogEventOptions.map((event) => <option key={event.id} value={event.id}>{event.label}</option>)}
-                  </select>
-                </label>
+                <FormControl id="catalog-event-filter">
+                  <FormControl.Label>Event</FormControl.Label>
+                  <Select value={catalogEventFilter} onChange={(e) => setCatalogEventFilter(e.target.value)}>
+                    <Select.Option value="">All events</Select.Option>
+                    {catalogEventOptions.map((event) => <Select.Option key={event.id} value={event.id}>{event.label}</Select.Option>)}
+                  </Select>
+                </FormControl>
                 <div className="catalog-options">
                   {visibleCatalogSpeakers.map((speaker) => (
                     <label key={speaker.speakerId} className="catalog-option">
-                      <input type="checkbox" checked={selectedSpeakerIds.includes(speaker.speakerId)} onChange={(event) => setSelectedSpeakerIds((current) => event.target.checked ? [...current, speaker.speakerId].slice(-MAX_SPEAKERS) : current.filter((id) => id !== speaker.speakerId))} />
+                      <Checkbox
+                        checked={selectedSpeakerIds.includes(speaker.speakerId)}
+                        onChange={(event) => setSelectedSpeakerIds((current) => event.target.checked ? [...current, speaker.speakerId].slice(-MAX_SPEAKERS) : current.filter((id) => id !== speaker.speakerId))}
+                      />
                       <span><strong>{speaker.name}</strong><small>{speaker.sessionTitle || 'Session title pending'} · {speaker.eventDate}</small></span>
                     </label>
                   ))}
                 </div>
-                <button
+                <Button
                   type="button"
-                  className="secondary-button"
                   disabled={!selectedSpeakerIds.length || state.speakers.length >= MAX_SPEAKERS}
                   onClick={applyCatalogSpeakers}
                 >
                   {state.speakers.length >= MAX_SPEAKERS ? `Speaker limit reached (${MAX_SPEAKERS})` : `Add selected speakers (${selectedSpeakerIds.length})`}
-                </button>
+                </Button>
               </fieldset>
               {!state.speakers.length && (
                 <p className="section-description">No speakers yet. Add them from the Planning catalogue or create one manually.</p>
@@ -681,44 +683,48 @@ function App() {
                       )}
                       Speaker {index + 1}
                     </span>
-                    <button type="button" className="danger" onClick={() => removeSpeaker(speaker.id)}>Remove</button>
+                    <Button type="button" size="small" variant="danger" onClick={() => removeSpeaker(speaker.id)}>Remove</Button>
                   </div>
                   <div className="form-grid single">
-                    <label>
-                      Name *
-                      <input
-                        type="text"
+                    <FormControl id={`speaker-name-${speaker.id}`}>
+                      <FormControl.Label required>Name</FormControl.Label>
+                      <TextInput
+                        id={`speaker-name-${speaker.id}`}
+                        block
+                        required
                         value={speaker.name}
                         onChange={(e) => updateSpeaker(speaker.id, { name: e.target.value })}
                       />
-                    </label>
-                    <label>
-                      Role
-                      <input
-                        type="text"
+                    </FormControl>
+                    <FormControl id={`speaker-role-${speaker.id}`}>
+                      <FormControl.Label>Role</FormControl.Label>
+                      <TextInput
+                        id={`speaker-role-${speaker.id}`}
+                        block
                         value={speaker.role ?? ''}
                         onChange={(e) => updateSpeaker(speaker.id, { role: e.target.value })}
                       />
-                    </label>
-                    <label>
-                      Photo
+                    </FormControl>
+                    <FormControl id={`speaker-photo-${speaker.id}`}>
+                      <FormControl.Label>Photo</FormControl.Label>
                       <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => {
-                          void (async () => {
-                            try {
-                              const file = event.target.files?.[0]
-                              if (!file) return
-                              const dataUrl = await handleFile(file)
-                              updateSpeaker(speaker.id, { photoDataUrl: dataUrl })
+                          id={`speaker-photo-${speaker.id}`}
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => {
+                            void (async () => {
+                              try {
+                                const file = event.target.files?.[0]
+                                if (!file) return
+                                const dataUrl = await handleFile(file)
+                                updateSpeaker(speaker.id, { photoDataUrl: dataUrl })
                             } catch (fileError) {
                               setError(fileError instanceof Error ? fileError.message : 'Invalid file.')
                             }
                           })()
                         }}
                       />
-                    </label>
+                    </FormControl>
                   </div>
                   {!speaker.photoDataUrl && (
                     <small className="speaker-card-hint">No photo yet: the banner will render the speaker initials.</small>
@@ -726,14 +732,13 @@ function App() {
                 </div>
                 )
               })}
-              <button
+              <Button
                 type="button"
-                className="secondary-button"
                 disabled={state.speakers.length >= MAX_SPEAKERS}
                 onClick={addManualSpeaker}
               >
                 Add speaker
-              </button>
+              </Button>
             </div>
           </details>
           )}
