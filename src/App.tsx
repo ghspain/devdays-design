@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { Banner, Button, Checkbox, CounterLabel, FormControl, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
+import { Banner, Button, Checkbox, CounterLabel, FormControl, IconButton, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
 import {
   ChevronDownIcon,
   CopilotIcon,
@@ -425,43 +425,39 @@ function App() {
         </div>
 
         <div className="topbar-actions">
-          <a
-            className="icon-btn"
+          <IconButton
+            as="a"
             href={REPOSITORY_URL}
             target="_blank"
             rel="noreferrer"
             title="View on GitHub"
             aria-label="View the project repository on GitHub"
-          >
-            <MarkGithubIcon size={18} />
-          </a>
-          <button
-            type="button"
-            className={`topbar-history-btn ${showHistory ? 'active' : ''}`}
+            icon={MarkGithubIcon}
+            size="medium"
+          />
+          <IconButton
+            icon={HistoryIcon}
+            size="medium"
             title="Previous banners"
             aria-label="Toggle previous banners"
             aria-pressed={showHistory}
             onClick={() => setShowHistory((value) => !value)}
-          >
-            <HistoryIcon size={16} />
-            <span>Previous banners</span>
-          </button>
+            className={showHistory ? 'topbar-history-toggle active' : 'topbar-history-toggle'}
+          />
         </div>
       </header>
 
       <div className="editor-body">
         <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`} aria-label="Editor controls">
           <div className="sidebar-header">
-            <button
-              type="button"
-              className="icon-btn"
+            <IconButton
+              icon={sidebarCollapsed ? SidebarExpandIcon : SidebarCollapseIcon}
+              size="medium"
               title={sidebarCollapsed ? 'Expand panel' : 'Collapse panel'}
               aria-label={sidebarCollapsed ? 'Expand panel' : 'Collapse panel'}
               aria-expanded={!sidebarCollapsed}
               onClick={() => setSidebarCollapsed((value) => !value)}
-            >
-              {sidebarCollapsed ? <SidebarExpandIcon size={18} /> : <SidebarCollapseIcon size={18} />}
-            </button>
+            />
             <span className="sidebar-title">Design</span>
           </div>
 
@@ -750,17 +746,24 @@ function App() {
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
-              <label>
-                Select organizer
-                <select value={selectedOrganizerId} onChange={(e) => setSelectedOrganizerId(e.target.value)}>
-                  <option value="">Choose an organizer…</option>
-                  {catalogOrganizers.map((organizer) => <option key={organizer.id} value={organizer.id}>{organizer.name}</option>)}
-                </select>
-              </label>
-              <button type="button" className="secondary-button" disabled={!selectedOrganizerId} onClick={applyCatalogOrganizer}>Use selected organizer</button>
-              <label>
-                Or upload a logo
-                <input type="file" accept="image/*" onChange={(event) => { void (async () => {
+              <FormControl id="organizer-select">
+                <FormControl.Label>Select organizer</FormControl.Label>
+                <Select
+                  id="organizer-select"
+                  block
+                  value={selectedOrganizerId}
+                  onChange={(e) => setSelectedOrganizerId(e.target.value)}
+                >
+                  <Select.Option value="">Choose an organizer…</Select.Option>
+                  {catalogOrganizers.map((organizer) => (
+                    <Select.Option key={organizer.id} value={organizer.id}>{organizer.name}</Select.Option>
+                  ))}
+                </Select>
+              </FormControl>
+              <Button disabled={!selectedOrganizerId} onClick={applyCatalogOrganizer}>Use selected organizer</Button>
+              <FormControl id="organizer-logo-upload">
+                <FormControl.Label>Or upload a logo</FormControl.Label>
+                <input type="file" id="organizer-logo-upload" accept="image/*" onChange={(event) => { void (async () => {
                   try {
                     const file = event.target.files?.[0]
                     if (!file) return
@@ -769,7 +772,7 @@ function App() {
                     setError(fileError instanceof Error ? fileError.message : 'Invalid file.')
                   }
                 })() }} />
-              </label>
+              </FormControl>
             </div>
           </details>
           )}
@@ -781,38 +784,43 @@ function App() {
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
-              <button
-                type="button"
-                className="resolution-toggle"
-                onClick={() => updateEvent({ includeSupportedBy: !state.event.includeSupportedBy })}
-              >
+              <div className="resolution-toggle">
                 <div>
-                  <strong>Do you want to include partner logos?</strong>
+                  <strong id="partner-logos-label">Do you want to include partner logos?</strong>
                   <span>Turn on to show the Supported by area when logos are uploaded.</span>
                 </div>
-                <span className={`switch ${state.event.includeSupportedBy ? 'on' : ''}`} aria-hidden="true">
-                  <span />
-                </span>
-              </button>
+                <ToggleSwitch
+                  aria-labelledby="partner-logos-label"
+                  checked={state.event.includeSupportedBy}
+                  onChange={(checked) => updateEvent({ includeSupportedBy: checked })}
+                />
+              </div>
               <p className="section-description">
                 Add up to 3 partner logos. They appear in the footer of the banner.
               </p>
-              <label>
-                Add from sponsor or collaborator catalogue
-                <select value={selectedSponsorId} onChange={(e) => setSelectedSponsorId(e.target.value)} disabled={state.partners.length >= 3}>
-                  <option value="">Choose a sponsor…</option>
+              <FormControl id="sponsor-select">
+                <FormControl.Label>Add from sponsor or collaborator catalogue</FormControl.Label>
+                <Select
+                  id="sponsor-select"
+                  block
+                  value={selectedSponsorId}
+                  onChange={(e) => setSelectedSponsorId(e.target.value)}
+                  disabled={state.partners.length >= 3}
+                >
+                  <Select.Option value="">Choose a sponsor…</Select.Option>
                   {catalogSponsors.map((sponsor) => (
-                    <option key={sponsor.id} value={sponsor.id}>{sponsor.name}</option>
+                    <Select.Option key={sponsor.id} value={sponsor.id}>{sponsor.name}</Select.Option>
                   ))}
-                </select>
-              </label>
-              <button type="button" className="secondary-button" disabled={!selectedSponsorId || state.partners.length >= 3} onClick={addCatalogSponsor}>
+                </Select>
+              </FormControl>
+              <Button disabled={!selectedSponsorId || state.partners.length >= 3} onClick={addCatalogSponsor}>
                 Add selected sponsor
-              </button>
-              <label>
-                Add logo
+              </Button>
+              <FormControl id="sponsor-logo-upload">
+                <FormControl.Label>Add logo</FormControl.Label>
                 <input
                   type="file"
+                  id="sponsor-logo-upload"
                   accept="image/*"
                   disabled={state.partners.length >= 3}
                   onChange={(event) => {
@@ -836,7 +844,7 @@ function App() {
                     })()
                   }}
                 />
-              </label>
+              </FormControl>
               <p className="section-description">
                 {state.partners.length >= 3
                   ? 'Partner logo limit reached (3/3). Remove one to upload another.'
@@ -847,9 +855,9 @@ function App() {
                 {state.partners.map((partner) => (
                   <div key={partner.id} className="logo-tile">
                     <img src={partner.imageDataUrl} alt="Partner logo" />
-                    <button
-                      type="button"
-                      className="danger"
+                    <Button
+                      variant="danger"
+                      size="small"
                       onClick={() =>
                         setState((previous) => ({
                           ...previous,
@@ -858,7 +866,7 @@ function App() {
                       }
                     >
                       Remove
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -976,27 +984,41 @@ function App() {
           </div>
 
           <div className="stage-toolbar" role="toolbar" aria-label="Canvas tools">
-            <button type="button" className="icon-btn" title="Zoom in" aria-label="Zoom in" onClick={zoomIn}>
-              <ZoomInIcon size={18} />
-            </button>
-            <button type="button" className="icon-btn" title="Zoom out" aria-label="Zoom out" onClick={zoomOut}>
-              <ZoomOutIcon size={18} />
-            </button>
-            <button type="button" className="icon-btn" title="Fit to screen" aria-label="Fit to screen" onClick={fitZoom}>
-              <ScreenFullIcon size={18} />
-            </button>
+            <IconButton
+              icon={ZoomInIcon}
+              size="small"
+              title="Zoom in"
+              aria-label="Zoom in"
+              onClick={zoomIn}
+              className="stage-icon-btn"
+            />
+            <IconButton
+              icon={ZoomOutIcon}
+              size="small"
+              title="Zoom out"
+              aria-label="Zoom out"
+              onClick={zoomOut}
+              className="stage-icon-btn"
+            />
+            <IconButton
+              icon={ScreenFullIcon}
+              size="small"
+              title="Fit to screen"
+              aria-label="Fit to screen"
+              onClick={fitZoom}
+              className="stage-icon-btn"
+            />
             <span className="toolbar-divider" aria-hidden="true" />
-            <button
-              type="button"
-              className="icon-btn download"
+            <IconButton
+              icon={DownloadIcon}
+              size="small"
+              variant="primary"
               title="Download"
               aria-label="Download"
               onClick={() => {
                 void exportBanner()
               }}
-            >
-              <DownloadIcon size={18} />
-            </button>
+            />
           </div>
         </section>
 
@@ -1005,18 +1027,16 @@ function App() {
             <div className="history-header">
               <h3>Previous banners</h3>
               <div className="history-header-actions">
-                <button type="button" onClick={clearHistory} disabled={history.length === 0}>
+                <Button size="small" onClick={clearHistory} disabled={history.length === 0}>
                   Clear all
-                </button>
-                <button
-                  type="button"
-                  className="icon-btn"
+                </Button>
+                <IconButton
+                  icon={XIcon}
+                  size="small"
                   title="Close"
                   aria-label="Close previous banners"
                   onClick={() => setShowHistory(false)}
-                >
-                  <XIcon size={16} />
-                </button>
+                />
               </div>
             </div>
             {history.length === 0 ? (
@@ -1032,12 +1052,12 @@ function App() {
                       <span>{item.state.event.city || 'City'} • {item.state.event.dateTime || 'Date/Time'}</span>
                     </div>
                     <div className="history-actions">
-                      <button type="button" onClick={() => restoreBanner(item)}>
+                      <Button size="small" onClick={() => restoreBanner(item)}>
                         Open
-                      </button>
-                      <button type="button" className="danger" onClick={() => removeHistoryItem(item.id)}>
+                      </Button>
+                      <Button variant="danger" size="small" onClick={() => removeHistoryItem(item.id)}>
                         Delete
-                      </button>
+                      </Button>
                     </div>
                   </article>
                 ))}
