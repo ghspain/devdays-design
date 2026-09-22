@@ -987,24 +987,6 @@ button:not([data-component]).danger {
   line-height: 1.2;
 }
 
-.speaker-preview-warning {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.35rem;
-  font-size: 0.75rem;
-  line-height: 1.25;
-  color: var(--app-warning);
-  background: rgba(210, 153, 34, 0.12);
-  border: 1px solid rgba(210, 153, 34, 0.4);
-  border-radius: 6px;
-  padding: 0.3rem 0.4rem;
-}
-
-.speaker-preview-warning svg {
-  flex: none;
-  margin-top: 1px;
-}
-
 .history-block {
   margin-top: 1rem;
   display: grid;
