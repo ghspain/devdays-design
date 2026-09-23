@@ -70,31 +70,31 @@ function App() {
     // Map validation findings to actionable field/section links
     const FINDING_TARGET_MAP: Record<string, { elementId: string; fieldId?: string }> = {
           'missing-city': { elementId: 'section-event', fieldId: 'event-city' },
-          'missing-venue': { elementId: 'section-event', fieldId: 'event-venue' },
-          'missing-date': { elementId: 'section-event', fieldId: 'event-date' },
-          'missing-hashtag': { elementId: 'section-event', fieldId: 'event-hashtag' },
-          'missing-url': { elementId: 'section-event', fieldId: 'event-url' },
-          'missing-description': { elementId: 'section-event', fieldId: 'event-description' },
+              'missing-venue': { elementId: 'section-event', fieldId: 'event-location' },
+              'missing-date': { elementId: 'section-event', fieldId: 'event-datetime' },
+              'missing-hashtag': { elementId: 'section-event' },
+              'missing-url': { elementId: 'section-event', fieldId: 'registration-url' },
+              'missing-description': { elementId: 'section-event' },
           'speakers-dropped': { elementId: 'section-speakers' },
           'logos-dropped': { elementId: 'section-partners' },
           'missing-partner': { elementId: 'section-partners' },
           'missing-sponsor': { elementId: 'section-partners' },
-          'missing-organizer': { elementId: 'section-organizer', fieldId: 'organizer-name' },
-          'missing-organizer-url': { elementId: 'section-organizer', fieldId: 'organizer-url' },
+              'missing-organizer': { elementId: 'section-organizer', fieldId: 'organizer-select' },
+              'missing-organizer-url': { elementId: 'section-organizer', fieldId: 'registration-url' },
         }
 
         /** Map truncated field names (from renderBanner.ts) to their editor field IDs. */
-        const TRUNCATED_FIELD_MAP: Record<string, { sectionId: string; fieldId: string }> = {
+            const TRUNCATED_FIELD_MAP: Record<string, { sectionId: string; fieldId?: string }> = {
           'city': { sectionId: 'section-event', fieldId: 'event-city' },
           'edition': { sectionId: 'section-event', fieldId: 'event-edition' },
-          'date & time': { sectionId: 'section-event', fieldId: 'event-date' },
-          'speaker name': { sectionId: 'section-speakers', fieldId: 'speaker-name' },
-          'speaker role': { sectionId: 'section-speakers', fieldId: 'speaker-role' },
-          'registration label': { sectionId: 'section-event', fieldId: 'event-cta' },
-          'registration URL': { sectionId: 'section-event', fieldId: 'event-url' },
+              'date & time': { sectionId: 'section-event', fieldId: 'event-datetime' },
+              'speaker name': { sectionId: 'section-speakers' },
+              'speaker role': { sectionId: 'section-speakers' },
+              'registration label': { sectionId: 'section-event', fieldId: 'registration-text' },
+              'registration URL': { sectionId: 'section-event', fieldId: 'registration-url' },
           'event title': { sectionId: 'section-event', fieldId: 'event-title' },
-          'event details': { sectionId: 'section-event', fieldId: 'event-description' },
-          'location': { sectionId: 'section-event', fieldId: 'event-venue' },
+              'event details': { sectionId: 'section-event' },
+              'location': { sectionId: 'section-event', fieldId: 'event-location' },
         }
 
         const navigateToField = (finding: ValidationFinding) => {
