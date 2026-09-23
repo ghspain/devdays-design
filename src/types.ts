@@ -7,6 +7,34 @@ export type BannerFormat =
 export type ExportType = 'png' | 'jpg'
 export type ExportScale = 1 | 2
 
+/** Identifies a bundle of colors and fixed brand text the renderer draws with.
+ *  Not to be confused with `lib/catalog.ts`'s `EventPreset` (a saved event-data
+ *  snapshot from the Planning catalogue) - this is the *visual* identity. */
+export type EventThemeId = 'devdays'
+
+export interface EventTheme {
+  id: EventThemeId
+  /** Shown in the theme picker. */
+  name: string
+  colors: {
+    primary: string
+    secondary: string
+    accent: string
+    background: string
+  }
+  /** Two-line fixed brand title drawn on the Speaker Banner / Social Promo formats. */
+  brandTitleLine1: string
+  brandTitleLine2: string
+  /** Fallback event title used when the organizer hasn't entered one yet. */
+  fixedEventTitle: string
+  /** Fixed green label shared by the Luma cover and the Speaker Banner. */
+  fixedGreenLabel: string
+  lumaCityColor: string
+  /** Text colors used on the light (lower) half of the speaker/social backgrounds. */
+  lightAreaTitleColor: string
+  lightAreaMutedColor: string
+}
+
 export interface Speaker {
   id: string
   /** Participation id from the Planning catalogue, used to dedupe additions. */
@@ -41,6 +69,8 @@ export interface EventDetails {
 
 export interface BannerState {
   format: BannerFormat
+  /** Which EventTheme supplied the current colors/labels. */
+  theme: EventThemeId
   colors: {
     primary: string
     secondary: string
