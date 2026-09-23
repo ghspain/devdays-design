@@ -42,6 +42,7 @@ import { createRenderInfo, validateState, type ValidationFinding } from './lib/v
 import { checkRenderedCanvas } from './lib/pixelChecks'
 import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
 import { buildEventPack, type EventPackProgress } from './lib/exportPack'
+import { readDraft, saveDraft, clearDraft } from './lib/draft'
 
 function App() {
   const [backgroundFailed, setBackgroundFailed] = useState(false)
@@ -65,9 +66,58 @@ function App() {
     validationIssueCount > 0
       ? `${validationErrorCount} error${validationErrorCount === 1 ? '' : 's'}, ${validationIssueCount - validationErrorCount} warning${validationIssueCount - validationErrorCount === 1 ? '' : 's'}`
       : ''
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+    // Map validation findings to actionable field/section links
+    const FINDING_TARGET_MAP: Record<string, { elementId: string; fieldId?: string }> = {
+      'text-truncated': { elementId: 'section-event', fieldId: 'event-city' },
+      'missing-city': { elementId: 'section-event', fieldId: 'event-city' },
+      'missing-venue': { elementId: 'section-event', fieldId: 'event-venue' },
+      'missing-date': { elementId: 'section-event', fieldId: 'event-date' },
+      'missing-hashtag': { elementId: 'section-event', fieldId: 'event-hashtag' },
+      'missing-url': { elementId: 'section-event', fieldId: 'event-url' },
+      'missing-description': { elementId: 'section-event', fieldId: 'event-description' },
+      'speakers-dropped': { elementId: 'section-speakers' },
+      'logos-dropped': { elementId: 'section-partners' },
+      'missing-partner': { elementId: 'section-partners' },
+      'missing-sponsor': { elementId: 'section-partners' },
+      'missing-organizer': { elementId: 'section-organizer', fieldId: 'organizer-name' },
+      'missing-organizer-url': { elementId: 'section-organizer', fieldId: 'organizer-url' },
+    }
+
+    const navigateToField = (finding: ValidationFinding) => {
+      const target = FINDING_TARGET_MAP[finding.code]
+      if (!target) return
+
+      // Scroll to the section
+      const sectionEl = document.getElementById(target.elementId) as HTMLDetailsElement | null
+      if (sectionEl) {
+        sectionEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        // Open the section if it's collapsed
+        if (sectionEl.tagName === 'DETAILS' && !sectionEl.open) {
+          sectionEl.open = true
+        }
+      }
+
+      // Focus the specific field if available
+      if (target.fieldId) {
+        const fieldEl = document.getElementById(target.fieldId)
+        if (fieldEl) {
+          setTimeout(() => {
+            fieldEl.focus()
+            fieldEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            // Briefly highlight the field
+            fieldEl.classList.add('validation-highlight')
+            setTimeout(() => fieldEl.classList.remove('validation-highlight'), 2000)
+          }, 300)
+        }
+      }
+    }
+
+    const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const [state, setState] = useState<BannerState>(() => buildDefaultState())
+  const [draftStatus, setDraftStatus] = useState<'saving' | 'saved' | 'error' | null>(null)
+  const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const format = useMemo(
     () => formatOptions.find((item) => item.id === state.format) ?? formatOptions[0],
@@ -118,6 +168,41 @@ function App() {
       cancelled = true
     }
   }, [])
+
+    // Load the latest draft on mount. If a draft exists, restore it; otherwise
+    // keep the default state so the user sees the pre-filled template.
+    useEffect(() => {
+      let cancelled = false
+      readDraft()
+        .then((draft) => {
+          if (!cancelled && draft) {
+            setState(normalizeState(draft))
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setDraftStatus('error')
+        })
+
+      return () => {
+        cancelled = true
+      }
+    }, [])
+
+    // Debounced auto-save draft on state changes.
+    useEffect(() => {
+      if (draftSaveRef.current) clearTimeout(draftSaveRef.current)
+      setDraftStatus('saving')
+
+      draftSaveRef.current = setTimeout(() => {
+        saveDraft(state)
+          .then(() => setDraftStatus('saved'))
+          .catch(() => setDraftStatus('error'))
+      }, 500)
+
+      return () => {
+        if (draftSaveRef.current) clearTimeout(draftSaveRef.current)
+      }
+    }, [state])
 
   useEffect(() => {
     let cancelled = false
@@ -303,10 +388,13 @@ function App() {
     setState((previous) => ({ ...previous, theme: theme.id, colors: theme.colors }))
   }
 
-  const resetAll = () => {
-    setState(buildDefaultState())
-    setZoom(1)
-  }
+  const [resetConfirm, setResetConfirm] = useState(false)
+
+    const resetAll = () => {
+      setState(buildDefaultState())
+      setZoom(1)
+      clearDraft().catch(() => undefined)
+    }
 
   const zoomIn = () => setZoom((value) => Math.min(2, Math.round((value + 0.1) * 10) / 10))
   const zoomOut = () => setZoom((value) => Math.max(0.3, Math.round((value - 0.1) * 10) / 10))
@@ -492,24 +580,26 @@ function App() {
                     .map((option) => (
                       <Select.Option key={option.id} value={option.id}>
                         {option.name} — {option.width}x{option.height}
-                      </Select.Option>
-                    ))}
-                </Select.OptGroup>
-                <Select.OptGroup label="Speaker formats">
-                  {speakerFormatIds
-                    .map((id) => formatOptions.find((option) => option.id === id))
-                    .filter((option): option is FormatOption => Boolean(option))
-                    .map((option) => (
-                      <Select.Option key={option.id} value={option.id}>
-                        {option.name} — {option.width}x{option.height}
-                      </Select.Option>
-                    ))}
-                </Select.OptGroup>
-              </Select>
-            </FormControl>
+                                    {option.description ? ` · ${option.description}` : ''}
+                                  </Select.Option>
+                                ))}
+                            </Select.OptGroup>
+                            <Select.OptGroup label="Speaker formats">
+                              {speakerFormatIds
+                                .map((id) => formatOptions.find((option) => option.id === id))
+                                .filter((option): option is FormatOption => Boolean(option))
+                                .map((option) => (
+                                  <Select.Option key={option.id} value={option.id}>
+                                    {option.name} — {option.width}x{option.height}
+                                    {option.description ? ` · ${option.description}` : ''}
+                                  </Select.Option>
+                                ))}
+                            </Select.OptGroup>
+                          </Select>
+                        </FormControl>
           </div>
 
-          <details className="side-section" open>
+          <details className="side-section" open id="section-event">
             <summary>
               <span>Event</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -656,7 +746,7 @@ function App() {
           </details>
 
           {!isMinimalCover && !isSocialPromo && (
-          <details className="side-section" open>
+          <details className="side-section" open id="section-speakers">
             <summary>
               <span>Speakers <small className="section-count">{state.speakers.length} / {MAX_SPEAKERS}</small></span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -767,7 +857,7 @@ function App() {
           )}
 
           {(isSpeakerBanner || isSocialPromo) && (
-          <details className="side-section" open>
+          <details className="side-section" open id="section-organizer">
             <summary>
               <span>Organizer</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -805,7 +895,7 @@ function App() {
           )}
 
           {(isLumaCover || isSocialPromo || isSpeakerBanner || isSpeakerSquare) && (
-          <details className="side-section" open>
+          <details className="side-section" open id="section-partners">
             <summary>
               <span>Sponsors and collaborators</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -910,22 +1000,61 @@ function App() {
                 <Banner variant="success" layout="compact" flush title="All checks passed" />
               </div>
             ) : (
-              validationFindings.map((finding) => (
-                <Banner
-                  key={`${finding.code}:${finding.field ?? ''}:${finding.message}`}
-                  variant={finding.severity === 'error' ? 'critical' : 'warning'}
-                  layout="compact"
-                  flush
-                  title={`${finding.severity === 'error' ? 'Error' : 'Warning'}: ${finding.message}`}
-                />
-              ))
-            )}
-          </div>
+                        validationFindings.map((finding) => {
+                          const target = FINDING_TARGET_MAP[finding.code]
+                          const hasAction = !!target
+                          const findingId = `finding-${finding.code}-${Math.random().toString(36).slice(2, 8)}`
+
+                          return (
+                            <div key={`${finding.code}:${finding.field ?? ''}:${finding.message}`} className="validation-finding">
+                              <Banner
+                                id={findingId}
+                                variant={finding.severity === 'error' ? 'critical' : 'warning'}
+                                layout="compact"
+                                flush
+                                title={`${finding.severity === 'error' ? 'Error' : 'Warning'}: ${finding.message}`}
+                                aria-describedby={hasAction ? findingId : undefined}
+                              />
+                              {hasAction && target && (
+                                <button
+                                  type="button"
+                                  className="validation-go-to-field"
+                                  onClick={() => navigateToField(finding)}
+                                  aria-label={`Go to ${target.fieldId ? 'field' : 'section'}`}
+                                >
+                                  Go to field
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
 
           <div className="sidebar-footer">
-            <Button variant="invisible" onClick={resetAll} title="Reset to defaults">
+                      <Button variant="invisible" onClick={() => setResetConfirm(true)} title="Reset to defaults">
               Reset
             </Button>
+                      {draftStatus && (
+                        <span className="draft-status" aria-live="polite">
+                          {draftStatus === 'saving' && '⏳ Saving…'}
+                          {draftStatus === 'saved' && '✓ Saved'}
+                          {draftStatus === 'error' && '✗ Draft error'}
+                        </span>
+                      )}
+                      {resetConfirm && (
+                        <div className="reset-confirm-dialog">
+                          <p>Reset all fields to defaults? This will clear the current draft.</p>
+                          <div className="reset-confirm-actions">
+                            <Button variant="invisible" onClick={() => setResetConfirm(false)}>
+                              Cancel
+                            </Button>
+                            <Button variant="danger" onClick={resetAll}>
+                              Confirm Reset
+                            </Button>
+                          </div>
+                        </div>
+                      )}
             <div className="pack-download-block">
               <Button
                 className="pack-download"
@@ -954,30 +1083,43 @@ function App() {
                   {packProgress.total > 0 ? ` ${packProgress.completed}/${packProgress.total}` : ''}
                 </small>
               )}
-            </div>
-            <div className="split-download">
-              <Button
-                className="download-main"
-                variant="primary"
-                leadingVisual={DownloadIcon}
-                trailingVisual={
-                  validationIssueCount > 0 ? (
-                    <CounterLabel
-                      className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
-                      aria-hidden="true"
-                    >
-                      {validationIssueCount}
-                    </CounterLabel>
-                  ) : null
-                }
-                onClick={() => {
-                  void exportBanner()
-                }}
-                aria-label={exportFindingsLabel ? `Download. Findings: ${exportFindingsLabel}` : undefined}
-              >
-                Download
-              </Button>
-            </div>
+                          <div className="download-summary">
+                            {isSpeakerPerBannerFormat ? (
+                              <>
+                                <span>
+                                  {namedSpeakers.length} speaker banner(s) · {format.width}×{format.height} each
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span>Single PNG · {format.width}×{format.height}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="split-download">
+                          <Button
+                            className="download-main"
+                            variant="primary"
+                            leadingVisual={DownloadIcon}
+                            trailingVisual={
+                              validationIssueCount > 0 ? (
+                                <CounterLabel
+                                  className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
+                                  aria-hidden="true"
+                                >
+                                  {validationIssueCount}
+                                </CounterLabel>
+                              ) : null
+                            }
+                            onClick={() => {
+                              void exportBanner()
+                            }}
+                            aria-label={exportFindingsLabel ? `Download PNG. Findings: ${exportFindingsLabel}` : undefined}
+                          >
+                            Download PNG
+                          </Button>
+                        </div>
           </div>
         </aside>
 
@@ -1040,8 +1182,8 @@ function App() {
               icon={DownloadIcon}
               size="small"
               variant="primary"
-              title="Download"
-              aria-label="Download"
+                          title="Download PNG"
+                          aria-label={`Download PNG · ${format.width}×${format.height}`}
               onClick={() => {
                 void exportBanner()
               }}

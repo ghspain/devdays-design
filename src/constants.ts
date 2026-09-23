@@ -7,6 +7,7 @@ export const formatOptions: FormatOption[] = [
     width: 1080,
     height: 1080,
     channels: ['Instagram', 'LinkedIn', 'X', 'BlueSky'],
+    description: 'Square image for speaker profiles',
   },
   {
     id: 'speaker_banner',
@@ -14,6 +15,7 @@ export const formatOptions: FormatOption[] = [
     width: 1080,
     height: 1350,
     channels: ['Instagram', 'LinkedIn', 'X', 'Facebook', 'BlueSky', 'Threads'],
+    description: 'Tall banner for speaker announcements',
   },
   {
     id: 'social_promo',
@@ -21,6 +23,7 @@ export const formatOptions: FormatOption[] = [
     width: 1080,
     height: 1350,
     channels: ['Instagram', 'LinkedIn', 'X', 'Facebook', 'BlueSky', 'Threads'],
+    description: 'Tall promo graphic for event posts',
   },
   {
     id: 'luma_cover',
@@ -28,6 +31,7 @@ export const formatOptions: FormatOption[] = [
     width: 1000,
     height: 1000,
     channels: ['Luma'],
+    description: 'Square cover image for Luma events',
   },
 ]
 
