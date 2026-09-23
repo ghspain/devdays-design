@@ -44,6 +44,14 @@ import { readDraft, saveDraft, clearDraft } from './lib/draft'
 
 const EDITOR_GUIDE_STORAGE_KEY = 'devdays-editor-guide-dismissed-v1'
 
+function shouldShowEditorGuide() {
+  try {
+    return window.localStorage.getItem(EDITOR_GUIDE_STORAGE_KEY) !== 'dismissed'
+  } catch {
+    return true
+  }
+}
+
 function App() {
   const [backgroundFailed, setBackgroundFailed] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -51,9 +59,7 @@ function App() {
   const [isMobileViewport, setIsMobileViewport] = useState(
     () => window.matchMedia('(max-width: 760px)').matches,
   )
-  const [showEditorGuide, setShowEditorGuide] = useState(
-    () => window.localStorage.getItem(EDITOR_GUIDE_STORAGE_KEY) !== 'dismissed',
-  )
+  const [showEditorGuide, setShowEditorGuide] = useState(shouldShowEditorGuide)
   const mobileFieldsScrollY = useRef(0)
   const [showHistory, setShowHistory] = useState(false)
   const [zoom, setZoom] = useState(1)

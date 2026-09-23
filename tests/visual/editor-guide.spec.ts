@@ -49,3 +49,24 @@ test('the quick guide fits on a narrow viewport without horizontal overflow', as
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth))
     .toBeLessThanOrEqual(1)
 })
+
+test('the editor stays usable when local storage is blocked', async ({ browser }) => {
+  const context = await browser.newContext()
+  await context.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('Storage access is blocked', 'SecurityError')
+      },
+    })
+  })
+  const page = await context.newPage()
+
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'A quick guide' })).toBeVisible()
+  await page.getByRole('button', { name: 'Dismiss' }).click()
+  await expect(page.getByText(/Could not save your guide preference/)).toBeVisible()
+
+  await context.close()
+})
