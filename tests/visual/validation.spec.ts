@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { selectFormat } from './helpers'
 
 interface Finding {
   code: string
@@ -93,7 +94,7 @@ test('a single unbreakable word wider than the box is reported as truncated', as
 test('speaker_banner name contrast never collapses into a false error-severity finding', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
-  await page.locator('.format-bar select').selectOption('speaker_banner')
+  await selectFormat(page, 'speaker_banner')
   // Let the render + validation settle.
   await page.waitForTimeout(2_000)
 

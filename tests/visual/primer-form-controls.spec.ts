@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { formatCard, selectFormat } from './helpers'
 
 // Phase 2 (#41): format bar and Event section use Primer form controls.
 test.beforeEach(async ({ page }) => {
@@ -6,12 +7,12 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
 })
 
-test('format bar keeps both optgroups and updates the banner', async ({ page }) => {
-  await expect(page.locator('.format-bar optgroup[label="Event formats"] option')).not.toHaveCount(0)
-  await expect(page.locator('.format-bar optgroup[label="Speaker formats"] option')).not.toHaveCount(0)
+test('format cards keep both format families and update the banner', async ({ page }) => {
+  await expect(page.getByRole('heading', { name: 'Event formats' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Speaker formats' })).toBeVisible()
 
-  await page.locator('.format-bar select').selectOption('speaker_square')
-  await expect(page.locator('.format-bar select')).toHaveValue('speaker_square')
+  await selectFormat(page, 'speaker_square')
+  await expect(formatCard(page, 'speaker_square')).toHaveAttribute('aria-pressed', 'true')
   const canvas = page.getByLabel('Banner preview')
   await expect
     .poll(() => canvas.evaluate((el) => (el as HTMLCanvasElement).height))
@@ -19,7 +20,7 @@ test('format bar keeps both optgroups and updates the banner', async ({ page }) 
 })
 
 test('event fields are Primer controls still reachable by label', async ({ page }) => {
-  await page.locator('.format-bar select').selectOption('social_promo')
+  await selectFormat(page, 'social_promo')
 
   await expect(page.getByLabel('Event preset')).toHaveAttribute('data-component', 'Select')
   await expect(page.getByLabel('Event title')).toHaveAttribute('data-component', 'input')
@@ -31,16 +32,16 @@ test('event fields are Primer controls still reachable by label', async ({ page 
 })
 
 test('preset flow fills the event fields', async ({ page }) => {
-  await page.locator('.format-bar select').selectOption('social_promo')
+  await selectFormat(page, 'social_promo')
   await page.getByLabel('Event preset').selectOption('devdays')
   const title = await page.getByLabel('Event title').inputValue()
   expect(title.length).toBeGreaterThan(0)
   // Selecting a preset must not change the chosen format.
-  await expect(page.locator('.format-bar select')).toHaveValue('social_promo')
+  await expect(formatCard(page, 'social_promo')).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('registration toggle exposes its accessible name and switches state', async ({ page }) => {
-  await page.locator('.format-bar select').selectOption('social_promo')
+  await selectFormat(page, 'social_promo')
 
   const toggle = page.getByRole('button', { name: /show registration footer bar/i })
   await expect(toggle).toBeVisible()
@@ -55,6 +56,6 @@ test('registration toggle exposes its accessible name and switches state', async
 })
 
 test('registration URL stays required', async ({ page }) => {
-  await page.locator('.format-bar select').selectOption('social_promo')
+  await selectFormat(page, 'social_promo')
   await expect(page.getByLabel('Registration URL')).toHaveAttribute('aria-required', 'true')
 })

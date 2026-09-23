@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { selectFormat } from './helpers'
 
 // Phase 3 (#42): the Speakers section uses Primer form controls while the
 // catalogue/card hooks (.catalog-picker, .catalog-option, .speaker-card,
@@ -7,7 +8,7 @@ import { expect, test } from '@playwright/test'
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
-  await page.locator('.format-bar select').selectOption('speaker_square')
+  await selectFormat(page, 'speaker_square')
 })
 
 test('catalogue event filter is a Primer Select inside the preserved fieldset', async ({ page }) => {

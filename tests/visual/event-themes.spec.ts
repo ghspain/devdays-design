@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { formatOptions } from '../../src/constants'
+import { selectFormat } from './helpers'
 
 // Phase 1 (#49): colors and fixed brand text now come from an EventTheme
 // resolved through `getEventTheme(state.theme)` instead of hardcoded
@@ -41,7 +42,7 @@ test.beforeEach(async ({ page }) => {
 
 for (const format of formatOptions) {
   test(`${format.id} renders at the expected size under the default (devdays) theme`, async ({ page }) => {
-    await page.locator('.format-bar select').selectOption(format.id)
+    await selectFormat(page, format.id)
 
     // Wait for luma background image to load before checking canvas
     if (format.id === 'luma_cover') {
