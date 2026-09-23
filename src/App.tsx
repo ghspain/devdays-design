@@ -69,24 +69,47 @@ function App() {
 
     // Map validation findings to actionable field/section links
     const FINDING_TARGET_MAP: Record<string, { elementId: string; fieldId?: string }> = {
-      'text-truncated': { elementId: 'section-event', fieldId: 'event-city' },
-      'missing-city': { elementId: 'section-event', fieldId: 'event-city' },
-      'missing-venue': { elementId: 'section-event', fieldId: 'event-venue' },
-      'missing-date': { elementId: 'section-event', fieldId: 'event-date' },
-      'missing-hashtag': { elementId: 'section-event', fieldId: 'event-hashtag' },
-      'missing-url': { elementId: 'section-event', fieldId: 'event-url' },
-      'missing-description': { elementId: 'section-event', fieldId: 'event-description' },
-      'speakers-dropped': { elementId: 'section-speakers' },
-      'logos-dropped': { elementId: 'section-partners' },
-      'missing-partner': { elementId: 'section-partners' },
-      'missing-sponsor': { elementId: 'section-partners' },
-      'missing-organizer': { elementId: 'section-organizer', fieldId: 'organizer-name' },
-      'missing-organizer-url': { elementId: 'section-organizer', fieldId: 'organizer-url' },
-    }
+          'missing-city': { elementId: 'section-event', fieldId: 'event-city' },
+          'missing-venue': { elementId: 'section-event', fieldId: 'event-venue' },
+          'missing-date': { elementId: 'section-event', fieldId: 'event-date' },
+          'missing-hashtag': { elementId: 'section-event', fieldId: 'event-hashtag' },
+          'missing-url': { elementId: 'section-event', fieldId: 'event-url' },
+          'missing-description': { elementId: 'section-event', fieldId: 'event-description' },
+          'speakers-dropped': { elementId: 'section-speakers' },
+          'logos-dropped': { elementId: 'section-partners' },
+          'missing-partner': { elementId: 'section-partners' },
+          'missing-sponsor': { elementId: 'section-partners' },
+          'missing-organizer': { elementId: 'section-organizer', fieldId: 'organizer-name' },
+          'missing-organizer-url': { elementId: 'section-organizer', fieldId: 'organizer-url' },
+        }
 
-    const navigateToField = (finding: ValidationFinding) => {
-      const target = FINDING_TARGET_MAP[finding.code]
-      if (!target) return
+        /** Map truncated field names (from renderBanner.ts) to their editor field IDs. */
+        const TRUNCATED_FIELD_MAP: Record<string, { sectionId: string; fieldId: string }> = {
+          'city': { sectionId: 'section-event', fieldId: 'event-city' },
+          'edition': { sectionId: 'section-event', fieldId: 'event-edition' },
+          'date & time': { sectionId: 'section-event', fieldId: 'event-date' },
+          'speaker name': { sectionId: 'section-speakers', fieldId: 'speaker-name' },
+          'speaker role': { sectionId: 'section-speakers', fieldId: 'speaker-role' },
+          'registration label': { sectionId: 'section-event', fieldId: 'event-cta' },
+          'registration URL': { sectionId: 'section-event', fieldId: 'event-url' },
+          'event title': { sectionId: 'section-event', fieldId: 'event-title' },
+          'event details': { sectionId: 'section-event', fieldId: 'event-description' },
+          'location': { sectionId: 'section-event', fieldId: 'event-venue' },
+        }
+
+        const navigateToField = (finding: ValidationFinding) => {
+          // For text-truncated, use the specific field name to find the target
+          let target: { elementId: string; fieldId?: string } | undefined
+          if (finding.code === 'text-truncated' && finding.field) {
+            const specific = TRUNCATED_FIELD_MAP[finding.field]
+            if (specific) {
+              target = { elementId: specific.sectionId, fieldId: specific.fieldId }
+            }
+          }
+          if (!target) {
+            target = FINDING_TARGET_MAP[finding.code]
+          }
+          if (!target) return
 
       // Scroll to the section
       const sectionEl = document.getElementById(target.elementId) as HTMLDetailsElement | null
@@ -1001,35 +1024,45 @@ function App() {
               </div>
             ) : (
                         validationFindings.map((finding) => {
-                          const target = FINDING_TARGET_MAP[finding.code]
-                          const hasAction = !!target
-                          const findingId = `finding-${finding.code}-${Math.random().toString(36).slice(2, 8)}`
+                                    // Resolve target: for text-truncated, use the specific field name
+                                    let target: { elementId: string; fieldId?: string } | undefined
+                                    if (finding.code === 'text-truncated' && finding.field) {
+                                      const specific = TRUNCATED_FIELD_MAP[finding.field]
+                                      if (specific) {
+                                        target = { elementId: specific.sectionId, fieldId: specific.fieldId }
+                                      }
+                                    }
+                                    if (!target) {
+                                      target = FINDING_TARGET_MAP[finding.code]
+                                    }
+                                    const hasAction = !!target
+                                    const findingId = `finding-${finding.code}-${Math.random().toString(36).slice(2, 8)}`
 
-                          return (
-                            <div key={`${finding.code}:${finding.field ?? ''}:${finding.message}`} className="validation-finding">
-                              <Banner
-                                id={findingId}
-                                variant={finding.severity === 'error' ? 'critical' : 'warning'}
-                                layout="compact"
-                                flush
-                                title={`${finding.severity === 'error' ? 'Error' : 'Warning'}: ${finding.message}`}
-                                aria-describedby={hasAction ? findingId : undefined}
-                              />
-                              {hasAction && target && (
-                                <button
-                                  type="button"
-                                  className="validation-go-to-field"
-                                  onClick={() => navigateToField(finding)}
-                                  aria-label={`Go to ${target.fieldId ? 'field' : 'section'}`}
-                                >
-                                  Go to field
-                                </button>
-                              )}
-                            </div>
-                          )
-                        })
-                      )}
-                    </div>
+                                    return (
+                                      <div key={`${finding.code}:${finding.field ?? ''}:${finding.message}`} className="validation-finding">
+                                        <Banner
+                                          id={findingId}
+                                          variant={finding.severity === 'error' ? 'critical' : 'warning'}
+                                          layout="compact"
+                                          flush
+                                          title={`${finding.severity === 'error' ? 'Error' : 'Warning'}: ${finding.message}`}
+                                          aria-describedby={hasAction ? findingId : undefined}
+                                        />
+                                        {hasAction && target && (
+                                          <button
+                                            type="button"
+                                            className="validation-go-to-field"
+                                            onClick={() => navigateToField(finding)}
+                                            aria-label={`Go to ${target.fieldId ? 'field' : 'section'}`}
+                                          >
+                                            Go to field
+                                          </button>
+                                        )}
+                                      </div>
+                                    )
+                                  })
+                                )}
+                              </div>
 
           <div className="sidebar-footer">
                       <Button variant="invisible" onClick={() => setResetConfirm(true)} title="Reset to defaults">
