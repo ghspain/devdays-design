@@ -122,10 +122,15 @@ export async function renderBanner(
     const textMaxWidth = containerWidth
     const bottomInset = leftX
 
-    // Fixed green label — "Dev Days 2026"
-    const labelText = 'DEV DAYS 2026'
+    // Fixed green label - shares theme.fixedGreenLabel/lumaCityColor with the
+    // Speaker Banner (see EventTheme doc comment). Previously hardcoded to
+    // devdays' own copy/color here, which meant switching the Design theme
+    // never affected the Luma Cover label - bug found and fixed in Phase 4
+    // (#52) while verifying the online_github theme renders with no forced
+    // Dev Days wordmark.
+    const labelText = theme.fixedGreenLabel
     const labelSize = 36
-    const labelColor = '#0CA334'
+    const labelColor = theme.lumaCityColor
 
     // Event edition distinguishes events in the same city without overloading
     // the location field (for example, PROFESSIONAL or STUDENTS).
