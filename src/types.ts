@@ -99,4 +99,6 @@ export interface FormatOption {
   width: number
   height: number
   channels?: string[]
+  /** Short purpose/channel guidance shown beside the format name. */
+  description?: string
 }

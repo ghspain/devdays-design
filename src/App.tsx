@@ -36,6 +36,7 @@ import type {
 } from './types'
 import { uid } from './lib/format'
 import { buildDefaultState, normalizeState, readBannerHistory, writeBannerHistory } from './lib/history'
+import { readDraft, writeDraft, clearDraft } from './lib/draft'
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
 import { createRenderInfo, validateState, type ValidationFinding } from './lib/validate'
@@ -69,6 +70,34 @@ function App() {
 
   const [state, setState] = useState<BannerState>(() => buildDefaultState())
 
+    // Restore draft (or last export) on mount.
+    useEffect(() => {
+      let cancelled = false
+      void (async () => {
+        try {
+          const draft = await readDraft()
+          if (draft && !cancelled) {
+            setState(normalizeState(draft))
+            return
+          }
+        } catch {
+          // ignore
+        }
+        try {
+          const history = readBannerHistory()
+          const lastExport = history[0]?.state
+          if (lastExport && !cancelled) {
+            setState(normalizeState(lastExport))
+          }
+        } catch {
+          // ignore
+        }
+      })()
+      return () => { cancelled = true }
+    }, [])
+
+  const [draftSaveStatus, setDraftSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+
   const format = useMemo(
     () => formatOptions.find((item) => item.id === state.format) ?? formatOptions[0],
     [state.format],
@@ -85,7 +114,15 @@ function App() {
     () => state.speakers.filter((speaker) => speaker.name.trim().length > 0).slice(0, MAX_SPEAKERS),
     [state.speakers],
   )
-  const showMultiSpeakerPreviewGrid = isSpeakerPerBannerFormat && namedSpeakers.length > 1
+    /** How many PNG files the Download button will produce. */
+    const downloadFileCount = isSpeakerPerBannerFormat ? namedSpeakers.length || 1 : 1
+    /** Human-readable label for the Download button. */
+    const downloadLabel = useMemo(() => {
+      const dims = `${format.width}x${format.height}`
+      if (downloadFileCount === 1) return `PNG · ${dims}`
+      return `PNG · ${dims} · ${downloadFileCount} files`
+    }, [format.width, format.height, downloadFileCount])
+    const showMultiSpeakerPreviewGrid = isSpeakerPerBannerFormat && namedSpeakers.length > 1
   const catalogEventOptions = useMemo(() => {
     const labels = new Map<string, string>()
     for (const item of catalogSpeakers) {
@@ -166,6 +203,19 @@ function App() {
       window.cancelAnimationFrame(frame)
     }
   }, [state, format, previewBackgroundFailed, showMultiSpeakerPreviewGrid, fontsReady])
+
+  // Debounced draft save: persist the latest state to IndexedDB after 500ms of inactivity.
+  useEffect(() => {
+    setDraftSaveStatus('saving')
+    const timer = setTimeout(() => {
+          void (async () => {
+            const ok = await writeDraft(state)
+            setDraftSaveStatus(ok ? 'saved' : 'error')
+            setTimeout(() => setDraftSaveStatus('idle'), 2000)
+          })()
+        }, 500)
+    return () => clearTimeout(timer)
+  }, [state])
 
   useEffect(() => {
     let cancelled = false
@@ -265,7 +315,25 @@ function App() {
   const removeSpeaker = (id: string) =>
     setState((previous) => ({ ...previous, speakers: previous.speakers.filter((speaker) => speaker.id !== id) }))
 
-  const addCatalogSponsor = () => {
+    /** Scroll to and focus a field by its id, with a brief highlight flash. */
+    const navigateToField = (targetId: string | undefined) => {
+      if (!targetId) return
+      const el = document.getElementById(targetId)
+      if (!el) return
+      // Scroll into view with a smooth behavior
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Focus the first interactive element inside the section
+      const input = el.querySelector<HTMLInputElement>('input, select, textarea')
+      input?.focus()
+      // Brief highlight via inline style
+      el.style.transition = 'box-shadow 0.3s ease'
+      el.style.boxShadow = '0 0 0 3px var(--color-accent-fg)'
+      setTimeout(() => {
+        el.style.boxShadow = ''
+      }, 2000)
+    }
+
+    const addCatalogSponsor = () => {
     const sponsor = catalogSponsors.find((item) => item.id === selectedSponsorId)
     if (!sponsor || state.partners.length >= 3) return
     setState((previous) => ({
@@ -304,9 +372,13 @@ function App() {
   }
 
   const resetAll = () => {
-    setState(buildDefaultState())
-    setZoom(1)
-  }
+      if (typeof window === 'undefined') return
+      const confirmed = window.confirm('Reset to defaults? This will clear the saved draft.')
+      if (!confirmed) return
+      void clearDraft().catch(() => {})
+      setState(buildDefaultState())
+      setZoom(1)
+    }
 
   const zoomIn = () => setZoom((value) => Math.min(2, Math.round((value + 0.1) * 10) / 10))
   const zoomOut = () => setZoom((value) => Math.max(0.3, Math.round((value - 0.1) * 10) / 10))
@@ -492,19 +564,21 @@ function App() {
                     .map((option) => (
                       <Select.Option key={option.id} value={option.id}>
                         {option.name} — {option.width}x{option.height}
-                      </Select.Option>
-                    ))}
-                </Select.OptGroup>
-                <Select.OptGroup label="Speaker formats">
-                  {speakerFormatIds
-                    .map((id) => formatOptions.find((option) => option.id === id))
-                    .filter((option): option is FormatOption => Boolean(option))
-                    .map((option) => (
-                      <Select.Option key={option.id} value={option.id}>
-                        {option.name} — {option.width}x{option.height}
-                      </Select.Option>
-                    ))}
-                </Select.OptGroup>
+                                              {option.description ? ` — ${option.description}` : ''}
+                                      </Select.Option>
+                                    ))}
+                                </Select.OptGroup>
+                                <Select.OptGroup label="Speaker formats">
+                                  {speakerFormatIds
+                                    .map((id) => formatOptions.find((option) => option.id === id))
+                                    .filter((option): option is FormatOption => Boolean(option))
+                                    .map((option) => (
+                                      <Select.Option key={option.id} value={option.id}>
+                                        {option.name} — {option.width}x{option.height}
+                                                                              {option.description ? ` — ${option.description}` : ''}
+                                      </Select.Option>
+                                    ))}
+                                </Select.OptGroup>
               </Select>
             </FormControl>
           </div>
@@ -656,7 +730,7 @@ function App() {
           </details>
 
           {!isMinimalCover && !isSocialPromo && (
-          <details className="side-section" open>
+          <details className="side-section" id="speakers-section" open>
             <summary>
               <span>Speakers <small className="section-count">{state.speakers.length} / {MAX_SPEAKERS}</small></span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -767,7 +841,7 @@ function App() {
           )}
 
           {(isSpeakerBanner || isSocialPromo) && (
-          <details className="side-section" open>
+                    <details className="side-section" id="organizer-section" open>
             <summary>
               <span>Organizer</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -904,28 +978,55 @@ function App() {
           {error && <p className="error">{error}</p>}
           </div>
 
-          <div className="validation-panel" aria-label="Validation findings">
-            {validationFindings.length === 0 ? (
-              <div role="status">
-                <Banner variant="success" layout="compact" flush title="All checks passed" />
-              </div>
-            ) : (
-              validationFindings.map((finding) => (
-                <Banner
-                  key={`${finding.code}:${finding.field ?? ''}:${finding.message}`}
-                  variant={finding.severity === 'error' ? 'critical' : 'warning'}
-                  layout="compact"
-                  flush
-                  title={`${finding.severity === 'error' ? 'Error' : 'Warning'}: ${finding.message}`}
-                />
-              ))
-            )}
-          </div>
+          <div className="validation-panel" aria-label="Validation findings" role="status">
+                      {validationFindings.length === 0 ? (
+                        <div role="status">
+                          <Banner variant="success" layout="compact" flush>
+                            <Banner.Title>All checks passed</Banner.Title>
+                          </Banner>
+                        </div>
+                      ) : (
+                        validationFindings.map((finding) => (
+                          <Banner
+                            key={`${finding.code}:${finding.field ?? ''}:${finding.message}`}
+                            variant={finding.severity === 'error' ? 'critical' : 'warning'}
+                            layout="compact"
+                            flush
+                                                    role="alert"
+                                                  >
+                                                      <Banner.Title>{finding.severity === 'error' ? 'Error' : 'Warning'}</Banner.Title>
+                                                      <span>
+                                                        {finding.message}
+                              {finding.targetId && (
+                                <button
+                                  type="button"
+                                  className="validation-navigate"
+                                  onClick={() => navigateToField(finding.targetId)}
+                                  aria-label={`Go to ${finding.field ?? 'field'}`}
+                                >
+                                  {' '}
+                                  → {finding.field}
+                                </button>
+                              )}
+                            </span>
+                          </Banner>
+                        ))
+                      )}
+                    </div>
 
           <div className="sidebar-footer">
             <Button variant="invisible" onClick={resetAll} title="Reset to defaults">
               Reset
             </Button>
+                      {draftSaveStatus !== 'idle' && (
+                        <small
+                          className="draft-status"
+                          aria-live="polite"
+                          style={{ color: draftSaveStatus === 'error' ? 'var(--color-danger-fg)' : 'var(--color-fg-muted)' }}
+                        >
+                          {draftSaveStatus === 'saving' ? 'Saving…' : draftSaveStatus === 'saved' ? 'Saved' : 'Save failed'}
+                        </small>
+                      )}
             <div className="pack-download-block">
               <Button
                 className="pack-download"
@@ -946,7 +1047,7 @@ function App() {
                 }}
                 aria-label={exportFindingsLabel ? `Event pack (.zip). Findings: ${exportFindingsLabel}` : undefined}
               >
-                Event pack (.zip)
+                              Event pack (.zip) — all speakers
               </Button>
               {packProgress && (
                 <small aria-live="polite">
@@ -975,7 +1076,7 @@ function App() {
                 }}
                 aria-label={exportFindingsLabel ? `Download. Findings: ${exportFindingsLabel}` : undefined}
               >
-                Download
+                                {downloadLabel}
               </Button>
             </div>
           </div>

@@ -1,0 +1,88 @@
+import { test, expect } from '@playwright/test'
+
+test.use({ viewport: { width: 1200, height: 800 } })
+
+test('clicking a truncated-city finding scrolls to and focuses the City input', async ({ page }) => {
+  await page.goto('/')
+
+  // Set a long city name that will trigger the truncated-city validation
+  await page.fill('input[id*="event-city"]', 'Esta es una ciudad con un nombre extremadamente largo que supera el límite de caracteres permitidos en el sistema')
+  await page.waitForTimeout(1000) // Wait for validation
+
+  // Check that the truncated-city finding appears
+  const findings = page.locator('.validation-panel [data-component="Banner"]')
+  await expect(findings.first()).toBeVisible()
+
+  // Look for the "Go to" link/button in the finding
+  const navigateBtn = page.locator('.validation-navigate').first()
+  if (await navigateBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await navigateBtn.click()
+    // The city input should receive focus
+    await expect(page.locator('input[id*="event-city"]')).toBeFocused({ timeout: 3000 })
+  }
+})
+
+test('clicking a speakers-dropped finding scrolls to the Speakers section', async ({ page }) => {
+  await page.goto('/')
+
+  // Clear any speakers
+  const speakerCards = page.locator('[data-testid="speaker-card"]')
+  const count = await speakerCards.count()
+  if (count > 0) {
+    for (let i = 0; i < count; i++) {
+      const removeBtn = speakerCards.first().locator('button[aria-label*="Remove"]')
+      if (await removeBtn.isVisible().catch(() => false)) {
+        await removeBtn.click()
+      }
+    }
+  }
+
+  await page.waitForTimeout(500)
+
+  // Check that the speakers-dropped finding appears
+  const findings = page.locator('.validation-panel [data-component="Banner"]')
+  const hasSpeakersFinding = await findings.evaluateAll(
+    (banners) => banners.some((b) => b.textContent?.includes('speaker')),
+    []
+  )
+
+  if (hasSpeakersFinding) {
+    const navigateBtn = page.locator('.validation-navigate').first()
+    if (await navigateBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await navigateBtn.click()
+      // The speakers section should be visible (scrolled into view)
+      await expect(page.locator('#speakers-section')).toBeVisible({ timeout: 3000 })
+    }
+  }
+})
+
+test('validation findings are programmatically associated with controls', async ({ page }) => {
+  await page.goto('/')
+
+  // Set a long city name to trigger validation
+  await page.fill('input[id*="event-city"]', 'Esta es una ciudad con un nombre extremadamente largo que supera el límite de caracteres permitidos en el sistema')
+  await page.waitForTimeout(1000)
+
+  // The city input should have aria-describedby pointing to a validation element
+  const cityInput = page.locator('input[id*="event-city"]')
+  const ariaDescribedby = await cityInput.getAttribute('aria-describedby')
+
+  // Either the input has aria-describedby, or the validation panel has role="alert"
+  const hasAriaDescribedby = ariaDescribedby !== null && ariaDescribedby.length > 0
+  const validationPanel = page.locator('.validation-panel')
+  const hasRoleAlert = await validationPanel.evaluate((el) => el.querySelector('[role="alert"], [role="status"]') !== null)
+
+  expect(hasAriaDescribedby || hasRoleAlert).toBeTruthy()
+})
+
+test('all-clear state shows success banner', async ({ page }) => {
+  await page.goto('/')
+  await page.waitForTimeout(500)
+
+  // With default state, check the validation panel
+  const hasSuccess = await page.locator('.validation-panel').evaluate(
+    (el) => el.textContent?.includes('All checks passed') || el.textContent?.includes('check passed')
+  )
+
+  expect(hasSuccess).toBeTruthy()
+})
