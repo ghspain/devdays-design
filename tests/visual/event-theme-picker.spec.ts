@@ -35,7 +35,7 @@ test('the sidebar exposes a Design theme Select distinct from Event preset', asy
   const designTheme = page.getByLabel('Design theme')
   await expect(designTheme).toHaveAttribute('data-component', 'Select')
   await expect(designTheme).toHaveValue('devdays')
-  await expect(designTheme.locator('option')).toHaveCount(2)
+  await expect(designTheme.locator('option')).toHaveCount(3)
 })
 
 test('switching the banner format does not change the selected design theme', async ({ page }) => {

@@ -78,6 +78,33 @@ export const EVENT_THEMES: Record<EventThemeId, EventTheme> = {
     lightAreaTitleColor: '#1f2328',
     lightAreaMutedColor: '#57606a',
   },
+  // 🧭 DECISION (#52): "more like the GitHub website" is interpreted as GitHub's
+  // own public light-mode Primer color tokens (canvas.default #ffffff,
+  // fg.default #1f2328, fg.muted #59636e, accent.fg #0969da) - the same design
+  // system this editor's own UI already adopted in the Primer migration (epic
+  // #39) - instead of inventing a new palette. No exact fixed-label copy was
+  // supplied either, so this theme deliberately does NOT force a marketing
+  // wordmark (no "GITHUB" or invented tagline baked in); brandTitleLine1/
+  // fixedGreenLabel use a neutral "Online Event" label instead. Both choices
+  // are isolated to this one object - swap either independently without
+  // touching the renderer.
+  online_github: {
+    id: 'online_github',
+    name: 'Online (GitHub style)',
+    colors: {
+      primary: '#1f2328',
+      secondary: '#59636e',
+      accent: '#0969da',
+      background: '#ffffff',
+    },
+    brandTitleLine1: 'Online Event',
+    brandTitleLine2: '',
+    fixedEventTitle: 'Online Event',
+    fixedGreenLabel: 'ONLINE EVENT',
+    lumaCityColor: '#0969da',
+    lightAreaTitleColor: '#1f2328',
+    lightAreaMutedColor: '#59636e',
+  },
 }
 
 export const DEFAULT_EVENT_THEME_ID: EventThemeId = 'devdays'
