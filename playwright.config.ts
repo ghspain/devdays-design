@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 // E2E_PORT lets local runs avoid dev servers already bound to 4173 on this machine.
 const port = Number(process.env.E2E_PORT ?? 4173)
-const baseURL = `http://127.0.0.1:${port}`
+const baseURL = `http://127.0.0.1:${port}/devdays-design/`
 
 export default defineConfig({
   testDir: './tests/visual',
@@ -29,7 +29,7 @@ export default defineConfig({
   ],
   webServer: {
     command: `npm run dev -- --host 127.0.0.1 --port ${port}`,
-    url: baseURL,
+      url: `http://127.0.0.1:${port}/devdays-design/`,
     reuseExistingServer: !process.env.CI,
   },
 })

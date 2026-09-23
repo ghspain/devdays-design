@@ -16,6 +16,8 @@ export interface ValidationFinding {
   message: string
   /** User-facing name of the affected field/element, when applicable. */
   field?: string
+  /** CSS selector or element id to scroll to when the user clicks the finding. */
+  targetId?: string
 }
 
 /** A drawn text block, recorded by the renderer so pixel checks know where
@@ -58,11 +60,26 @@ export function validateState(
   const findings: ValidationFinding[] = []
 
   for (const field of info.truncatedFields) {
+    // Map truncated field names to their editor control ids
+    const targetId =
+      field === 'Event title' || field === 'Title'
+        ? 'event-title'
+        : field === 'Edition'
+          ? 'event-edition'
+          : field === 'City'
+            ? 'event-city'
+            : field === 'Date and time'
+              ? 'event-datetime'
+              : field === 'Location'
+                ? 'event-location'
+                : undefined
+
     findings.push({
       code: 'text-truncated',
       severity: 'warning',
       field,
       message: `"${field}" is too long for this format and was cut with "...". Shorten it or pick another format.`,
+      targetId,
     })
   }
 
@@ -73,6 +90,7 @@ export function validateState(
       severity: 'warning',
       field: 'partner logos',
       message: `${dropped} of ${state.partners.length} partner logos do not fit (this format shows ${info.logoCap}) and will not appear.`,
+      targetId: 'organizer-section',
     })
   }
 
@@ -83,6 +101,7 @@ export function validateState(
       severity: 'warning',
       field: 'speakers',
       message: `${dropped} of ${state.speakers.length} speakers exceed the ${info.speakerCap}-speaker limit of this format and will not appear.`,
+      targetId: 'speakers-section',
     })
   }
 

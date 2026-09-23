@@ -273,6 +273,25 @@
   font-size: inherit;
 }
 
+.validation-navigate {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-accent-fg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.validation-navigate:hover {
+  opacity: 0.8;
+}
+
+.validation-navigate:focus-visible {
+  outline: 2px solid var(--color-accent-fg);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .download-badge {
   display: inline-flex;
   align-items: center;
@@ -1272,15 +1291,14 @@ input[type='file'] {
     max-height: none;
     overflow: visible;
     padding: 0.75rem;
-  }
+      padding-bottom: 6.5rem;
+    }
 
-  .sidebar-footer {
-    position: sticky;
-    bottom: 0;
-    z-index: 8;
-    padding: 0.65rem 0.75rem;
-    flex-wrap: wrap;
-  }
+    .sidebar-footer {
+      position: static;
+      padding: 0.65rem 0.75rem;
+      flex-wrap: wrap;
+    }
 
   /* .sidebar-footer is sticky-bottom and always paints over whatever sits
      behind it while the user scrolls this long single column. Reserve real

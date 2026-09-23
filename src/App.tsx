@@ -40,7 +40,7 @@ import { createRenderInfo, validateState, type ValidationFinding } from './lib/v
 import { checkRenderedCanvas } from './lib/pixelChecks'
 import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
 import { buildEventPack, type EventPackProgress } from './lib/exportPack'
-import { readDraft, saveDraft, clearDraft } from './lib/draft'
+import { readDraft, writeDraft, clearDraft } from './lib/draft'
 
 const EDITOR_GUIDE_STORAGE_KEY = 'devdays-editor-guide-dismissed-v1'
 
@@ -173,6 +173,9 @@ function App() {
     [state.speakers],
   )
   const showMultiSpeakerPreviewGrid = isSpeakerPerBannerFormat && namedSpeakers.length > 1
+  const downloadFileCount =
+    isSpeakerPerBannerFormat && namedSpeakers.length > 1 ? namedSpeakers.length : 1
+  const downloadLabel = `PNG · ${format.width}×${format.height}${downloadFileCount > 1 ? ` · ${downloadFileCount} files` : ''}`
   const catalogEventOptions = useMemo(() => {
     const labels = new Map<string, string>()
     for (const item of catalogSpeakers) {
@@ -241,7 +244,7 @@ function App() {
       setDraftStatus('saving')
 
       draftSaveRef.current = setTimeout(() => {
-        saveDraft(state)
+        writeDraft(state)
           .then(() => setDraftStatus('saved'))
           .catch(() => setDraftStatus('error'))
       }, 500)
@@ -1147,7 +1150,7 @@ function App() {
           {error && <p className="error">{error}</p>}
           </div>
 
-          <div className="validation-panel" aria-label="Validation findings">
+          <div className="validation-panel" aria-label="Validation findings" role="status">
             {validationFindings.length === 0 ? (
               <div role="status">
                 <Banner variant="success" layout="compact" flush title="All checks passed" />
@@ -1278,9 +1281,13 @@ function App() {
                             onClick={() => {
                               void exportBanner()
                             }}
-                            aria-label={exportFindingsLabel ? `Download PNG. Findings: ${exportFindingsLabel}` : undefined}
+                            aria-label={
+                              exportFindingsLabel
+                                ? `Download PNG. Findings: ${exportFindingsLabel}`
+                                : `Download ${downloadLabel}`
+                            }
                           >
-                            Download PNG
+                            {downloadLabel}
                           </Button>
                         </div>
           </div>

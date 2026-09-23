@@ -99,6 +99,6 @@ export interface FormatOption {
   width: number
   height: number
   channels?: string[]
-  /** Short, user-facing purpose description (e.g. "Single image for Instagram feed"). */
+  /** Short purpose/channel guidance shown beside the format name. */
   description?: string
 }
