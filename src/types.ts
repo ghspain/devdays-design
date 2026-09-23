@@ -10,7 +10,7 @@ export type ExportScale = 1 | 2
 /** Identifies a bundle of colors and fixed brand text the renderer draws with.
  *  Not to be confused with `lib/catalog.ts`'s `EventPreset` (a saved event-data
  *  snapshot from the Planning catalogue) - this is the *visual* identity. */
-export type EventThemeId = 'devdays'
+export type EventThemeId = 'devdays' | 'community_meetup'
 
 export interface EventTheme {
   id: EventThemeId

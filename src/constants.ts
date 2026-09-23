@@ -54,6 +54,30 @@ export const EVENT_THEMES: Record<EventThemeId, EventTheme> = {
     lightAreaTitleColor: '#1f2328',
     lightAreaMutedColor: '#57606a',
   },
+  // 🧭 DECISION (#51): no Community Meetup brand kit was supplied. Picked a
+  // conservative palette that stays inside the app's existing token set
+  // (GitHub Community's own purple accent, `#a371f7`, already used elsewhere
+  // in the Primer design system this app depends on) so it reads as
+  // "GitHub, but not Dev Days" without inventing new brand colors. Swap the
+  // values below in one place once real brand assets are available; nothing
+  // else needs to change.
+  community_meetup: {
+    id: 'community_meetup',
+    name: 'Community Meetup',
+    colors: {
+      primary: '#f0f6fc',
+      secondary: '#8b949e',
+      accent: '#a371f7',
+      background: '#0d1117',
+    },
+    brandTitleLine1: 'GitHub Community',
+    brandTitleLine2: 'Meetup',
+    fixedEventTitle: 'Community Meetup',
+    fixedGreenLabel: 'COMMUNITY MEETUP',
+    lumaCityColor: '#a371f7',
+    lightAreaTitleColor: '#1f2328',
+    lightAreaMutedColor: '#57606a',
+  },
 }
 
 export const DEFAULT_EVENT_THEME_ID: EventThemeId = 'devdays'

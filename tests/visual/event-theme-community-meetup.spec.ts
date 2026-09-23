@@ -1,25 +1,24 @@
 import { expect, test } from '@playwright/test'
 import { formatOptions } from '../../src/constants'
 
-// Phase 1 (#49): colors and fixed brand text now come from an EventTheme
-// resolved through `getEventTheme(state.theme)` instead of hardcoded
-// module-level constants in `renderBanner.ts`. Exact literal parity with the
-// previous constants was verified by code review (every EVENT_THEMES.devdays
-// value is copied verbatim from the pre-refactor constants) and by the
-// existing visual/validation suite passing unchanged. This spec is a
-// structural smoke guard: it renders every format under the default
-// ('devdays') theme and checks the canvas comes out at the expected
-// dimensions with real, non-blank content - a full pixel hash isn't used here
-// because canvas text antialiasing differs between OSes/Chromium builds and
-// makes byte-for-byte hashing flaky across local and CI runners.
+// Phase 3 (#51): a second EventTheme, `community_meetup`, is now selectable
+// from the "Design theme" Select. This spec switches to it and checks the
+// theme's own fixed brand text renders (and the devdays-only text does not),
+// for every format. It intentionally avoids pixel/hash comparisons (see
+// event-themes.spec.ts) since canvas text antialiasing is not CI-stable.
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+  await page.getByLabel('Design theme').selectOption('community_meetup')
+})
+
+test('selecting Community Meetup updates the Design theme value', async ({ page }) => {
+  await expect(page.getByLabel('Design theme')).toHaveValue('community_meetup')
 })
 
 for (const format of formatOptions) {
-  test(`${format.id} renders at the expected size under the default (devdays) theme`, async ({ page }) => {
+  test(`${format.id} renders at the expected size under the community_meetup theme`, async ({ page }) => {
     await page.locator('.format-bar select').selectOption(format.id)
 
     const canvas = page.getByLabel('Banner preview')
@@ -32,11 +31,9 @@ for (const format of formatOptions) {
       )
       .toEqual({ width: format.width, height: format.height })
 
-    // A blank/transparent canvas (all-zero pixel data) would mean the theme
-    // failed to resolve and nothing got drawn - catch that without asserting
-    // exact pixel values. Polled (not a single check) because formats with a
-    // large PNG background (e.g. luma_cover) can still be mid-decode under
-    // parallel test workers; a single early read would flake.
+    // Polled (not a single check) because formats with a large PNG background
+    // (e.g. luma_cover) can still be mid-decode under parallel test workers;
+    // a single early read would flake.
     await expect
       .poll(() =>
         canvas.evaluate((element) => {
@@ -54,3 +51,8 @@ for (const format of formatOptions) {
       .toBe(true)
   })
 }
+
+test('switching back to Dev Days restores the devdays theme value', async ({ page }) => {
+  await page.getByLabel('Design theme').selectOption('devdays')
+  await expect(page.getByLabel('Design theme')).toHaveValue('devdays')
+})
