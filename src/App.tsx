@@ -16,8 +16,10 @@ import {
 import './App.css'
 import {
   eventFormatIds,
+  EVENT_THEMES,
   filenamePrefixByFormat,
   formatOptions,
+  getEventTheme,
   MAX_HISTORY_ITEMS,
   MAX_SPEAKERS,
   REPOSITORY_URL,
@@ -28,6 +30,7 @@ import type {
   BannerHistoryItem,
   BannerState,
   EventDetails,
+  EventThemeId,
   FormatOption,
   Speaker,
 } from './types'
@@ -291,6 +294,15 @@ function App() {
     }))
   }
 
+  // Design themes control colors + fixed brand text (see epic #48). This is
+  // deliberately separate from applyPreset/eventPresets above, which is an
+  // unrelated data-catalog feature (lib/catalog.ts) that only prefills event
+  // content fields.
+  const applyTheme = (themeId: EventThemeId) => {
+    const theme = getEventTheme(themeId)
+    setState((previous) => ({ ...previous, theme: theme.id, colors: theme.colors }))
+  }
+
   const resetAll = () => {
     setState(buildDefaultState())
     setZoom(1)
@@ -508,6 +520,21 @@ function App() {
                 <Select id="event-preset" block defaultValue="" onChange={(e) => applyPreset(e.target.value)}>
                   <Select.Option value="">Choose a preset…</Select.Option>
                   {eventPresets.map((preset) => <Select.Option key={preset.id} value={preset.id}>{preset.name}</Select.Option>)}
+                </Select>
+              </FormControl>
+              <FormControl id="design-theme">
+                <FormControl.Label>Design theme</FormControl.Label>
+                <Select
+                  id="design-theme"
+                  block
+                  value={state.theme}
+                  onChange={(e) => applyTheme(e.target.value as EventThemeId)}
+                >
+                  {Object.values(EVENT_THEMES).map((theme) => (
+                    <Select.Option key={theme.id} value={theme.id}>
+                      {theme.name}
+                    </Select.Option>
+                  ))}
                 </Select>
               </FormControl>
               <div className="form-grid single">
