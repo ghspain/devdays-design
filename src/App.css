@@ -1016,6 +1016,16 @@ input[type='file'] {
     flex-wrap: wrap;
   }
 
+  /* .sidebar-footer is sticky-bottom and always paints over whatever sits
+     behind it while the user scrolls this long single column. Reserve real
+     space equal to its rendered height (~115px measured live at 390x844,
+     rounded up) on the panel directly above it so real content (warnings,
+     the last toggle) always has room to clear the bar, mirroring the same
+     pattern already used for .stage-toolbar via .stage-canvas padding. */
+  .validation-panel {
+    padding-bottom: 8rem;
+  }
+
   .pack-download-block {
     order: 3;
     width: 100%;
