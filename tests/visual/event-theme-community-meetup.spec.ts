@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { formatOptions } from '../../src/constants'
+import { selectFormat, selectTheme, themeCard } from './helpers'
 
 // Phase 3 (#51): a second EventTheme, `community_meetup`, is now selectable
 // from the "Design theme" Select. This spec switches to it and checks the
@@ -30,16 +31,16 @@ async function waitForLumaBackground(page: import('@playwright/test').Page) {
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
-  await page.getByLabel('Design theme').selectOption('community_meetup')
+  await selectTheme(page, 'community_meetup')
 })
 
-test('selecting Community Meetup updates the Design theme value', async ({ page }) => {
-  await expect(page.getByLabel('Design theme')).toHaveValue('community_meetup')
+test('selecting Community Meetup marks its visual theme card selected', async ({ page }) => {
+  await expect(themeCard(page, 'community_meetup')).toHaveAttribute('aria-pressed', 'true')
 })
 
 for (const format of formatOptions) {
   test(`${format.id} renders at the expected size under the community_meetup theme`, async ({ page }) => {
-    await page.locator('.format-bar select').selectOption(format.id)
+    await selectFormat(page, format.id)
 
     // Wait for luma background image to load before checking canvas
     if (format.id === 'luma_cover') {
@@ -78,6 +79,6 @@ for (const format of formatOptions) {
 }
 
 test('switching back to Dev Days restores the devdays theme value', async ({ page }) => {
-  await page.getByLabel('Design theme').selectOption('devdays')
-  await expect(page.getByLabel('Design theme')).toHaveValue('devdays')
+  await selectTheme(page, 'devdays')
+  await expect(themeCard(page, 'devdays')).toHaveAttribute('aria-pressed', 'true')
 })

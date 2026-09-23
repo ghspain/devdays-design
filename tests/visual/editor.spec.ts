@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import JSZip from 'jszip'
 import { formatOptions } from '../../src/constants'
+import { formatCard, selectFormat, showPreviewForViewport } from './helpers'
 
 const formats = formatOptions.map(({ id, width, height }) => ({ id, width, height }))
 
@@ -33,7 +34,8 @@ async function waitForLumaBackground(page: import('@playwright/test').Page) {
 
 for (const format of formats) {
   test(`${format.id} renders a populated canvas without layout overflow`, async ({ page }, testInfo) => {
-    await page.locator('.format-bar select').selectOption(format.id)
+    await selectFormat(page, format.id)
+    await showPreviewForViewport(page)
 
     // Wait for luma background image to load before checking canvas
     if (format.id === 'luma_cover') {
@@ -114,7 +116,7 @@ test('speaker banner renders selected organizer and sponsor logos', async ({ pag
     if (request.url().includes('/logos/')) failedLogoRequests.push(request.url())
   })
 
-  await page.locator('.format-bar select').selectOption('speaker_banner')
+  await selectFormat(page, 'speaker_banner')
   await page.getByLabel('Select organizer').selectOption('ghspain')
   await page.getByRole('button', { name: 'Use selected organizer' }).click()
   await page.getByLabel('Add from sponsor or collaborator catalogue').selectOption('celonis')
@@ -122,6 +124,7 @@ test('speaker banner renders selected organizer and sponsor logos', async ({ pag
 
   await expect(page.getByText('2 slot(s) remaining.')).toBeVisible()
   await expect.poll(() => failedLogoRequests).toEqual([])
+  await showPreviewForViewport(page)
   await testInfo.attach(`catalogue-logos-${testInfo.project.name}`, {
     body: await page.locator('.stage').screenshot(),
     contentType: 'image/png',
@@ -129,20 +132,20 @@ test('speaker banner renders selected organizer and sponsor logos', async ({ pag
 })
 
 test('applying an event preset keeps the selected banner format', async ({ page }) => {
-  await page.locator('.format-bar select').selectOption('speaker_square')
+  await selectFormat(page, 'speaker_square')
   await page.getByLabel('Event preset').selectOption('meetup')
-  await expect(page.locator('.format-bar select')).toHaveValue('speaker_square')
+  await expect(formatCard(page, 'speaker_square')).toHaveAttribute('aria-pressed', 'true')
   await page.getByLabel('Event preset').selectOption('devdays')
-  await expect(page.locator('.format-bar select')).toHaveValue('speaker_square')
+  await expect(formatCard(page, 'speaker_square')).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('formats are grouped into event and speaker families', async ({ page }) => {
-  await expect(page.locator('.format-bar optgroup[label="Event formats"] option')).toHaveCount(2)
-  await expect(page.locator('.format-bar optgroup[label="Speaker formats"] option')).toHaveCount(2)
+  await expect(page.locator('.format-group').nth(0).locator('.format-card')).toHaveCount(2)
+  await expect(page.locator('.format-group').nth(1).locator('.format-card')).toHaveCount(2)
 })
 
 test('speaker avatars render inside the square canvas', async ({ page }) => {
-  await page.locator('.format-bar select').selectOption('speaker_square')
+  await selectFormat(page, 'speaker_square')
   const canvas = page.getByLabel('Banner preview')
   await expect
     .poll(() =>
@@ -176,7 +179,7 @@ test('speaker avatars render inside the square canvas', async ({ page }) => {
 })
 
 test('catalogue speaker selection adds cumulatively with dedupe and a counter', async ({ page }) => {
-  await page.locator('.format-bar select').selectOption('speaker_square')
+  await selectFormat(page, 'speaker_square')
   const counter = page.locator('.section-count')
   await expect(counter).toHaveText('1 / 12')
 
@@ -201,13 +204,13 @@ test('catalogue speaker selection adds cumulatively with dedupe and a counter', 
 })
 
 test('sponsors section is available on the speaker square format', async ({ page }) => {
-  await page.locator('.format-bar select').selectOption('speaker_square')
+  await selectFormat(page, 'speaker_square')
   await expect(page.getByText('Sponsors and collaborators')).toBeVisible()
 })
 
 test('partner logos toggle hides and shows the square footer logos', async ({ page }) => {
   test.setTimeout(90_000)
-  await page.locator('.format-bar select').selectOption('speaker_square')
+  await selectFormat(page, 'speaker_square')
   const canvas = page.getByLabel('Banner preview')
   await expect.poll(() => canvas.evaluate((element) => (element as HTMLCanvasElement).width)).toBe(1080)
 
@@ -467,16 +470,11 @@ test('event pack downloads every format in one ZIP', async ({ page }, testInfo) 
 // Phase 3 (#56): Formats and downloads explain the asset being created
 test('format selector shows purpose descriptions alongside dimensions', async ({ page }) => {
   // Open the format selector dropdown
-  await page.getByRole('combobox', { name: 'Format' }).click()
-  await page.waitForTimeout(300) // Wait for dropdown to render
-
-  // Check that the option texts contain the descriptions
-  const optionTexts = await page.locator('option[data-component="Select.Option"]').allTextContents()
-  const allText = optionTexts.join(' ')
-  expect(allText).toContain('Square image for speaker profiles')
-  expect(allText).toContain('Tall banner for speaker announcements')
-  expect(allText).toContain('Tall promo graphic for event posts')
-  expect(allText).toContain('Square cover image for Luma events')
+  for (const format of formatOptions) {
+    const card = formatCard(page, format.id)
+    await expect(card).toContainText(format.description ?? '')
+    await expect(card).toContainText(`${format.width} × ${format.height}`)
+  }
 })
 
 test('download button distinguishes PNG from ZIP export', async ({ page }) => {
@@ -487,6 +485,7 @@ test('download button distinguishes PNG from ZIP export', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Event pack (.zip)' })).toBeVisible()
 
   // The canvas toolbar download should have an accessible name mentioning PNG
+  await showPreviewForViewport(page)
   const toolbarDownload = page.getByLabel(/Download PNG/)
   await expect(toolbarDownload).toBeVisible()
 })
@@ -496,7 +495,7 @@ test('download summary shows correct dimensions and count', async ({ page }) => 
   await expect(page.locator('.download-summary').first()).toContainText(/Single PNG · 1000×1000/)
 
   // Switch to speaker_banner (multi-speaker format)
-  await page.getByRole('combobox', { name: 'Format' }).selectOption('speaker_banner')
+  await selectFormat(page, 'speaker_banner')
   await expect(page.locator('.download-summary').first()).toContainText(/1 speaker banner\(s\) · 1080×1350/)
 
   // Add a second speaker and verify count updates

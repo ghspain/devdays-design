@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { selectFormat, showPreviewForViewport } from './helpers'
 
 // Phase 4 (#43): Organizer, Sponsors, top bar, stage toolbar and the history
 // drawer are Primer controls (Select/FormControl, Button, IconButton,
@@ -26,7 +27,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
   // speaker_banner shows both the Organizer and the Sponsors sections.
-  await page.locator('.format-bar select').selectOption('speaker_banner')
+  await selectFormat(page, 'speaker_banner')
 })
 
 test('organizer catalogue uses a Primer Select with a FormControl label', async ({ page }) => {
@@ -95,6 +96,7 @@ test('top bar and sidebar controls are IconButtons with stable aria-labels', asy
 })
 
 test('stage toolbar buttons are IconButtons readable over the dark stage', async ({ page }) => {
+  await showPreviewForViewport(page)
   const toolbar = page.getByRole('toolbar', { name: 'Canvas tools' })
   await expect(toolbar).toBeVisible()
   for (const name of ['Zoom in', 'Zoom out', 'Fit to screen', 'Download']) {

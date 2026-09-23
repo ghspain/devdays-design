@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { Banner, Button, Checkbox, CounterLabel, FormControl, IconButton, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
 import {
   ChevronDownIcon,
@@ -26,12 +26,10 @@ import {
   speakerFormatIds,
 } from './constants'
 import type {
-  BannerFormat,
   BannerHistoryItem,
   BannerState,
   EventDetails,
   EventThemeId,
-  FormatOption,
   Speaker,
 } from './types'
 import { uid } from './lib/format'
@@ -44,9 +42,25 @@ import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets } fro
 import { buildEventPack, type EventPackProgress } from './lib/exportPack'
 import { readDraft, saveDraft, clearDraft } from './lib/draft'
 
+const EDITOR_GUIDE_STORAGE_KEY = 'devdays-editor-guide-dismissed-v1'
+
+function shouldShowEditorGuide() {
+  try {
+    return window.localStorage.getItem(EDITOR_GUIDE_STORAGE_KEY) !== 'dismissed'
+  } catch {
+    return true
+  }
+}
+
 function App() {
   const [backgroundFailed, setBackgroundFailed] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileView, setMobileView] = useState<'fields' | 'preview'>('fields')
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    () => window.matchMedia('(max-width: 760px)').matches,
+  )
+  const [showEditorGuide, setShowEditorGuide] = useState(shouldShowEditorGuide)
+  const mobileFieldsScrollY = useRef(0)
   const [showHistory, setShowHistory] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [error, setError] = useState('')
@@ -190,6 +204,16 @@ function App() {
     return () => {
       cancelled = true
     }
+  }, [])
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 760px)')
+    const updateViewport = () => {
+      setIsMobileViewport(media.matches)
+      if (!media.matches) setMobileView('fields')
+    }
+    media.addEventListener('change', updateViewport)
+    return () => media.removeEventListener('change', updateViewport)
   }, [])
 
     // Load the latest draft on mount. If a draft exists, restore it; otherwise
@@ -537,8 +561,37 @@ function App() {
     writeBannerHistory([])
   }
 
+  const switchMobileView = (view: 'fields' | 'preview') => {
+    if (isMobileViewport) {
+      if (view === 'preview') mobileFieldsScrollY.current = window.scrollY
+      setMobileView(view)
+      requestAnimationFrame(() => {
+        window.scrollTo(0, view === 'preview' ? 0 : mobileFieldsScrollY.current)
+      })
+      return
+    }
+    setMobileView(view)
+  }
+
+  const handleMobileViewKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (!isMobileViewport || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return
+    event.preventDefault()
+    const view = event.key === 'ArrowRight' ? 'preview' : 'fields'
+    switchMobileView(view)
+    document.getElementById(`mobile-${view}-tab`)?.focus()
+  }
+
+  const dismissEditorGuide = () => {
+    try {
+      window.localStorage.setItem(EDITOR_GUIDE_STORAGE_KEY, 'dismissed')
+      setShowEditorGuide(false)
+    } catch {
+      setError('Could not save your guide preference. You can close this guide again later.')
+    }
+  }
+
   return (
-    <div className="editor-shell">
+    <div className="editor-shell" data-mobile-view={mobileView}>
       <header className="topbar">
         <div className="topbar-left">
           <span className="topbar-icon" aria-hidden="true">
@@ -571,7 +624,44 @@ function App() {
       </header>
 
       <div className="editor-body">
-        <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`} aria-label="Editor controls">
+        <div
+          className="mobile-view-tabs"
+          role={isMobileViewport ? 'tablist' : undefined}
+          aria-label={isMobileViewport ? 'Editor view' : undefined}
+        >
+          <button
+            id="mobile-fields-tab"
+            aria-controls={isMobileViewport ? 'mobile-fields-panel' : undefined}
+            aria-selected={isMobileViewport ? mobileView === 'fields' : undefined}
+            onKeyDown={handleMobileViewKeyDown}
+            onClick={() => switchMobileView('fields')}
+            role={isMobileViewport ? 'tab' : undefined}
+            tabIndex={mobileView === 'fields' ? 0 : -1}
+            type="button"
+          >
+            Fields
+          </button>
+          <button
+            id="mobile-preview-tab"
+            aria-controls={isMobileViewport ? 'mobile-preview-panel' : undefined}
+            aria-selected={isMobileViewport ? mobileView === 'preview' : undefined}
+            onKeyDown={handleMobileViewKeyDown}
+            onClick={() => switchMobileView('preview')}
+            role={isMobileViewport ? 'tab' : undefined}
+            tabIndex={mobileView === 'preview' ? 0 : -1}
+            type="button"
+          >
+            Preview
+          </button>
+        </div>
+        <aside
+          id="mobile-fields-panel"
+          className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
+          aria-label="Editor controls"
+          role={isMobileViewport ? 'tabpanel' : undefined}
+          aria-labelledby={isMobileViewport ? 'mobile-fields-tab' : undefined}
+          tabIndex={isMobileViewport ? -1 : undefined}
+        >
           <div className="sidebar-header">
             <IconButton
               icon={sidebarCollapsed ? SidebarExpandIcon : SidebarCollapseIcon}
@@ -585,41 +675,70 @@ function App() {
           </div>
 
           <div className="sidebar-content">
+          {showEditorGuide && (
+            <section className="editor-guide" role="region" aria-labelledby="editor-guide-title">
+              <div className="editor-guide-header">
+                <h2 id="editor-guide-title">A quick guide</h2>
+                <button className="editor-guide-dismiss" onClick={dismissEditorGuide} type="button">
+                  Dismiss
+                </button>
+              </div>
+              <ol>
+                <li><strong>Format</strong> chooses the image shape and channel.</li>
+                <li><strong>Event preset</strong> fills event details; <strong>Design theme</strong> sets the visual identity.</li>
+                <li>Edit the event, speaker, and partner details for this image.</li>
+                <li>Review validation messages and follow their field links to fix issues.</li>
+                <li><strong>Download PNG</strong> saves this format; <strong>Event pack (.zip)</strong> includes every format.</li>
+              </ol>
+            </section>
+          )}
           {backgroundFailed && <p className="warning">Background image unavailable: using gradient fallback for preview.</p>}
 
           <div className="format-bar">
-            <FormControl id="format" className="format-select-label">
-              <FormControl.Label>Format</FormControl.Label>
-              <Select
-                id="format"
-                block
-                value={state.format}
-                onChange={(e) => setState((previous) => ({ ...previous, format: e.target.value as BannerFormat }))}
-              >
-                <Select.OptGroup label="Event formats">
-                  {eventFormatIds
-                    .map((id) => formatOptions.find((option) => option.id === id))
-                    .filter((option): option is FormatOption => Boolean(option))
-                    .map((option) => (
-                      <Select.Option key={option.id} value={option.id}>
-                        {option.name} — {option.width}x{option.height}
-                                    {option.description ? ` · ${option.description}` : ''}
-                                  </Select.Option>
-                                ))}
-                            </Select.OptGroup>
-                            <Select.OptGroup label="Speaker formats">
-                              {speakerFormatIds
-                                .map((id) => formatOptions.find((option) => option.id === id))
-                                .filter((option): option is FormatOption => Boolean(option))
-                                .map((option) => (
-                                  <Select.Option key={option.id} value={option.id}>
-                                    {option.name} — {option.width}x{option.height}
-                                    {option.description ? ` · ${option.description}` : ''}
-                                  </Select.Option>
-                                ))}
-                            </Select.OptGroup>
-                          </Select>
-                        </FormControl>
+            <span className="picker-label" id="format-label">Format</span>
+            <div className="format-groups" role="group" aria-labelledby="format-label">
+              {[
+                { label: 'Event formats', ids: eventFormatIds },
+                { label: 'Speaker formats', ids: speakerFormatIds },
+              ].map((group) => (
+                <div className="format-group" key={group.label}>
+                  <h3>{group.label}</h3>
+                  <div className="format-grid-pair">
+                    {group.ids.map((id) => {
+                      const option = formatOptions.find((item) => item.id === id)
+                      if (!option) return null
+                      return (
+                        <button
+                          aria-pressed={state.format === option.id}
+                          aria-label={`${option.name}, ${option.width} by ${option.height}, ${option.description ?? ''}, ${option.channels?.join(', ') ?? ''}`}
+                          className={`card-option format-card${state.format === option.id ? ' selected' : ''}`}
+                          key={option.id}
+                          onClick={() => setState((previous) => ({ ...previous, format: option.id }))}
+                          type="button"
+                        >
+                          <span className="format-ratio-wrap" aria-hidden="true">
+                            <span
+                              className="format-ratio"
+                              style={{
+                                aspectRatio: `${option.width} / ${option.height}`,
+                                backgroundColor: state.colors.background,
+                                borderColor: state.colors.secondary,
+                              }}
+                            >
+                              <span style={{ backgroundColor: state.colors.accent }} />
+                            </span>
+                          </span>
+                          <strong>{option.name}</strong>
+                          <small>{option.width} × {option.height}</small>
+                          <small>{option.description}</small>
+                          <small>Channels: {option.channels?.join(', ')}</small>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <details className="side-section" open id="section-event">
@@ -634,22 +753,33 @@ function App() {
                   <Select.Option value="">Choose a preset…</Select.Option>
                   {eventPresets.map((preset) => <Select.Option key={preset.id} value={preset.id}>{preset.name}</Select.Option>)}
                 </Select>
+                <FormControl.Caption>A recipe that fills event details; it does not change the format or visual identity.</FormControl.Caption>
               </FormControl>
-              <FormControl id="design-theme">
-                <FormControl.Label>Design theme</FormControl.Label>
-                <Select
-                  id="design-theme"
-                  block
-                  value={state.theme}
-                  onChange={(e) => applyTheme(e.target.value as EventThemeId)}
-                >
+              <div className="theme-picker">
+                <span className="picker-label" id="theme-label">Design theme</span>
+                <div className="theme-grid" role="group" aria-labelledby="theme-label">
                   {Object.values(EVENT_THEMES).map((theme) => (
-                    <Select.Option key={theme.id} value={theme.id}>
-                      {theme.name}
-                    </Select.Option>
+                    <button
+                      aria-pressed={state.theme === theme.id}
+                      aria-label={theme.name}
+                      className={`card-option theme-card${state.theme === theme.id ? ' selected' : ''}`}
+                      key={theme.id}
+                      onClick={() => applyTheme(theme.id)}
+                      type="button"
+                    >
+                      <strong>{theme.name}</strong>
+                      <span
+                        className="swatch-row"
+                        aria-label={`Colors: ${theme.colors.primary}, ${theme.colors.accent}, ${theme.colors.background}`}
+                      >
+                        {[theme.colors.primary, theme.colors.accent, theme.colors.background].map((color) => (
+                          <span key={color} style={{ backgroundColor: color }} />
+                        ))}
+                      </span>
+                    </button>
                   ))}
-                </Select>
-              </FormControl>
+                </div>
+              </div>
               <div className="form-grid single">
                 <FormControl id="event-title">
                   <FormControl.Label>Event title</FormControl.Label>
@@ -1156,7 +1286,14 @@ function App() {
           </div>
         </aside>
 
-        <section className="stage" aria-label="Preview">
+        <section
+          id="mobile-preview-panel"
+          className="stage"
+          aria-label="Preview"
+          role={isMobileViewport ? 'tabpanel' : undefined}
+          aria-labelledby={isMobileViewport ? 'mobile-preview-tab' : undefined}
+          tabIndex={isMobileViewport ? -1 : undefined}
+        >
           <div className="stage-canvas">
             {!showMultiSpeakerPreviewGrid && (
               <div

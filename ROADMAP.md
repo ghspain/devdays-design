@@ -49,6 +49,9 @@ per phase:
 - Phase 2: #54 — event drafts survive reloads before export (IndexedDB).
 - Phase 3: #56 — formats and downloads explain the asset being created.
 - Phase 4: #55 — validation takes users directly to the field to fix.
+- Phase 5: #64 — Organizers can compare formats and themes visually.
+- Phase 6: #65 — Organizers can switch between fields and preview on mobile.
+- Phase 7: #66 — New organizers understand formats, presets, themes, and exports.
 
 ## Visual validation (epic #26)
 
