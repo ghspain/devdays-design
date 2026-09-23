@@ -7,7 +7,7 @@ community CRM, event database, or social publishing system.
 
 1. Local speaker catalogue with a reduced `people.csv` contract.
 2. Local sponsor catalogue with `sponsors.csv` and direct upload fallback.
-3. Presets for Dev Days, Community Meetup, and online events.
+3. Presets for Dev Days, Community Meetup, and online events. ✅
 4. Editable event title, edition, city, venue, date, and registration fields.
 5. Visual validation for overflow, safe areas, contrast, and logo limits.
 6. Batch generation of the supported image formats from one event state.
