@@ -1,0 +1,30 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - heading "Dev Days" [level=1] [ref=e11]
+    - generic [ref=e12]:
+      - link "View the project repository on GitHub" [ref=e13] [cursor=pointer]:
+        - /url: https://github.com/ghspain/devdays-design
+      - button "Toggle previous banners" [ref=e16] [cursor=pointer]
+  - generic [ref=e19]:
+    - complementary "Editor controls" [ref=e20]:
+      - generic [ref=e21]:
+        - button "Collapse panel" [expanded] [ref=e22] [cursor=pointer]
+        - generic [ref=e26]: Design
+      - generic [ref=e27]:
+        - generic [ref=e29]
+        - group [ref=e33]
+        - group [ref=e181]
+        - group [ref=e66]
+      - generic "Validation findings" [ref=e101]:
+        - status [ref=e102]
+      - generic [ref=e110]:
+        - button "Reset" [ref=e111] [cursor=pointer]
+        - button "Event pack (.zip)" [ref=e116] [cursor=pointer]
+        - button "Download" [ref=e120] [cursor=pointer]
+    - region "Preview" [ref=e123]:
+      - generic "Banner preview" [ref=e126]
+      - toolbar "Canvas tools" [ref=e127]:
+        - button "Zoom in" [ref=e128] [cursor=pointer]
+        - button "Zoom out" [ref=e132] [cursor=pointer]
+        - button "Fit to screen" [ref=e136] [cursor=pointer]
+        - button "Download" [ref=e140] [cursor=pointer]

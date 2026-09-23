@@ -1,0 +1,126 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - heading "Dev Days" [level=1] [ref=e11]
+    - generic [ref=e12]:
+      - link "View the project repository on GitHub" [ref=e13] [cursor=pointer]:
+        - /url: https://github.com/ghspain/devdays-design
+      - button "Toggle previous banners" [ref=e16] [cursor=pointer]
+  - generic [ref=e19]:
+    - complementary "Editor controls" [ref=e20]:
+      - generic [ref=e21]:
+        - button "Collapse panel" [expanded] [ref=e22] [cursor=pointer]
+        - generic [ref=e26]: Design
+      - generic [ref=e27]:
+        - generic [ref=e29]:
+          - generic [ref=e30] [cursor=pointer]: Format
+          - combobox "Format" [ref=e32] [cursor=pointer]:
+            - option "Luma Cover — 1000x1000"
+            - option "Social Promo — 1080x1350" [selected]
+            - option "Speaker Profile — 1080x1080"
+            - option "Speaker Banner — 1080x1350"
+        - group [ref=e33]:
+          - generic "Event" [ref=e34] [cursor=pointer]
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - generic [ref=e40] [cursor=pointer]: Event preset
+              - combobox "Event preset" [ref=e42] [cursor=pointer]:
+                - option "Choose a preset…" [selected]
+                - option "Dev Days"
+                - option "Community Meetup"
+                - option "Online event"
+            - generic [ref=e43]:
+              - generic [ref=e44] [cursor=pointer]: Design theme
+              - combobox "Design theme" [ref=e46] [cursor=pointer]:
+                - option "Dev Days" [selected]
+                - option "Community Meetup"
+                - option "Online (GitHub style)"
+            - generic [ref=e47]:
+              - generic [ref=e48]:
+                - generic [ref=e49] [cursor=pointer]: Event title
+                - textbox "Event title" [ref=e51]: Dev Days
+              - generic [ref=e57]:
+                - generic [ref=e58] [cursor=pointer]: City
+                - textbox "City" [ref=e60]: Madrid
+              - generic [ref=e61]:
+                - generic [ref=e62] [cursor=pointer]: Date and time
+                - textbox "Date and time" [ref=e64]: Apr 15 • 7:00 PM
+                - generic [ref=e65]: "Example: Apr 15 • 7:00 PM"
+              - generic [ref=e144]:
+                - generic [ref=e145] [cursor=pointer]: Location
+                - textbox "Location" [ref=e147]: North Convention Center
+                - generic [ref=e148]: Can wrap to 2 lines in Social Promo
+              - generic [ref=e149]:
+                - generic [ref=e150]:
+                  - strong [ref=e151]: Show registration footer bar
+                  - generic [ref=e152]: Adds a CTA + short URL strip at the bottom of the banner.
+                - generic [ref=e153]:
+                  - generic [ref=e156] [cursor=pointer]: "On"
+                  - button "Show registration footer bar" [pressed] [ref=e157] [cursor=pointer]
+              - generic [ref=e166]:
+                - generic [ref=e167] [cursor=pointer]: Registration bar style
+                - combobox "Registration bar style" [ref=e169] [cursor=pointer]:
+                  - option "CTA + URL" [selected]
+                  - option "URL only"
+              - generic [ref=e170]:
+                - generic [ref=e171] [cursor=pointer]: CTA text
+                - textbox "CTA text" [ref=e173]:
+                  - /placeholder: Register now
+                  - text: Register now
+              - generic [ref=e174]:
+                - generic [ref=e176] [cursor=pointer]:
+                  - generic [ref=e177]: Registration URL
+                  - generic [ref=e178]: "*"
+                - textbox "Registration URL *" [ref=e180]:
+                  - /placeholder: gh.io/devdays
+                  - text: gh.io/devdays
+        - group [ref=e181]:
+          - generic "Organizer" [ref=e182] [cursor=pointer]
+          - generic [ref=e186]:
+            - generic [ref=e187]:
+              - generic [ref=e188] [cursor=pointer]: Select organizer
+              - combobox "Select organizer" [ref=e190] [cursor=pointer]:
+                - option "Choose an organizer…" [selected]
+                - option "GitHub Community Spain"
+                - option "TechRiders"
+            - button "Use selected organizer" [disabled] [ref=e191]
+            - generic [ref=e194]:
+              - generic [ref=e195] [cursor=pointer]: Or upload a logo
+              - button "Or upload a logo" [ref=e196]
+        - group [ref=e66]:
+          - generic "Sponsors and collaborators" [ref=e67] [cursor=pointer]
+          - generic [ref=e71]:
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - strong [ref=e74]: Do you want to include partner logos?
+                - generic [ref=e75]: Turn on to show the Supported by area when logos are uploaded.
+              - generic [ref=e76]:
+                - generic [ref=e79] [cursor=pointer]: "Off"
+                - button "Do you want to include partner logos?" [ref=e80] [cursor=pointer]
+            - paragraph [ref=e89]: Add up to 3 partner logos. They appear in the footer of the banner.
+            - generic [ref=e90]:
+              - generic [ref=e91] [cursor=pointer]: Add from sponsor or collaborator catalogue
+              - combobox "Add from sponsor or collaborator catalogue" [ref=e93] [cursor=pointer]:
+                - option "Choose a sponsor…" [selected]
+                - option "Celonis"
+                - option "GitHub Community Spain"
+                - option "TechRiders"
+            - button "Add selected sponsor" [disabled] [ref=e94]
+            - generic [ref=e97]:
+              - generic [ref=e98] [cursor=pointer]: Add logo
+              - button "Add logo" [ref=e99]
+            - paragraph [ref=e100]: 3 slot(s) remaining.
+      - generic "Validation findings" [ref=e101]:
+        - status [ref=e102]:
+          - region [ref=e103]:
+            - heading "All checks passed" [level=2] [ref=e109]
+      - generic [ref=e110]:
+        - button "Reset" [ref=e111] [cursor=pointer]
+        - button "Event pack (.zip)" [ref=e116] [cursor=pointer]
+        - button "Download" [ref=e120] [cursor=pointer]
+    - region "Preview" [ref=e123]:
+      - generic "Banner preview" [ref=e126]
+      - toolbar "Canvas tools" [ref=e127]:
+        - button "Zoom in" [ref=e128] [cursor=pointer]
+        - button "Zoom out" [ref=e132] [cursor=pointer]
+        - button "Fit to screen" [ref=e136] [cursor=pointer]
+        - button "Download" [ref=e140] [cursor=pointer]
