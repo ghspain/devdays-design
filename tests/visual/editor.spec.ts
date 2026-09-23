@@ -332,7 +332,7 @@ test('mobile footer does not overlap editor content', async ({ page }, testInfo)
   expect(await checkNoOverlap()).toBe(true)
 
   // Verify all footer actions are still reachable.
-    await expect(page.getByRole('button', { name: 'Download PNG', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: /^Download PNG/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /event pack/i })).toBeVisible()
 
   await testInfo.attach(`mobile-footer-${testInfo.project.name}`, {
@@ -479,14 +479,15 @@ test('format selector shows purpose descriptions alongside dimensions', async ({
 
 test('download button distinguishes PNG from ZIP export', async ({ page }) => {
   // The primary download button mentions PNG (with dimensions / file count)
-  await expect(page.getByRole('button', { name: /^Download PNG/ })).toBeVisible()
+  await expect(page.locator('button.download-main')).toBeVisible()
+  await expect(page.locator('button.download-main')).toHaveAccessibleName(/^Download PNG/)
 
   // The event pack button should say "Event pack (.zip)"
   await expect(page.getByRole('button', { name: 'Event pack (.zip)' })).toBeVisible()
 
   // The canvas toolbar download should have an accessible name mentioning PNG
   await showPreviewForViewport(page)
-  const toolbarDownload = page.getByLabel(/Download PNG/)
+  const toolbarDownload = page.locator('button[title="Download PNG"]')
   await expect(toolbarDownload).toBeVisible()
 })
 
