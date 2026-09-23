@@ -114,6 +114,10 @@
   position: relative;
 }
 
+.mobile-view-tabs {
+  display: none;
+}
+
 .sidebar {
   flex: none;
   width: 400px;
@@ -217,6 +221,39 @@
   align-items: center;
   gap: 0.6rem;
   background: var(--app-header-bg);
+  position: relative;
+}
+
+.draft-status {
+  font-size: 0.75rem;
+  color: var(--vscode-textCodeBlock-background);
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.reset-confirm-dialog {
+  position: absolute;
+  bottom: 100%;
+  left: 0.9rem;
+  right: 0.9rem;
+  background: var(--app-bg);
+  border: 1px solid var(--vscode-border);
+  border-radius: 6px;
+  padding: 1rem;
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.reset-confirm-dialog p {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: var(--vscode-foreground);
+}
+
+.reset-confirm-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 .validation-panel {
@@ -285,6 +322,45 @@
 .pack-download-block small {
   color: var(--vscode-text-muted);
   font-size: 0.72rem;
+}
+
+.download-summary {
+  font-size: 0.72rem;
+  color: var(--vscode-text-muted);
+  text-align: right;
+  line-height: 1.3;
+}
+
+.validation-highlight {
+  animation: validation-field-highlight 2s ease;
+  box-shadow: 0 0 0 3px var(--vscode-charts-red) !important;
+}
+
+@keyframes validation-field-highlight {
+  0% { background-color: var(--vscode-inputValidation-errorBackground); }
+  100% { background-color: transparent; }
+}
+
+.validation-finding {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.validation-go-to-field {
+  align-self: flex-end;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid var(--vscode-button-border);
+  color: var(--vscode-button-foreground);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background-color 0.15s ease;
+}
+
+.validation-go-to-field:hover {
+  background-color: var(--vscode-button-hoverBackground);
 }
 
 .split-download {
@@ -425,6 +501,20 @@
   gap: 0.55rem;
 }
 
+.picker-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--vscode-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.format-groups,
+.theme-grid {
+  display: grid;
+  gap: 0.55rem;
+}
+
 .format-group h3 {
   margin: 0;
   font-size: 0.96rem;
@@ -438,7 +528,9 @@
 }
 
 .format-grid-pair {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
 .card-option {
@@ -448,10 +540,12 @@
   border-radius: 10px;
   background: var(--vscode-bg-elev-2);
   color: var(--vscode-text);
+  font: inherit;
   padding: 0.8rem;
   display: flex;
   flex-direction: column;
   gap: 0.38rem;
+  cursor: pointer;
   box-shadow: none;
   transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
 }
@@ -471,16 +565,146 @@
   box-shadow: 0 0 0 1px var(--vscode-accent) inset;
 }
 
+.format-card {
+  min-width: 0;
+  padding: 0.6rem;
+}
+
+.format-card:focus-visible,
+.theme-card:focus-visible {
+  outline: 2px solid var(--vscode-accent);
+  outline-offset: 2px;
+}
+
+.format-ratio-wrap {
+  width: 100%;
+  height: 2.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+  border-radius: 5px;
+  background: var(--vscode-bg-elev-1);
+}
+
+.format-ratio {
+  max-width: 100%;
+  max-height: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  border: 1px solid;
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px var(--app-shadow-medium);
+}
+
+.format-ratio > span {
+  display: block;
+  width: 100%;
+  height: 18%;
+  flex: none;
+}
+
+.format-card strong,
+.theme-card strong {
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.format-card small {
+  line-height: 1.25;
+}
+
+.theme-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.theme-card {
+  min-width: 0;
+  padding: 0.55rem;
+}
+
 .swatch-row {
   display: flex;
   gap: 0.35rem;
+  padding-top: 0.1rem;
 }
 
 .swatch-row span {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
+  flex: none;
   border-radius: 999px;
   border: 1px solid var(--app-swatch-border);
+}
+
+.theme-card .swatch-row {
+  gap: 0.25rem;
+}
+
+.picker-description {
+  margin: -0.45rem 0 0.65rem;
+  color: var(--vscode-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.editor-guide {
+  padding: 0.8rem;
+  border: 1px solid var(--vscode-border);
+  border-radius: 8px;
+  background: var(--app-copilot-tint);
+  color: var(--vscode-text);
+}
+
+.editor-guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.editor-guide h2 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.editor-guide-dismiss {
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--vscode-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--vscode-text-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.editor-guide-dismiss:hover {
+  background: var(--vscode-bg-elev-1);
+  color: var(--vscode-text);
+}
+
+.editor-guide-dismiss:focus-visible {
+  outline: 2px solid var(--vscode-accent);
+  outline-offset: 2px;
+}
+
+.editor-guide ol {
+  margin: 0.55rem 0 0;
+  padding-left: 1.2rem;
+  color: var(--vscode-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.editor-guide li + li {
+  margin-top: 0.22rem;
+}
+
+.editor-guide strong {
+  color: var(--vscode-text);
 }
 
 .form-grid {
@@ -1013,6 +1237,48 @@ input[type='file'] {
     overflow: visible;
   }
 
+  .mobile-view-tabs {
+    position: sticky;
+    top: 52px;
+    z-index: 19;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0.35rem 0.75rem;
+    border-bottom: 1px solid var(--vscode-border);
+    background: var(--app-header-bg);
+    backdrop-filter: blur(8px);
+  }
+
+  .mobile-view-tabs button {
+    min-height: 40px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--vscode-text-muted);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .mobile-view-tabs button[aria-selected='true'] {
+    background: var(--app-copilot-tint);
+    color: var(--vscode-accent);
+    box-shadow: inset 0 0 0 1px var(--vscode-accent);
+  }
+
+  .mobile-view-tabs button:focus-visible {
+    outline: 2px solid var(--vscode-accent);
+    outline-offset: 2px;
+  }
+
+  .editor-shell[data-mobile-view='preview'] .sidebar {
+    display: none;
+  }
+
+  .editor-shell[data-mobile-view='fields'] .stage {
+    display: none;
+  }
+
   .sidebar,
   .sidebar.collapsed {
     width: 100%;
@@ -1033,6 +1299,16 @@ input[type='file'] {
       padding: 0.65rem 0.75rem;
       flex-wrap: wrap;
     }
+
+  /* .sidebar-footer is sticky-bottom and always paints over whatever sits
+     behind it while the user scrolls this long single column. Reserve real
+     space equal to its rendered height (~115px measured live at 390x844,
+     rounded up) on the panel directly above it so real content (warnings,
+     the last toggle) always has room to clear the bar, mirroring the same
+     pattern already used for .stage-toolbar via .stage-canvas padding. */
+  .validation-panel {
+    padding-bottom: 8rem;
+  }
 
   .pack-download-block {
     order: 3;
@@ -1108,6 +1384,14 @@ input[type='file'] {
   .history-item img {
     width: 96px;
     height: 60px;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Prevent the sticky footer from overlapping editor content on mobile.
+     The footer stays in normal flow so the scrollable sidebar reserves space. */
+  .sidebar-footer {
+    position: static;
   }
 }
 

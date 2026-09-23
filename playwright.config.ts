@@ -10,10 +10,13 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
+    // Limit parallel workers to avoid overwhelming the dev server when loading
+    // large assets (e.g. 4MB luma background image) in parallel.
+    workers: process.env.CI ? undefined : 4,
   use: {
-    baseURL,
-    trace: 'retain-on-failure',
-  },
+      baseURL,
+      trace: 'retain-on-failure',
+    },
   projects: [
     {
       name: 'desktop-chromium',

@@ -38,6 +38,21 @@ of #6–#11. Tracked as an epic with one issue per phase:
 - Phase 4: #17 — align sidebar sections and format groups with the renderer.
 - Phase 5: #15 — full validation pass (lint, build, visual tests).
 
+## Editor coherence pass (epic #53)
+
+A follow-up coherence pass addressing mobile layout, draft persistence, format
+clarity, and actionable validation feedback. Tracked as an epic with one issue
+per phase:
+
+- Epic: ghspain/devdays-design#53 — Editor coherence and usability pass.
+- Phase 1: #57 — mobile editing keeps every field clear of the action bar.
+- Phase 2: #54 — event drafts survive reloads before export (IndexedDB).
+- Phase 3: #56 — formats and downloads explain the asset being created.
+- Phase 4: #55 — validation takes users directly to the field to fix.
+- Phase 5: #64 — Organizers can compare formats and themes visually.
+- Phase 6: #65 — Organizers can switch between fields and preview on mobile.
+- Phase 7: #66 — New organizers understand formats, presets, themes, and exports.
+
 ## Visual validation (epic #26)
 
 Roadmap item 5 shipped as a spec-driven epic with one issue per phase:

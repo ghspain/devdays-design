@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { Banner, Button, Checkbox, CounterLabel, FormControl, IconButton, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
 import {
   ChevronDownIcon,
@@ -26,27 +26,41 @@ import {
   speakerFormatIds,
 } from './constants'
 import type {
-  BannerFormat,
   BannerHistoryItem,
   BannerState,
   EventDetails,
   EventThemeId,
-  FormatOption,
   Speaker,
 } from './types'
 import { uid } from './lib/format'
 import { buildDefaultState, normalizeState, readBannerHistory, writeBannerHistory } from './lib/history'
-import { readDraft, writeDraft, clearDraft } from './lib/draft'
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
 import { createRenderInfo, validateState, type ValidationFinding } from './lib/validate'
 import { checkRenderedCanvas } from './lib/pixelChecks'
 import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
 import { buildEventPack, type EventPackProgress } from './lib/exportPack'
+import { readDraft, writeDraft, clearDraft } from './lib/draft'
+
+const EDITOR_GUIDE_STORAGE_KEY = 'devdays-editor-guide-dismissed-v1'
+
+function shouldShowEditorGuide() {
+  try {
+    return window.localStorage.getItem(EDITOR_GUIDE_STORAGE_KEY) !== 'dismissed'
+  } catch {
+    return true
+  }
+}
 
 function App() {
   const [backgroundFailed, setBackgroundFailed] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileView, setMobileView] = useState<'fields' | 'preview'>('fields')
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    () => window.matchMedia('(max-width: 760px)').matches,
+  )
+  const [showEditorGuide, setShowEditorGuide] = useState(shouldShowEditorGuide)
+  const mobileFieldsScrollY = useRef(0)
   const [showHistory, setShowHistory] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [error, setError] = useState('')
@@ -66,37 +80,81 @@ function App() {
     validationIssueCount > 0
       ? `${validationErrorCount} error${validationErrorCount === 1 ? '' : 's'}, ${validationIssueCount - validationErrorCount} warning${validationIssueCount - validationErrorCount === 1 ? '' : 's'}`
       : ''
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+    // Map validation findings to actionable field/section links
+    const FINDING_TARGET_MAP: Record<string, { elementId: string; fieldId?: string }> = {
+          'missing-city': { elementId: 'section-event', fieldId: 'event-city' },
+              'missing-venue': { elementId: 'section-event', fieldId: 'event-location' },
+              'missing-date': { elementId: 'section-event', fieldId: 'event-datetime' },
+              'missing-hashtag': { elementId: 'section-event' },
+              'missing-url': { elementId: 'section-event', fieldId: 'registration-url' },
+              'missing-description': { elementId: 'section-event' },
+          'speakers-dropped': { elementId: 'section-speakers' },
+          'logos-dropped': { elementId: 'section-partners' },
+          'missing-partner': { elementId: 'section-partners' },
+          'missing-sponsor': { elementId: 'section-partners' },
+              'missing-organizer': { elementId: 'section-organizer', fieldId: 'organizer-select' },
+              'missing-organizer-url': { elementId: 'section-organizer', fieldId: 'registration-url' },
+        }
+
+        /** Map truncated field names (from renderBanner.ts) to their editor field IDs. */
+            const TRUNCATED_FIELD_MAP: Record<string, { sectionId: string; fieldId?: string }> = {
+          'city': { sectionId: 'section-event', fieldId: 'event-city' },
+          'edition': { sectionId: 'section-event', fieldId: 'event-edition' },
+              'date & time': { sectionId: 'section-event', fieldId: 'event-datetime' },
+              'speaker name': { sectionId: 'section-speakers' },
+              'speaker role': { sectionId: 'section-speakers' },
+              'registration label': { sectionId: 'section-event', fieldId: 'registration-text' },
+              'registration URL': { sectionId: 'section-event', fieldId: 'registration-url' },
+          'event title': { sectionId: 'section-event', fieldId: 'event-title' },
+              'event details': { sectionId: 'section-event' },
+              'location': { sectionId: 'section-event', fieldId: 'event-location' },
+        }
+
+        const navigateToField = (finding: ValidationFinding) => {
+          // For text-truncated, use the specific field name to find the target
+          let target: { elementId: string; fieldId?: string } | undefined
+          if (finding.code === 'text-truncated' && finding.field) {
+            const specific = TRUNCATED_FIELD_MAP[finding.field]
+            if (specific) {
+              target = { elementId: specific.sectionId, fieldId: specific.fieldId }
+            }
+          }
+          if (!target) {
+            target = FINDING_TARGET_MAP[finding.code]
+          }
+          if (!target) return
+
+      // Scroll to the section
+      const sectionEl = document.getElementById(target.elementId) as HTMLDetailsElement | null
+      if (sectionEl) {
+        sectionEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        // Open the section if it's collapsed
+        if (sectionEl.tagName === 'DETAILS' && !sectionEl.open) {
+          sectionEl.open = true
+        }
+      }
+
+      // Focus the specific field if available
+      if (target.fieldId) {
+        const fieldEl = document.getElementById(target.fieldId)
+        if (fieldEl) {
+          setTimeout(() => {
+            fieldEl.focus()
+            fieldEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            // Briefly highlight the field
+            fieldEl.classList.add('validation-highlight')
+            setTimeout(() => fieldEl.classList.remove('validation-highlight'), 2000)
+          }, 300)
+        }
+      }
+    }
+
+    const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const [state, setState] = useState<BannerState>(() => buildDefaultState())
-
-    // Restore draft (or last export) on mount.
-    useEffect(() => {
-      let cancelled = false
-      void (async () => {
-        try {
-          const draft = await readDraft()
-          if (draft && !cancelled) {
-            setState(normalizeState(draft))
-            return
-          }
-        } catch {
-          // ignore
-        }
-        try {
-          const history = readBannerHistory()
-          const lastExport = history[0]?.state
-          if (lastExport && !cancelled) {
-            setState(normalizeState(lastExport))
-          }
-        } catch {
-          // ignore
-        }
-      })()
-      return () => { cancelled = true }
-    }, [])
-
-  const [draftSaveStatus, setDraftSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [draftStatus, setDraftStatus] = useState<'saving' | 'saved' | 'error' | null>(null)
+  const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const format = useMemo(
     () => formatOptions.find((item) => item.id === state.format) ?? formatOptions[0],
@@ -114,15 +172,10 @@ function App() {
     () => state.speakers.filter((speaker) => speaker.name.trim().length > 0).slice(0, MAX_SPEAKERS),
     [state.speakers],
   )
-    /** How many PNG files the Download button will produce. */
-    const downloadFileCount = isSpeakerPerBannerFormat ? namedSpeakers.length || 1 : 1
-    /** Human-readable label for the Download button. */
-    const downloadLabel = useMemo(() => {
-      const dims = `${format.width}x${format.height}`
-      if (downloadFileCount === 1) return `PNG · ${dims}`
-      return `PNG · ${dims} · ${downloadFileCount} files`
-    }, [format.width, format.height, downloadFileCount])
-    const showMultiSpeakerPreviewGrid = isSpeakerPerBannerFormat && namedSpeakers.length > 1
+  const showMultiSpeakerPreviewGrid = isSpeakerPerBannerFormat && namedSpeakers.length > 1
+  const downloadFileCount =
+    isSpeakerPerBannerFormat && namedSpeakers.length > 1 ? namedSpeakers.length : 1
+  const downloadLabel = `PNG · ${format.width}×${format.height}${downloadFileCount > 1 ? ` · ${downloadFileCount} files` : ''}`
   const catalogEventOptions = useMemo(() => {
     const labels = new Map<string, string>()
     for (const item of catalogSpeakers) {
@@ -155,6 +208,51 @@ function App() {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 760px)')
+    const updateViewport = () => {
+      setIsMobileViewport(media.matches)
+      if (!media.matches) setMobileView('fields')
+    }
+    media.addEventListener('change', updateViewport)
+    return () => media.removeEventListener('change', updateViewport)
+  }, [])
+
+    // Load the latest draft on mount. If a draft exists, restore it; otherwise
+    // keep the default state so the user sees the pre-filled template.
+    useEffect(() => {
+      let cancelled = false
+      readDraft()
+        .then((draft) => {
+          if (!cancelled && draft) {
+            setState(normalizeState(draft))
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setDraftStatus('error')
+        })
+
+      return () => {
+        cancelled = true
+      }
+    }, [])
+
+    // Debounced auto-save draft on state changes.
+    useEffect(() => {
+      if (draftSaveRef.current) clearTimeout(draftSaveRef.current)
+      setDraftStatus('saving')
+
+      draftSaveRef.current = setTimeout(() => {
+        writeDraft(state)
+          .then(() => setDraftStatus('saved'))
+          .catch(() => setDraftStatus('error'))
+      }, 500)
+
+      return () => {
+        if (draftSaveRef.current) clearTimeout(draftSaveRef.current)
+      }
+    }, [state])
 
   useEffect(() => {
     let cancelled = false
@@ -203,19 +301,6 @@ function App() {
       window.cancelAnimationFrame(frame)
     }
   }, [state, format, previewBackgroundFailed, showMultiSpeakerPreviewGrid, fontsReady])
-
-  // Debounced draft save: persist the latest state to IndexedDB after 500ms of inactivity.
-  useEffect(() => {
-    setDraftSaveStatus('saving')
-    const timer = setTimeout(() => {
-          void (async () => {
-            const ok = await writeDraft(state)
-            setDraftSaveStatus(ok ? 'saved' : 'error')
-            setTimeout(() => setDraftSaveStatus('idle'), 2000)
-          })()
-        }, 500)
-    return () => clearTimeout(timer)
-  }, [state])
 
   useEffect(() => {
     let cancelled = false
@@ -315,25 +400,7 @@ function App() {
   const removeSpeaker = (id: string) =>
     setState((previous) => ({ ...previous, speakers: previous.speakers.filter((speaker) => speaker.id !== id) }))
 
-    /** Scroll to and focus a field by its id, with a brief highlight flash. */
-    const navigateToField = (targetId: string | undefined) => {
-      if (!targetId) return
-      const el = document.getElementById(targetId)
-      if (!el) return
-      // Scroll into view with a smooth behavior
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      // Focus the first interactive element inside the section
-      const input = el.querySelector<HTMLInputElement>('input, select, textarea')
-      input?.focus()
-      // Brief highlight via inline style
-      el.style.transition = 'box-shadow 0.3s ease'
-      el.style.boxShadow = '0 0 0 3px var(--color-accent-fg)'
-      setTimeout(() => {
-        el.style.boxShadow = ''
-      }, 2000)
-    }
-
-    const addCatalogSponsor = () => {
+  const addCatalogSponsor = () => {
     const sponsor = catalogSponsors.find((item) => item.id === selectedSponsorId)
     if (!sponsor || state.partners.length >= 3) return
     setState((previous) => ({
@@ -371,13 +438,12 @@ function App() {
     setState((previous) => ({ ...previous, theme: theme.id, colors: theme.colors }))
   }
 
-  const resetAll = () => {
-      if (typeof window === 'undefined') return
-      const confirmed = window.confirm('Reset to defaults? This will clear the saved draft.')
-      if (!confirmed) return
-      void clearDraft().catch(() => {})
+  const [resetConfirm, setResetConfirm] = useState(false)
+
+    const resetAll = () => {
       setState(buildDefaultState())
       setZoom(1)
+      clearDraft().catch(() => undefined)
     }
 
   const zoomIn = () => setZoom((value) => Math.min(2, Math.round((value + 0.1) * 10) / 10))
@@ -498,8 +564,37 @@ function App() {
     writeBannerHistory([])
   }
 
+  const switchMobileView = (view: 'fields' | 'preview') => {
+    if (isMobileViewport) {
+      if (view === 'preview') mobileFieldsScrollY.current = window.scrollY
+      setMobileView(view)
+      requestAnimationFrame(() => {
+        window.scrollTo(0, view === 'preview' ? 0 : mobileFieldsScrollY.current)
+      })
+      return
+    }
+    setMobileView(view)
+  }
+
+  const handleMobileViewKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (!isMobileViewport || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return
+    event.preventDefault()
+    const view = event.key === 'ArrowRight' ? 'preview' : 'fields'
+    switchMobileView(view)
+    document.getElementById(`mobile-${view}-tab`)?.focus()
+  }
+
+  const dismissEditorGuide = () => {
+    try {
+      window.localStorage.setItem(EDITOR_GUIDE_STORAGE_KEY, 'dismissed')
+      setShowEditorGuide(false)
+    } catch {
+      setError('Could not save your guide preference. You can close this guide again later.')
+    }
+  }
+
   return (
-    <div className="editor-shell">
+    <div className="editor-shell" data-mobile-view={mobileView}>
       <header className="topbar">
         <div className="topbar-left">
           <span className="topbar-icon" aria-hidden="true">
@@ -532,7 +627,44 @@ function App() {
       </header>
 
       <div className="editor-body">
-        <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`} aria-label="Editor controls">
+        <div
+          className="mobile-view-tabs"
+          role={isMobileViewport ? 'tablist' : undefined}
+          aria-label={isMobileViewport ? 'Editor view' : undefined}
+        >
+          <button
+            id="mobile-fields-tab"
+            aria-controls={isMobileViewport ? 'mobile-fields-panel' : undefined}
+            aria-selected={isMobileViewport ? mobileView === 'fields' : undefined}
+            onKeyDown={handleMobileViewKeyDown}
+            onClick={() => switchMobileView('fields')}
+            role={isMobileViewport ? 'tab' : undefined}
+            tabIndex={mobileView === 'fields' ? 0 : -1}
+            type="button"
+          >
+            Fields
+          </button>
+          <button
+            id="mobile-preview-tab"
+            aria-controls={isMobileViewport ? 'mobile-preview-panel' : undefined}
+            aria-selected={isMobileViewport ? mobileView === 'preview' : undefined}
+            onKeyDown={handleMobileViewKeyDown}
+            onClick={() => switchMobileView('preview')}
+            role={isMobileViewport ? 'tab' : undefined}
+            tabIndex={mobileView === 'preview' ? 0 : -1}
+            type="button"
+          >
+            Preview
+          </button>
+        </div>
+        <aside
+          id="mobile-fields-panel"
+          className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
+          aria-label="Editor controls"
+          role={isMobileViewport ? 'tabpanel' : undefined}
+          aria-labelledby={isMobileViewport ? 'mobile-fields-tab' : undefined}
+          tabIndex={isMobileViewport ? -1 : undefined}
+        >
           <div className="sidebar-header">
             <IconButton
               icon={sidebarCollapsed ? SidebarExpandIcon : SidebarCollapseIcon}
@@ -546,44 +678,73 @@ function App() {
           </div>
 
           <div className="sidebar-content">
+          {showEditorGuide && (
+            <section className="editor-guide" role="region" aria-labelledby="editor-guide-title">
+              <div className="editor-guide-header">
+                <h2 id="editor-guide-title">A quick guide</h2>
+                <button className="editor-guide-dismiss" onClick={dismissEditorGuide} type="button">
+                  Dismiss
+                </button>
+              </div>
+              <ol>
+                <li><strong>Format</strong> chooses the image shape and channel.</li>
+                <li><strong>Event preset</strong> fills event details; <strong>Design theme</strong> sets the visual identity.</li>
+                <li>Edit the event, speaker, and partner details for this image.</li>
+                <li>Review validation messages and follow their field links to fix issues.</li>
+                <li><strong>Download PNG</strong> saves this format; <strong>Event pack (.zip)</strong> includes every format.</li>
+              </ol>
+            </section>
+          )}
           {backgroundFailed && <p className="warning">Background image unavailable: using gradient fallback for preview.</p>}
 
           <div className="format-bar">
-            <FormControl id="format" className="format-select-label">
-              <FormControl.Label>Format</FormControl.Label>
-              <Select
-                id="format"
-                block
-                value={state.format}
-                onChange={(e) => setState((previous) => ({ ...previous, format: e.target.value as BannerFormat }))}
-              >
-                <Select.OptGroup label="Event formats">
-                  {eventFormatIds
-                    .map((id) => formatOptions.find((option) => option.id === id))
-                    .filter((option): option is FormatOption => Boolean(option))
-                    .map((option) => (
-                      <Select.Option key={option.id} value={option.id}>
-                        {option.name} — {option.width}x{option.height}
-                                              {option.description ? ` — ${option.description}` : ''}
-                                      </Select.Option>
-                                    ))}
-                                </Select.OptGroup>
-                                <Select.OptGroup label="Speaker formats">
-                                  {speakerFormatIds
-                                    .map((id) => formatOptions.find((option) => option.id === id))
-                                    .filter((option): option is FormatOption => Boolean(option))
-                                    .map((option) => (
-                                      <Select.Option key={option.id} value={option.id}>
-                                        {option.name} — {option.width}x{option.height}
-                                                                              {option.description ? ` — ${option.description}` : ''}
-                                      </Select.Option>
-                                    ))}
-                                </Select.OptGroup>
-              </Select>
-            </FormControl>
+            <span className="picker-label" id="format-label">Format</span>
+            <div className="format-groups" role="group" aria-labelledby="format-label">
+              {[
+                { label: 'Event formats', ids: eventFormatIds },
+                { label: 'Speaker formats', ids: speakerFormatIds },
+              ].map((group) => (
+                <div className="format-group" key={group.label}>
+                  <h3>{group.label}</h3>
+                  <div className="format-grid-pair">
+                    {group.ids.map((id) => {
+                      const option = formatOptions.find((item) => item.id === id)
+                      if (!option) return null
+                      return (
+                        <button
+                          aria-pressed={state.format === option.id}
+                          aria-label={`${option.name}, ${option.width} by ${option.height}, ${option.description ?? ''}, ${option.channels?.join(', ') ?? ''}`}
+                          className={`card-option format-card${state.format === option.id ? ' selected' : ''}`}
+                          key={option.id}
+                          onClick={() => setState((previous) => ({ ...previous, format: option.id }))}
+                          type="button"
+                        >
+                          <span className="format-ratio-wrap" aria-hidden="true">
+                            <span
+                              className="format-ratio"
+                              style={{
+                                aspectRatio: `${option.width} / ${option.height}`,
+                                backgroundColor: state.colors.background,
+                                borderColor: state.colors.secondary,
+                              }}
+                            >
+                              <span style={{ backgroundColor: state.colors.accent }} />
+                            </span>
+                          </span>
+                          <strong>{option.name}</strong>
+                          <small>{option.width} × {option.height}</small>
+                          <small>{option.description}</small>
+                          <small>Channels: {option.channels?.join(', ')}</small>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <details className="side-section" open>
+          <details className="side-section" open id="section-event">
             <summary>
               <span>Event</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -595,22 +756,33 @@ function App() {
                   <Select.Option value="">Choose a preset…</Select.Option>
                   {eventPresets.map((preset) => <Select.Option key={preset.id} value={preset.id}>{preset.name}</Select.Option>)}
                 </Select>
+                <FormControl.Caption>A recipe that fills event details; it does not change the format or visual identity.</FormControl.Caption>
               </FormControl>
-              <FormControl id="design-theme">
-                <FormControl.Label>Design theme</FormControl.Label>
-                <Select
-                  id="design-theme"
-                  block
-                  value={state.theme}
-                  onChange={(e) => applyTheme(e.target.value as EventThemeId)}
-                >
+              <div className="theme-picker">
+                <span className="picker-label" id="theme-label">Design theme</span>
+                <div className="theme-grid" role="group" aria-labelledby="theme-label">
                   {Object.values(EVENT_THEMES).map((theme) => (
-                    <Select.Option key={theme.id} value={theme.id}>
-                      {theme.name}
-                    </Select.Option>
+                    <button
+                      aria-pressed={state.theme === theme.id}
+                      aria-label={theme.name}
+                      className={`card-option theme-card${state.theme === theme.id ? ' selected' : ''}`}
+                      key={theme.id}
+                      onClick={() => applyTheme(theme.id)}
+                      type="button"
+                    >
+                      <strong>{theme.name}</strong>
+                      <span
+                        className="swatch-row"
+                        aria-label={`Colors: ${theme.colors.primary}, ${theme.colors.accent}, ${theme.colors.background}`}
+                      >
+                        {[theme.colors.primary, theme.colors.accent, theme.colors.background].map((color) => (
+                          <span key={color} style={{ backgroundColor: color }} />
+                        ))}
+                      </span>
+                    </button>
                   ))}
-                </Select>
-              </FormControl>
+                </div>
+              </div>
               <div className="form-grid single">
                 <FormControl id="event-title">
                   <FormControl.Label>Event title</FormControl.Label>
@@ -730,7 +902,7 @@ function App() {
           </details>
 
           {!isMinimalCover && !isSocialPromo && (
-          <details className="side-section" id="speakers-section" open>
+          <details className="side-section" open id="section-speakers">
             <summary>
               <span>Speakers <small className="section-count">{state.speakers.length} / {MAX_SPEAKERS}</small></span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -841,7 +1013,7 @@ function App() {
           )}
 
           {(isSpeakerBanner || isSocialPromo) && (
-                    <details className="side-section" id="organizer-section" open>
+          <details className="side-section" open id="section-organizer">
             <summary>
               <span>Organizer</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -879,7 +1051,7 @@ function App() {
           )}
 
           {(isLumaCover || isSocialPromo || isSpeakerBanner || isSpeakerSquare) && (
-          <details className="side-section" open>
+          <details className="side-section" open id="section-partners">
             <summary>
               <span>Sponsors and collaborators</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -979,53 +1151,75 @@ function App() {
           </div>
 
           <div className="validation-panel" aria-label="Validation findings" role="status">
-                      {validationFindings.length === 0 ? (
-                        <div role="status">
-                          <Banner variant="success" layout="compact" flush>
-                            <Banner.Title>All checks passed</Banner.Title>
-                          </Banner>
-                        </div>
-                      ) : (
-                        validationFindings.map((finding) => (
-                          <Banner
-                            key={`${finding.code}:${finding.field ?? ''}:${finding.message}`}
-                            variant={finding.severity === 'error' ? 'critical' : 'warning'}
-                            layout="compact"
-                            flush
-                                                    role="alert"
-                                                  >
-                                                      <Banner.Title>{finding.severity === 'error' ? 'Error' : 'Warning'}</Banner.Title>
-                                                      <span>
-                                                        {finding.message}
-                              {finding.targetId && (
-                                <button
-                                  type="button"
-                                  className="validation-navigate"
-                                  onClick={() => navigateToField(finding.targetId)}
-                                  aria-label={`Go to ${finding.field ?? 'field'}`}
-                                >
-                                  {' '}
-                                  → {finding.field}
-                                </button>
-                              )}
-                            </span>
-                          </Banner>
-                        ))
-                      )}
-                    </div>
+            {validationFindings.length === 0 ? (
+              <div role="status">
+                <Banner variant="success" layout="compact" flush title="All checks passed" />
+              </div>
+            ) : (
+                        validationFindings.map((finding) => {
+                                    // Resolve target: for text-truncated, use the specific field name
+                                    let target: { elementId: string; fieldId?: string } | undefined
+                                    if (finding.code === 'text-truncated' && finding.field) {
+                                      const specific = TRUNCATED_FIELD_MAP[finding.field]
+                                      if (specific) {
+                                        target = { elementId: specific.sectionId, fieldId: specific.fieldId }
+                                      }
+                                    }
+                                    if (!target) {
+                                      target = FINDING_TARGET_MAP[finding.code]
+                                    }
+                                    const hasAction = !!target
+                                    const findingId = `finding-${finding.code}-${Math.random().toString(36).slice(2, 8)}`
+
+                                    return (
+                                      <div key={`${finding.code}:${finding.field ?? ''}:${finding.message}`} className="validation-finding">
+                                        <Banner
+                                          id={findingId}
+                                          variant={finding.severity === 'error' ? 'critical' : 'warning'}
+                                          layout="compact"
+                                          flush
+                                          title={`${finding.severity === 'error' ? 'Error' : 'Warning'}: ${finding.message}`}
+                                          aria-describedby={hasAction ? findingId : undefined}
+                                        />
+                                        {hasAction && target && (
+                                          <button
+                                            type="button"
+                                            className="validation-go-to-field"
+                                            onClick={() => navigateToField(finding)}
+                                            aria-label={`Go to ${target.fieldId ? 'field' : 'section'}`}
+                                          >
+                                            Go to field
+                                          </button>
+                                        )}
+                                      </div>
+                                    )
+                                  })
+                                )}
+                              </div>
 
           <div className="sidebar-footer">
-            <Button variant="invisible" onClick={resetAll} title="Reset to defaults">
+                      <Button variant="invisible" onClick={() => setResetConfirm(true)} title="Reset to defaults">
               Reset
             </Button>
-                      {draftSaveStatus !== 'idle' && (
-                        <small
-                          className="draft-status"
-                          aria-live="polite"
-                          style={{ color: draftSaveStatus === 'error' ? 'var(--color-danger-fg)' : 'var(--color-fg-muted)' }}
-                        >
-                          {draftSaveStatus === 'saving' ? 'Saving…' : draftSaveStatus === 'saved' ? 'Saved' : 'Save failed'}
-                        </small>
+                      {draftStatus && (
+                        <span className="draft-status" aria-live="polite">
+                          {draftStatus === 'saving' && '⏳ Saving…'}
+                          {draftStatus === 'saved' && '✓ Saved'}
+                          {draftStatus === 'error' && '✗ Draft error'}
+                        </span>
+                      )}
+                      {resetConfirm && (
+                        <div className="reset-confirm-dialog">
+                          <p>Reset all fields to defaults? This will clear the current draft.</p>
+                          <div className="reset-confirm-actions">
+                            <Button variant="invisible" onClick={() => setResetConfirm(false)}>
+                              Cancel
+                            </Button>
+                            <Button variant="danger" onClick={resetAll}>
+                              Confirm Reset
+                            </Button>
+                          </div>
+                        </div>
                       )}
             <div className="pack-download-block">
               <Button
@@ -1047,7 +1241,7 @@ function App() {
                 }}
                 aria-label={exportFindingsLabel ? `Event pack (.zip). Findings: ${exportFindingsLabel}` : undefined}
               >
-                              Event pack (.zip) — all speakers
+                Event pack (.zip)
               </Button>
               {packProgress && (
                 <small aria-live="polite">
@@ -1055,34 +1249,58 @@ function App() {
                   {packProgress.total > 0 ? ` ${packProgress.completed}/${packProgress.total}` : ''}
                 </small>
               )}
-            </div>
-            <div className="split-download">
-              <Button
-                className="download-main"
-                variant="primary"
-                leadingVisual={DownloadIcon}
-                trailingVisual={
-                  validationIssueCount > 0 ? (
-                    <CounterLabel
-                      className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
-                      aria-hidden="true"
-                    >
-                      {validationIssueCount}
-                    </CounterLabel>
-                  ) : null
-                }
-                onClick={() => {
-                  void exportBanner()
-                }}
-                aria-label={exportFindingsLabel ? `Download. Findings: ${exportFindingsLabel}` : undefined}
-              >
-                                {downloadLabel}
-              </Button>
-            </div>
+                          <div className="download-summary">
+                            {isSpeakerPerBannerFormat ? (
+                              <>
+                                <span>
+                                  {namedSpeakers.length} speaker banner(s) · {format.width}×{format.height} each
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span>Single PNG · {format.width}×{format.height}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="split-download">
+                          <Button
+                            className="download-main"
+                            variant="primary"
+                            leadingVisual={DownloadIcon}
+                            trailingVisual={
+                              validationIssueCount > 0 ? (
+                                <CounterLabel
+                                  className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
+                                  aria-hidden="true"
+                                >
+                                  {validationIssueCount}
+                                </CounterLabel>
+                              ) : null
+                            }
+                            onClick={() => {
+                              void exportBanner()
+                            }}
+                            aria-label={
+                              exportFindingsLabel
+                                ? `Download PNG. Findings: ${exportFindingsLabel}`
+                                : `Download ${downloadLabel}`
+                            }
+                          >
+                            {downloadLabel}
+                          </Button>
+                        </div>
           </div>
         </aside>
 
-        <section className="stage" aria-label="Preview">
+        <section
+          id="mobile-preview-panel"
+          className="stage"
+          aria-label="Preview"
+          role={isMobileViewport ? 'tabpanel' : undefined}
+          aria-labelledby={isMobileViewport ? 'mobile-preview-tab' : undefined}
+          tabIndex={isMobileViewport ? -1 : undefined}
+        >
           <div className="stage-canvas">
             {!showMultiSpeakerPreviewGrid && (
               <div
@@ -1141,8 +1359,8 @@ function App() {
               icon={DownloadIcon}
               size="small"
               variant="primary"
-              title="Download"
-              aria-label="Download"
+                          title="Download PNG"
+                          aria-label={`Download PNG · ${format.width}×${format.height}`}
               onClick={() => {
                 void exportBanner()
               }}

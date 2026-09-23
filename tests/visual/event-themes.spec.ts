@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { formatOptions } from '../../src/constants'
+import { selectFormat } from './helpers'
 
 // Phase 1 (#49): colors and fixed brand text now come from an EventTheme
 // resolved through `getEventTheme(state.theme)` instead of hardcoded
@@ -13,6 +14,27 @@ import { formatOptions } from '../../src/constants'
 // because canvas text antialiasing differs between OSes/Chromium builds and
 // makes byte-for-byte hashing flaky across local and CI runners.
 
+// Wait for the luma background image to load (it's a large PNG that can be slow
+// when running tests in parallel with many workers). We wait for the canvas to
+// have non-zero alpha pixels, which indicates the background has been drawn.
+async function waitForLumaBackground(page: import('@playwright/test').Page) {
+  await expect
+    .poll(async () => {
+      return page.evaluate(() => {
+        const canvas = document.querySelector('canvas[aria-label="Banner preview"]') as HTMLCanvasElement
+        if (!canvas) return false
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return false
+        const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        for (let index = 0; index < data.length; index += 4) {
+          if (data[index + 3] !== 0) return true
+        }
+        return false
+      })
+    }, { timeout: 15000 })
+    .toBe(true)
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
@@ -20,7 +42,12 @@ test.beforeEach(async ({ page }) => {
 
 for (const format of formatOptions) {
   test(`${format.id} renders at the expected size under the default (devdays) theme`, async ({ page }) => {
-    await page.locator('.format-bar select').selectOption(format.id)
+    await selectFormat(page, format.id)
+
+    // Wait for luma background image to load before checking canvas
+    if (format.id === 'luma_cover') {
+      await waitForLumaBackground(page)
+    }
 
     const canvas = page.getByLabel('Banner preview')
     await expect
