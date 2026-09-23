@@ -23,63 +23,57 @@ test.describe('Event drafts survive reloads', () => {
     await page.goto('/')
     await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
 
-    // Change format
-    await page.locator('.format-bar select').selectOption('speaker_square')
-    await expect(page.locator('.format-bar select')).toHaveValue('speaker_square')
+      // Change format by clicking the Speaker Profile card
+      await page.getByRole('button', { name: /Speaker Profile/ }).click()
+      await expect(page.locator('.format-card.selected')).toContainText('Speaker Profile', { timeout: 3000 })
 
     // Wait for draft save
     await expect(page.locator('.draft-status')).toContainText('Saved', { timeout: 5000 })
 
     // Reload
     await page.reload()
-    await expect(page.locator('.format-bar select')).toHaveValue('speaker_square', { timeout: 10000 })
+      await expect(page.locator('.format-card.selected')).toContainText('Speaker Profile', { timeout: 10000 })
   })
 
   test('reset confirm clears the draft and restores defaults', async ({ page }) => {
-    await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+      await page.goto('/')
+      await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
 
-    // Edit the event title
-    const titleInput = page.getByLabel('Event title')
-    await titleInput.fill('Temporary Event')
-    await expect(titleInput).toHaveValue('Temporary Event')
+      // Edit the event title
+      const titleInput = page.getByLabel('Event title')
+      await titleInput.fill('Temporary Event')
+      await expect(titleInput).toHaveValue('Temporary Event')
 
-    // Wait for draft save
-    await expect(page.locator('.draft-status')).toContainText('Saved', { timeout: 5000 })
+      // Wait for draft save
+      await expect(page.locator('.draft-status')).toContainText('Saved', { timeout: 5000 })
 
-    // Click Reset and confirm (handle browser confirm dialog)
-    page.on('dialog', async (dialog) => {
-      expect(dialog.type()).toBe('confirm')
-      await dialog.accept()
+      // Click Reset and confirm via custom dialog
+      await page.getByRole('button', { name: 'Reset' }).click()
+      await page.getByRole('button', { name: 'Confirm Reset' }).click()
+
+      // The title should be restored to default
+      await expect(titleInput).toHaveValue('Dev Days', { timeout: 5000 })
     })
-    await page.getByRole('button', { name: 'Reset' }).click()
-
-    // The title should be restored to default
-    await expect(titleInput).toHaveValue('Dev Days', { timeout: 5000 })
-  })
 
   test('reset cancel keeps the draft', async ({ page }) => {
-    await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+      await page.goto('/')
+      await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
 
-    // Edit the event title
-    const titleInput = page.getByLabel('Event title')
-    await titleInput.fill('Temporary Event')
-    await expect(titleInput).toHaveValue('Temporary Event')
+      // Edit the event title
+      const titleInput = page.getByLabel('Event title')
+      await titleInput.fill('Temporary Event')
+      await expect(titleInput).toHaveValue('Temporary Event')
 
-    // Wait for draft save
-    await expect(page.locator('.draft-status')).toContainText('Saved', { timeout: 5000 })
+      // Wait for draft save
+      await expect(page.locator('.draft-status')).toContainText('Saved', { timeout: 5000 })
 
-    // Click Reset and cancel (handle browser confirm dialog)
-    page.on('dialog', async (dialog) => {
-      expect(dialog.type()).toBe('confirm')
-      await dialog.dismiss()
+      // Click Reset and cancel via custom dialog
+      await page.getByRole('button', { name: 'Reset' }).click()
+      await page.getByRole('button', { name: 'Cancel' }).click()
+
+      // The title should still be the temporary one
+      await expect(titleInput).toHaveValue('Temporary Event', { timeout: 5000 })
     })
-    await page.getByRole('button', { name: 'Reset' }).click()
-
-    // The title should still be the temporary one
-    await expect(titleInput).toHaveValue('Temporary Event', { timeout: 5000 })
-  })
 
   test('draft save status is accessible', async ({ page }) => {
     await page.goto('/')

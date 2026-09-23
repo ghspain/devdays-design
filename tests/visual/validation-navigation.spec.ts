@@ -2,14 +2,14 @@ import { test, expect } from '@playwright/test'
 
 test.use({ viewport: { width: 1200, height: 800 } })
 
-test('clicking a truncated-city finding scrolls to and focuses the City input', async ({ page }) => {
+test('clicking a text-truncated finding scrolls to and focuses the Event title input', async ({ page }) => {
   await page.goto('/')
 
-  // Set a long city name that will trigger the truncated-city validation
-  await page.fill('input[id*="event-city"]', 'Esta es una ciudad con un nombre extremadamente largo que supera el límite de caracteres permitidos en el sistema')
+  // Set a very long event title that will trigger text-truncated validation
+  await page.fill('input[id*="event-title"]', 'Esta es una conferencia internacional de tecnología y desarrollo de software con un nombre extremadamente largo que supera todos los límites')
   await page.waitForTimeout(1000) // Wait for validation
 
-  // Check that the truncated-city finding appears
+  // Check that the text-truncated finding appears
   const findings = page.locator('.validation-panel [data-component="Banner"]')
   await expect(findings.first()).toBeVisible()
 
@@ -17,8 +17,8 @@ test('clicking a truncated-city finding scrolls to and focuses the City input', 
   const navigateBtn = page.locator('.validation-navigate').first()
   if (await navigateBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
     await navigateBtn.click()
-    // The city input should receive focus
-    await expect(page.locator('input[id*="event-city"]')).toBeFocused({ timeout: 3000 })
+    // The event title input should receive focus
+    await expect(page.locator('input[id*="event-title"]')).toBeFocused({ timeout: 3000 })
   }
 })
 
@@ -59,20 +59,19 @@ test('clicking a speakers-dropped finding scrolls to the Speakers section', asyn
 test('validation findings are programmatically associated with controls', async ({ page }) => {
   await page.goto('/')
 
-  // Set a long city name to trigger validation
-  await page.fill('input[id*="event-city"]', 'Esta es una ciudad con un nombre extremadamente largo que supera el límite de caracteres permitidos en el sistema')
+  // Set a long event title to trigger validation
+  await page.fill('input[id*="event-title"]', 'Esta es una conferencia internacional de tecnología y desarrollo de software con un nombre extremadamente largo que supera todos los límites')
   await page.waitForTimeout(1000)
 
-  // The city input should have aria-describedby pointing to a validation element
-  const cityInput = page.locator('input[id*="event-city"]')
-  const ariaDescribedby = await cityInput.getAttribute('aria-describedby')
+  // The event title input should have aria-describedby pointing to a validation element
+  const titleInput = page.locator('input[id*="event-title"]')
+  const ariaDescribedby = await titleInput.getAttribute('aria-describedby')
 
-  // Either the input has aria-describedby, or the validation panel has role="alert"
-  const hasAriaDescribedby = ariaDescribedby !== null && ariaDescribedby.length > 0
+  // Either the input has aria-describedby, or the validation panel has role="status"
   const validationPanel = page.locator('.validation-panel')
-  const hasRoleAlert = await validationPanel.evaluate((el) => el.querySelector('[role="alert"], [role="status"]') !== null)
+  const panelRole = await validationPanel.getAttribute('role')
 
-  expect(hasAriaDescribedby || hasRoleAlert).toBeTruthy()
+  expect(ariaDescribedby !== null && ariaDescribedby.length > 0 || panelRole === 'status').toBeTruthy()
 })
 
 test('all-clear state shows success banner', async ({ page }) => {

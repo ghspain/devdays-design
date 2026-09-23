@@ -478,8 +478,8 @@ test('format selector shows purpose descriptions alongside dimensions', async ({
 })
 
 test('download button distinguishes PNG from ZIP export', async ({ page }) => {
-  // The primary download button should say "Download PNG" (exact match)
-  await expect(page.getByRole('button', { name: 'Download PNG', exact: true })).toBeVisible()
+  // The primary download button mentions PNG (with dimensions / file count)
+  await expect(page.getByRole('button', { name: /^Download PNG/ })).toBeVisible()
 
   // The event pack button should say "Event pack (.zip)"
   await expect(page.getByRole('button', { name: 'Event pack (.zip)' })).toBeVisible()

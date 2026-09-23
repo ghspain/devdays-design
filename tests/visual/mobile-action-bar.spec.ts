@@ -96,7 +96,7 @@ test.describe('Mobile action bar', () => {
     await page.goto('/')
 
     // Check that the format selector is visible
-    await expect(page.locator('.format-bar select')).toBeVisible()
+    await expect(page.locator('.format-bar')).toBeVisible()
 
     // Check that the footer actions are visible
     await expect(page.getByRole('button', { name: 'Reset' })).toBeVisible()

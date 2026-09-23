@@ -1,20 +1,22 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Format and export outputs are explained', () => {
-  test('format select shows description for each option', async ({ page }) => {
+  test('format cards show name and description for each format', async ({ page }) => {
     await page.goto('/')
 
-    // Primer Select renders a native <select> inside .format-bar with all options
-    const formatSelectEl = page.locator('.format-bar select')
-    const options = await formatSelectEl.locator('option').all()
-    expect(options.length).toBeGreaterThanOrEqual(4)
+    // Format cards render as toggle buttons with descriptive aria-labels
+    const cards = page.locator('.format-card')
+    expect(await cards.count()).toBeGreaterThanOrEqual(4)
 
-    // Verify option values include all format ids
-    const values = await Promise.all(options.map((opt) => opt.getAttribute('value')))
-    expect(values).toContain('speaker_square')
-    expect(values).toContain('speaker_banner')
-    expect(values).toContain('social_promo')
-    expect(values).toContain('luma_cover')
+    const labels = await cards.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')))
+    expect(labels.some((l) => l?.includes('Speaker Profile'))).toBeTruthy()
+    expect(labels.some((l) => l?.includes('Speaker Banner'))).toBeTruthy()
+    expect(labels.some((l) => l?.includes('Social Promo'))).toBeTruthy()
+    expect(labels.some((l) => l?.includes('Luma Cover'))).toBeTruthy()
+
+    // Each card's label includes a description beyond the name and dimensions
+    const withDescription = labels.filter((l) => l && l.split(',').length >= 3)
+    expect(withDescription.length).toBe(labels.length)
   })
 
   test('download button shows dimensions and file count', async ({ page }) => {
@@ -35,9 +37,8 @@ test.describe('Format and export outputs are explained', () => {
   }) => {
     await page.goto('/')
 
-    // Switch to speaker_banner format using the format-bar select
-    const formatSelect = page.locator('.format-bar select')
-    await formatSelect.selectOption('speaker_banner')
+    // Switch to speaker_banner format via its format card
+    await page.getByRole('button', { name: /Speaker Banner/ }).click()
 
     // Add a second speaker via the "Add speaker" button
     const addSpeakerBtn = page.getByRole('button', { name: 'Add speaker' })
@@ -60,7 +61,13 @@ test.describe('Format and export outputs are explained', () => {
     await expect(packBtn).toBeVisible()
 
     const packText = await packBtn.textContent()
+    expect(packText).toContain('Event pack')
     expect(packText).toContain('.zip')
-    expect(packText).toContain('speaker')
+
+    // The PNG button must not be confused with the ZIP button
+    const downloadBtn = page.locator('button.download-main')
+    const downloadText = await downloadBtn.textContent()
+    expect(downloadText).not.toContain('.zip')
+    expect(downloadText).toContain('PNG')
   })
 })
