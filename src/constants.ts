@@ -1,4 +1,4 @@
-import type { BannerFormat, BannerState, FormatOption } from './types'
+import type { BannerFormat, EventTheme, EventThemeId, FormatOption } from './types'
 
 export const formatOptions: FormatOption[] = [
   {
@@ -31,22 +31,43 @@ export const formatOptions: FormatOption[] = [
   },
 ]
 
-export const defaultColors: BannerState['colors'] = {
-  primary: '#f0f6fc',
-  secondary: '#8b949e',
-  accent: '#0abf40',
-  background: '#0d1117',
+// Every visual theme the app can render. New themes are added here (and picked
+// in the sidebar) without touching the renderer, which only reads through
+// `getEventTheme`. `devdays` reproduces today's hardcoded look byte-for-byte.
+// Not to be confused with `lib/catalog.ts`'s `eventPresets` (saved event-data
+// snapshots from the Planning catalogue, e.g. a past edition's title/city/date).
+export const EVENT_THEMES: Record<EventThemeId, EventTheme> = {
+  devdays: {
+    id: 'devdays',
+    name: 'Dev Days',
+    colors: {
+      primary: '#f0f6fc',
+      secondary: '#8b949e',
+      accent: '#0abf40',
+      background: '#0d1117',
+    },
+    brandTitleLine1: 'GitHub Copilot',
+    brandTitleLine2: 'Dev Days',
+    fixedEventTitle: 'Dev Days',
+    fixedGreenLabel: 'DEV DAYS 2026',
+    lumaCityColor: '#00d12f',
+    lightAreaTitleColor: '#1f2328',
+    lightAreaMutedColor: '#57606a',
+  },
 }
 
-export const brandTitleLine1 = 'GitHub Copilot'
-export const brandTitleLine2 = 'Dev Days'
-export const fixedEventTitle = 'Dev Days'
-// Fixed green label shared by the Luma cover and the Speaker Banner.
-export const fixedGreenLabel = 'DEV DAYS 2026'
-export const lumaCityColor = '#00d12f'
-// Text colors used on the light (lower) half of the speaker/social backgrounds.
-export const lightAreaTitleColor = '#1f2328'
-export const lightAreaMutedColor = '#57606a'
+export const DEFAULT_EVENT_THEME_ID: EventThemeId = 'devdays'
+
+/** Resolves a theme id to its data, falling back to the default theme for unknown ids
+ *  (e.g. an older history entry saved before a theme was removed). */
+export function getEventTheme(id: EventThemeId | undefined): EventTheme {
+  return (id && EVENT_THEMES[id]) ?? EVENT_THEMES[DEFAULT_EVENT_THEME_ID]
+}
+
+// Backward-compatible aliases so existing consumers (history defaults, etc.) keep
+// working unchanged; they all resolve to the default theme's values.
+export const defaultColors = EVENT_THEMES[DEFAULT_EVENT_THEME_ID].colors
+export const fixedEventTitle = EVENT_THEMES[DEFAULT_EVENT_THEME_ID].fixedEventTitle
 
 export const BANNER_HISTORY_STORAGE_KEY = 'banner-history-v1'
 export const MAX_HISTORY_ITEMS = 20

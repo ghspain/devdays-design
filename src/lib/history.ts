@@ -1,4 +1,4 @@
-import { BANNER_HISTORY_STORAGE_KEY, defaultColors, fixedEventTitle } from '../constants'
+import { BANNER_HISTORY_STORAGE_KEY, DEFAULT_EVENT_THEME_ID, defaultColors, fixedEventTitle } from '../constants'
 import type { BannerHistoryItem, BannerState, EventDetails } from '../types'
 import { uid } from './format'
 
@@ -25,6 +25,7 @@ export function normalizeState(
 ): BannerState {
   return {
     format: input?.format ?? 'luma_cover',
+    theme: input?.theme ?? DEFAULT_EVENT_THEME_ID,
     colors: input?.colors ?? defaultColors,
     event: normalizeEvent(input?.event),
     speakers: Array.isArray(input?.speakers) ? input.speakers : [],
@@ -39,6 +40,7 @@ export function normalizeState(
 export function buildDefaultState(): BannerState {
   return normalizeState({
     format: 'luma_cover',
+    theme: DEFAULT_EVENT_THEME_ID,
     colors: defaultColors,
     event: {
       title: fixedEventTitle,

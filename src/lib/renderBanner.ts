@@ -1,12 +1,4 @@
-import {
-  brandTitleLine1,
-  brandTitleLine2,
-  fixedGreenLabel,
-  lightAreaMutedColor,
-  lightAreaTitleColor,
-  lumaCityColor,
-  MAX_SPEAKERS,
-} from '../constants'
+import { getEventTheme, MAX_SPEAKERS } from '../constants'
 import type { BannerState, ExportScale, FormatOption } from '../types'
 import { wrapText, wrapTextWithBreaks, roundedRectPath, type TruncatedFlag } from './canvasText'
 import type { RenderInfo } from './validate'
@@ -32,6 +24,10 @@ export async function renderBanner(
 
   const ctx = canvas.getContext('2d')
   if (!ctx) return
+
+  // Resolves the active theme once; every fixed brand color/label below reads
+  // from it instead of a hardcoded module-level constant.
+  const theme = getEventTheme(state.theme)
 
   ctx.setTransform(scale, 0, 0, scale, 0, 0)
   ctx.clearRect(0, 0, width, height)
@@ -257,14 +253,14 @@ export async function renderBanner(
 
       while (eventTitleSize > Math.round(56 * socialPromoScale)) {
         ctx.font = `600 ${eventTitleSize}px "Mona Sans", sans-serif`
-        if (ctx.measureText(brandTitleLine1).width <= textMaxWidth) break
+        if (ctx.measureText(theme.brandTitleLine1).width <= textMaxWidth) break
         eventTitleSize -= 2
       }
 
       ctx.font = `500 ${citySize}px "Mona Sans Mono", monospace`
       ctx.letterSpacing = '3px'
       // Green label source: Speaker Banner and Social Promo use the fixed Luma label, other formats use the city.
-      const greenLabelText = (isSpeakerBanner || isSocialPromo ? fixedGreenLabel : state.event.city || 'City').toUpperCase()
+      const greenLabelText = (isSpeakerBanner || isSocialPromo ? theme.fixedGreenLabel : state.event.city || 'City').toUpperCase()
       const cityLines = wrapTracked('city', (f) => wrapText(ctx, greenLabelText, textMaxWidth, 2, f))
       const cityLineStep = citySize * 1.1
       const eventLineStep = eventTitleSize * 1.08
@@ -292,7 +288,7 @@ export async function renderBanner(
         ? Math.round(cityY + speakerBannerDateFromLabel)
         : eventTitleY + eventLineStep + (eventLineStep + 2)
 
-      ctx.fillStyle = lumaCityColor
+      ctx.fillStyle = theme.lumaCityColor
       ctx.font = `500 ${citySize}px "Mona Sans Mono", monospace`
       ctx.letterSpacing = '3px'
       // Green fixed label vertical nudge (px). Negative = move the label UP without moving date/title.
@@ -305,7 +301,7 @@ export async function renderBanner(
         // speaker_square green label carries the user-entered city.
         // Box top uses ~0.8em ascent above the baseline (not the full em) so the
         // designed label near the top edge isn't falsely flagged as cropped.
-        trackRegion('city', lumaCityColor, textX, cityY + greenLabelRaise - citySize * 0.8, textMaxWidth, cityLines.length * cityLineStep)
+        trackRegion('city', theme.lumaCityColor, textX, cityY + greenLabelRaise - citySize * 0.8, textMaxWidth, cityLines.length * cityLineStep)
       }
 
       if (isSpeakerBanner || isSocialPromo) {
@@ -313,25 +309,25 @@ export async function renderBanner(
         const titleCitySize = 72
         const titleCityLineStep = titleCitySize * 1.02
         ctx.font = `500 ${titleCitySize}px "Mona Sans", sans-serif`
-        ctx.fillStyle = lightAreaTitleColor
+        ctx.fillStyle = theme.lightAreaTitleColor
         const titleCityLines = wrapTracked('city', (f) => wrapText(ctx, state.event.city || 'City', textMaxWidth, 2, f))
         titleCityLines.forEach((line, index) => {
           ctx.fillText(line, textX, eventTitleY + index * titleCityLineStep)
         })
-        trackRegion('city', lightAreaTitleColor, textX, eventTitleY - titleCitySize, textMaxWidth, titleCityLines.length * titleCityLineStep)
+        trackRegion('city', theme.lightAreaTitleColor, textX, eventTitleY - titleCitySize, textMaxWidth, titleCityLines.length * titleCityLineStep)
 
         // Social Promo: location name right after the city, styled like the speaker role.
         const cityBottomY = eventTitleY + (titleCityLines.length - 1) * titleCityLineStep
         if (isSocialPromo && state.event.location.trim()) {
           const locationRoleSize = Math.max(Math.round(metaSize * 1.6), 41)
           const locationTopY = cityBottomY + Math.round(locationRoleSize * 1.4) + 25
-          ctx.fillStyle = lightAreaMutedColor
+          ctx.fillStyle = theme.lightAreaMutedColor
           ctx.font = `500 ${locationRoleSize}px "Mona Sans", sans-serif`
           const locationLines = wrapTracked('location', (f) => wrapTextWithBreaks(ctx, state.event.location.trim(), textMaxWidth, 2, f))
           locationLines.forEach((line, index) => {
             ctx.fillText(line, textX, locationTopY + index * locationRoleSize * 1.16)
           })
-          trackRegion('location', lightAreaMutedColor, textX, locationTopY - locationRoleSize, textMaxWidth, locationLines.length * locationRoleSize * 1.16)
+          trackRegion('location', theme.lightAreaMutedColor, textX, locationTopY - locationRoleSize, textMaxWidth, locationLines.length * locationRoleSize * 1.16)
           socialPromoLocationBottomY =
             locationTopY + (locationLines.length - 1) * locationRoleSize * 1.16 + Math.round(locationRoleSize * 0.35)
         } else if (isSocialPromo) {
@@ -340,9 +336,9 @@ export async function renderBanner(
       } else {
         ctx.font = `600 ${eventTitleSize}px "Mona Sans", sans-serif`
         ctx.fillStyle = dateColor
-        ctx.fillText(brandTitleLine1, textX, eventTitleY)
+        ctx.fillText(theme.brandTitleLine1, textX, eventTitleY)
         ctx.fillStyle = '#ffffff'
-        ctx.fillText(brandTitleLine2, textX, eventTitleY + eventLineStep)
+        ctx.fillText(theme.brandTitleLine2, textX, eventTitleY + eventLineStep)
       }
 
       ctx.font = `500 ${effectiveDateSize}px "Mona Sans Mono", monospace`
@@ -574,13 +570,13 @@ export async function renderBanner(
       trackRegion('speaker name', '#0CA334', textX, textBlockTop, textMaxWidth, nameBlockHeight)
 
       if (roleLines.length > 0) {
-        ctx.fillStyle = lightAreaMutedColor
+        ctx.fillStyle = theme.lightAreaMutedColor
         ctx.font = `500 ${roleSize}px "Mona Sans", sans-serif`
         const roleStartY = textBlockTop + nameBlockHeight + nameToRoleGap
         roleLines.forEach((line, idx) => {
           ctx.fillText(line, textX, roleStartY + idx * roleLineStep)
         })
-        trackRegion('speaker role', lightAreaMutedColor, textX, roleStartY, textMaxWidth, roleLines.length * roleLineStep)
+        trackRegion('speaker role', theme.lightAreaMutedColor, textX, roleStartY, textMaxWidth, roleLines.length * roleLineStep)
       }
 
       ctx.textBaseline = 'alphabetic'
@@ -718,7 +714,7 @@ export async function renderBanner(
       const labelX = padding
       const urlRightX = width - padding
       const maxUrlW = Math.max(120, barW - textInset * 2)
-      const registerUrlColor = lumaCityColor
+      const registerUrlColor = theme.lumaCityColor
       const registerGap = Math.round(metaSize * 0.45)
 
       ctx.textBaseline = 'middle'
@@ -790,7 +786,7 @@ export async function renderBanner(
       const logosTopY = headingY + 14
       const slotWidth = (areaWidth - logoGap * (logos.length - 1)) / logos.length
 
-      ctx.fillStyle = lightAreaMutedColor
+      ctx.fillStyle = theme.lightAreaMutedColor
       ctx.font = `600 18px "Mona Sans Mono", monospace`
       ctx.letterSpacing = '2px'
       ctx.textAlign = 'right'
