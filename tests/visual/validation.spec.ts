@@ -260,3 +260,117 @@ for (const formatId of ['luma_cover', 'speaker_banner', 'social_promo', 'speaker
     expect(codes).not.toContain('safe-area')
   })
 }
+
+// --- Phase 4: actionable validation navigation --------------------------------
+
+test('text-truncated city finding exposes a "Go to field" button that focuses the City input', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+
+  // Trigger a truncation finding by entering an overlong city name.
+  await page.getByLabel('City').fill('Buenos Aires Capital Federal Extendiiiisima')
+
+  await expect
+    .poll(() => findings(page), { timeout: 10_000 })
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'text-truncated', field: 'city', severity: 'warning' }),
+      ]),
+    )
+
+  // The validation panel should contain a "Go to field" action button for the city finding.
+  // The city finding is the first finding (most recent), so we look for the button within the
+  // validation panel that has aria-label "Go to field".
+  await expect(page.locator('.validation-panel .validation-go-to-field')).toBeVisible()
+
+  // Clicking the link should focus the City input.
+  const cityInput = page.getByRole('textbox', { name: 'City' }).first()
+  await cityInput.evaluate((el: HTMLElement) => el.blur())
+  await expect(cityInput).not.toBeFocused()
+
+  await page.locator('.validation-panel .validation-go-to-field').first().click()
+
+  // The City input should now be focused.
+  await expect(cityInput).toBeFocused({ timeout: 3000 })
+})
+
+test('speakers-dropped finding exposes a "Go to field" button that navigates to the Speakers section', async ({ page }) => {
+  await seedHistory(page, [
+    historyItem({ format: 'speaker_square', speakers: Array.from({ length: 13 }, (_, i) => speaker(i + 1)) }),
+  ])
+
+  await expect
+    .poll(() => findings(page), { timeout: 10_000 })
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'speakers-dropped', field: 'speakers' }),
+      ]),
+    )
+
+  // The validation panel should contain at least one "Go to field" action button.
+  await expect(page.locator('.validation-panel .validation-go-to-field').first()).toBeVisible()
+
+  // Clicking the link should scroll to and open the Speakers section.
+  const speakersSection = page.locator('#section-speakers')
+  await expect(speakersSection).toBeVisible()
+
+  await page.locator('.validation-panel .validation-go-to-field').first().click()
+
+  // The section should be open after clicking.
+  await expect(speakersSection).toHaveAttribute('open')
+})
+
+test('logos-dropped finding exposes a "Go to field" button that navigates to the Partners section', async ({ page }) => {
+  await seedHistory(page, [historyItem({ partners: [1, 2, 3, 4, 5].map(partner) })])
+
+  await expect
+    .poll(() => findings(page), { timeout: 10_000 })
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'logos-dropped', field: 'partner logos' }),
+      ]),
+    )
+
+  // The validation panel should contain a "Go to field" action button.
+  await expect(page.locator('.validation-panel .validation-go-to-field')).toBeVisible()
+
+  // Clicking the link should scroll to and open the Partners section.
+  const partnersSection = page.locator('#section-partners')
+  await expect(partnersSection).toBeVisible()
+
+  await page.locator('.validation-panel .validation-go-to-field').first().click()
+
+  // The section should be open after clicking.
+  await expect(partnersSection).toHaveAttribute('open')
+})
+
+test('validation-highlight animation class is applied to the focused field', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+
+  // Trigger a truncation finding.
+  await page.getByLabel('City').fill('Buenos Aires Capital Federal Extendiiiisima')
+
+  await expect
+    .poll(() => findings(page), { timeout: 10_000 })
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'text-truncated', field: 'city', severity: 'warning' }),
+      ]),
+    )
+
+  // Click the "Go to field" link and verify the highlight class is briefly applied.
+  const cityInput = page.getByRole('textbox', { name: 'City' }).first()
+  await cityInput.evaluate((el: HTMLElement) => el.blur())
+
+  await page.locator('.validation-panel .validation-go-to-field').first().click()
+
+  // The field should briefly have the validation-highlight class (removed after 2s).
+  await expect
+    .poll(
+      async () =>
+        await cityInput.evaluate((el: HTMLElement) => el.classList.contains('validation-highlight')),
+      { timeout: 3000 },
+    )
+    .toBe(true)
+})
