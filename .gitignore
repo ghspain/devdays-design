@@ -30,3 +30,5 @@ test-results/
 
 # Impeccable design tooling
 .impeccable/
+
+.playwright-mcp/
