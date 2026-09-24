@@ -963,9 +963,14 @@ function App() {
           </details>
           )}
 
-          <div className="format-bar">
-            <span className="picker-label" id="format-label">Format</span>
-            <div className="format-groups" role="group" aria-labelledby="format-label">
+          <details className="side-section" open id="section-format">
+            <summary>
+              <span>Format</span>
+              <ChevronDownIcon size={16} className="chevron" />
+            </summary>
+            <div className="section-block format-bar">
+              <span className="picker-label" id="format-label">Choose a banner size</span>
+              <div className="format-groups" role="group" aria-labelledby="format-label">
               {[
                 { label: 'Event formats', ids: eventFormatIds },
                 { label: 'Speaker formats', ids: speakerFormatIds },
@@ -1008,7 +1013,8 @@ function App() {
                 </div>
               ))}
             </div>
-          </div>
+            </div>
+          </details>
 
           {(isSpeakerBanner || isSocialPromo) && (
           <details className="side-section" open id="section-organizer">
@@ -1127,8 +1133,9 @@ function App() {
                   <div key={partner.id} className="logo-tile">
                     <img src={partner.imageDataUrl} alt="Partner logo" />
                     <Button
-                      variant="danger"
+                      variant="invisible"
                       size="small"
+                      className="logo-remove"
                       onClick={() =>
                         setState((previous) => ({
                           ...previous,

@@ -918,14 +918,39 @@ input[type='file'] {
 }
 
 .logo-tile img {
-  width: calc(100% - 15px);
-  max-width: calc(100% - 15px);
-  height: 70px;
-  margin-right: 15px;
-  justify-self: start;
+  width: 100%;
+  max-width: 100%;
+  height: 72px;
   object-fit: contain;
   background: var(--vscode-bg);
   border-radius: 6px;
+}
+
+.logo-remove {
+  width: 100%;
+  color: var(--vscode-text-muted);
+}
+
+.logo-remove:hover {
+  color: #cf222e;
+}
+
+input[type='file']::file-selector-button {
+  margin-right: 0.65rem;
+  padding: 0.42rem 0.85rem;
+  border: 1px solid var(--vscode-border);
+  border-radius: 6px;
+  background: var(--vscode-bg-elev-2);
+  color: var(--vscode-text);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+input[type='file']::file-selector-button:hover {
+  background: var(--vscode-bg-elev-1);
+  border-color: var(--vscode-text-muted);
 }
 
 .export-panel {
