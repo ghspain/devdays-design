@@ -66,6 +66,20 @@ epic with one issue per phase:
 - Phase 4: #75 — fields that truncate in the banner are flagged next to the field.
 - Phase 5: #76 — theme cards show a visual preview of each theme.
 
+## Critique follow-up pass (epic #83)
+
+A follow-up pass from the design critique: consolidate the three download
+entry points into one hierarchy, reduce sidebar cognitive density, and make
+warnings, destructive actions, and format changes explain themselves. Tracked
+as an epic with one issue per phase:
+
+- Epic: ghspain/devdays-design#83 — Critique follow-up pass.
+- Phase 1: #78 — consolidate the three download points into one clear hierarchy.
+- Phase 2: #79 — collapse sidebar sections by default to reduce cognitive density.
+- Phase 3: #80 — visually differentiate warnings from errors in validation badges.
+- Phase 4: #81 — unify destructive action protection (speaker/partner removal undo).
+- Phase 5: #82 — warn the user when changing formats hides fields.
+
 ## Visual validation (epic #26)
 
 Roadmap item 5 shipped as a spec-driven epic with one issue per phase:
