@@ -53,6 +53,19 @@ per phase:
 - Phase 6: #65 — Organizers can switch between fields and preview on mobile.
 - Phase 7: #66 — New organizers understand formats, presets, themes, and exports.
 
+## Editor coherence and polish pass (epic #71)
+
+A polish pass on the editor: mobile footer clearance, download hierarchy,
+sidebar reordering, truncation indicators, and theme previews. Tracked as an
+epic with one issue per phase:
+
+- Epic: ghspain/devdays-design#71 — Editor coherence and polish pass.
+- Phase 1: #72 — mobile editing keeps fields clear of the footer at every width.
+- Phase 2: #73 — the PNG download is the primary action and the ZIP is secondary.
+- Phase 3: #74 — the sidebar leads with essentials and folds advanced controls.
+- Phase 4: #75 — fields that truncate in the banner are flagged next to the field.
+- Phase 5: #76 — theme cards show a visual preview of each theme.
+
 ## Visual validation (epic #26)
 
 Roadmap item 5 shipped as a spec-driven epic with one issue per phase:
