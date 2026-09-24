@@ -67,7 +67,7 @@ test('error findings render a red X-icon badge on both download buttons', async 
   await expect(primaryBadge).toHaveClass(/error/)
   await expect(primaryBadge.locator('svg.octicon-x')).toHaveCount(1)
   const primaryStyle = await primaryBadge.evaluate((el) => getComputedStyle(el).backgroundColor)
-  expect(primaryStyle).toBe('rgb(248, 81, 73)')
+  expect(primaryStyle).toBe('rgb(207, 34, 46)')
 
   const packBadge = packDownload(page).locator('.download-badge')
   await expect(packBadge).toHaveClass(/error/)
