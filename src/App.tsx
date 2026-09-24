@@ -1277,58 +1277,10 @@ function App() {
                               </div>
 
           <div className="sidebar-footer">
-                      <Button variant="invisible" onClick={() => setResetConfirm(true)} title="Reset to defaults">
-              Reset
-            </Button>
-                      {draftStatus && (
-                        <span className="draft-status" aria-live="polite">
-                          {draftStatus === 'saving' && '⏳ Saving…'}
-                          {draftStatus === 'saved' && '✓ Saved'}
-                          {draftStatus === 'error' && '✗ Draft error'}
-                        </span>
-                      )}
-                      {resetConfirm && (
-                        <div className="reset-confirm-dialog">
-                          <p>Reset all fields to defaults? This will clear the current draft.</p>
-                          <div className="reset-confirm-actions">
-                            <Button variant="invisible" onClick={() => setResetConfirm(false)}>
-                              Cancel
-                            </Button>
-                            <Button variant="danger" onClick={resetAll}>
-                              Confirm Reset
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-            <div className="pack-download-block">
-              <Button
-                className="pack-download"
-                loading={isExportingPack}
-                leadingVisual={DownloadIcon}
-                trailingVisual={
-                  validationIssueCount > 0 ? (
-                    <CounterLabel
-                      className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
-                      aria-hidden="true"
-                    >
-                      {validationIssueCount}
-                    </CounterLabel>
-                  ) : null
-                }
-                onClick={() => {
-                  void exportEventPack()
-                }}
-                aria-label={exportFindingsLabel ? `Event pack (.zip). Findings: ${exportFindingsLabel}` : undefined}
-              >
-                Event pack (.zip)
-              </Button>
-              {packProgress && (
-                <small aria-live="polite">
-                  {packProgress.label}
-                  {packProgress.total > 0 ? ` ${packProgress.completed}/${packProgress.total}` : ''}
-                </small>
-              )}
-                          <div className="download-summary">
+            {/* #78: single clear download hierarchy in the sidebar —
+                primary PNG CTA, secondary Event pack, then meta row. */}
+            <div className="footer-download-stack">
+                        <div className="download-summary">
                             {isSpeakerPerBannerFormat ? (
                               <>
                                 <span>
@@ -1341,8 +1293,7 @@ function App() {
                               </>
                             )}
                           </div>
-                        </div>
-                        <div className="split-download">
+                          <div className="split-download">
                           <Button
                             className="download-main"
                             variant="primary"
@@ -1368,7 +1319,62 @@ function App() {
                           >
                             {downloadLabel}
                           </Button>
-                        </div>
+                          </div>
+              <div className="pack-download-block">
+                <Button
+                  className="pack-download"
+                  loading={isExportingPack}
+                  leadingVisual={DownloadIcon}
+                  trailingVisual={
+                    validationIssueCount > 0 ? (
+                      <CounterLabel
+                        className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
+                        aria-hidden="true"
+                      >
+                        {validationIssueCount}
+                      </CounterLabel>
+                    ) : null
+                  }
+                  onClick={() => {
+                    void exportEventPack()
+                  }}
+                  aria-label={exportFindingsLabel ? `Event pack (.zip). Findings: ${exportFindingsLabel}` : undefined}
+                >
+                  Event pack (.zip)
+                </Button>
+                {packProgress && (
+                  <small aria-live="polite">
+                    {packProgress.label}
+                    {packProgress.total > 0 ? ` ${packProgress.completed}/${packProgress.total}` : ''}
+                  </small>
+                )}
+              </div>
+            </div>
+            <div className="footer-meta-row">
+              <Button variant="invisible" onClick={() => setResetConfirm(true)} title="Reset to defaults">
+                Reset
+              </Button>
+              {draftStatus && (
+                <span className="draft-status" aria-live="polite">
+                  {draftStatus === 'saving' && '⏳ Saving…'}
+                  {draftStatus === 'saved' && '✓ Saved'}
+                  {draftStatus === 'error' && '✗ Draft error'}
+                </span>
+              )}
+            </div>
+            {resetConfirm && (
+              <div className="reset-confirm-dialog">
+                <p>Reset all fields to defaults? This will clear the current draft.</p>
+                <div className="reset-confirm-actions">
+                  <Button variant="invisible" onClick={() => setResetConfirm(false)}>
+                    Cancel
+                  </Button>
+                  <Button variant="danger" onClick={resetAll}>
+                    Confirm Reset
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </aside>
 
@@ -1432,17 +1438,6 @@ function App() {
               aria-label="Fit to screen"
               onClick={fitZoom}
               className="stage-icon-btn"
-            />
-            <span className="toolbar-divider" aria-hidden="true" />
-            <IconButton
-              icon={DownloadIcon}
-              size="small"
-              variant="primary"
-                          title="Download PNG"
-                          aria-label={`Download PNG · ${format.width}×${format.height}`}
-              onClick={() => {
-                void exportBanner()
-              }}
             />
           </div>
         </section>

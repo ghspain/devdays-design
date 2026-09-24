@@ -218,10 +218,38 @@
   padding: 0.75rem 0.9rem;
   border-top: 1px solid var(--vscode-border);
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0.6rem;
   background: var(--app-header-bg);
   position: relative;
+}
+
+/* #78: clear download hierarchy — primary PNG CTA above the secondary
+   Event pack, with the summary text right above the primary button. */
+.footer-download-stack {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.footer-download-stack .download-summary {
+  text-align: left;
+}
+
+.footer-download-stack .split-download {
+  width: 100%;
+}
+
+.footer-download-stack .download-main {
+  flex: 1;
+  justify-content: center;
+}
+
+.footer-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .draft-status {
@@ -313,7 +341,6 @@
 }
 
 .pack-download-block {
-  margin-left: auto;
   display: grid;
   justify-items: end;
   gap: 0.2rem;
@@ -1336,7 +1363,6 @@ input[type='file']::file-selector-button:hover {
   }
 
   .pack-download-block {
-    order: 3;
     width: 100%;
   }
 
@@ -1346,6 +1372,7 @@ input[type='file']::file-selector-button:hover {
     justify-content: center;
   }
 
+  .footer-download-stack .download-main,
   .sidebar-footer .download-main {
     min-height: 42px;
   }

@@ -485,10 +485,9 @@ test('download button distinguishes PNG from ZIP export', async ({ page }) => {
   // The event pack button should say "Event pack (.zip)"
   await expect(page.getByRole('button', { name: 'Event pack (.zip)' })).toBeVisible()
 
-  // The canvas toolbar download should have an accessible name mentioning PNG
+  // #78: the canvas toolbar no longer has any download control.
   await showPreviewForViewport(page)
-  const toolbarDownload = page.locator('button[title="Download PNG"]')
-  await expect(toolbarDownload).toBeVisible()
+  await expect(page.locator('.stage-toolbar button[title="Download PNG"]')).toHaveCount(0)
 })
 
 test('download summary shows correct dimensions and count', async ({ page }) => {

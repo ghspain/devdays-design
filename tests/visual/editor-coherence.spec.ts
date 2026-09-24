@@ -57,8 +57,9 @@ test('main download is primary while pack and toolbar downloads stay secondary',
   await expect(pack).toBeVisible()
   await expect(pack).not.toHaveAttribute('data-variant', 'primary')
 
-  // The toolbar download lives in the stage toolbar, hidden on mobile.
-  await expect(page.locator('button[title="Download PNG"]')).toBeAttached()
+  // #78: the stage toolbar no longer carries a download icon — all
+  // downloads live in the sidebar footer.
+  await expect(page.locator('button[title="Download PNG"]')).toHaveCount(0)
   await expect(page.locator('.download-summary')).not.toBeEmpty()
 })
 
