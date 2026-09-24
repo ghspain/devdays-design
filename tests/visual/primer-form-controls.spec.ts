@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { formatCard, selectFormat } from './helpers'
+import { formatCard, openSection, selectFormat } from './helpers'
 
 // Phase 2 (#41): format bar and Event section use Primer form controls.
 test.beforeEach(async ({ page }) => {
@@ -21,6 +21,7 @@ test('format cards keep both format families and update the banner', async ({ pa
 
 test('event fields are Primer controls still reachable by label', async ({ page }) => {
   await selectFormat(page, 'social_promo')
+  await openSection(page, 'section-event')
 
   await expect(page.getByLabel('Event preset')).toHaveAttribute('data-component', 'Select')
   await expect(page.getByLabel('Event title')).toHaveAttribute('data-component', 'input')
@@ -33,6 +34,7 @@ test('event fields are Primer controls still reachable by label', async ({ page 
 
 test('preset flow fills the event fields', async ({ page }) => {
   await selectFormat(page, 'social_promo')
+  await openSection(page, 'section-event')
   await page.getByLabel('Event preset').selectOption('devdays')
   const title = await page.getByLabel('Event title').inputValue()
   expect(title.length).toBeGreaterThan(0)

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openSection } from './helpers'
 
 test.describe('Event drafts survive reloads', () => {
   test('editing event title and reload restores the draft', async ({ page }) => {
@@ -7,6 +8,7 @@ test.describe('Event drafts survive reloads', () => {
 
     // Edit the event title
     const titleInput = page.getByLabel('Event title')
+    await openSection(page, 'section-event')
     await titleInput.fill('My Custom Event')
     await expect(titleInput).toHaveValue('My Custom Event')
 
@@ -41,6 +43,7 @@ test.describe('Event drafts survive reloads', () => {
 
       // Edit the event title
       const titleInput = page.getByLabel('Event title')
+      await openSection(page, 'section-event')
       await titleInput.fill('Temporary Event')
       await expect(titleInput).toHaveValue('Temporary Event')
 
@@ -61,6 +64,7 @@ test.describe('Event drafts survive reloads', () => {
 
       // Edit the event title
       const titleInput = page.getByLabel('Event title')
+      await openSection(page, 'section-event')
       await titleInput.fill('Temporary Event')
       await expect(titleInput).toHaveValue('Temporary Event')
 
@@ -81,6 +85,7 @@ test.describe('Event drafts survive reloads', () => {
 
     // Edit something to trigger a save
     const titleInput = page.getByLabel('Event title')
+    await openSection(page, 'section-event')
     await titleInput.fill('Test Event')
 
     // Check that the draft status has aria-live

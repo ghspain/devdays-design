@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ToggleEvent as ReactToggleEvent } from 'react'
 import { Banner, Button, Checkbox, CounterLabel, FormControl, IconButton, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
 import {
   AlertIcon,
@@ -77,6 +77,34 @@ function App() {
   const [validationFindings, setValidationFindings] = useState<ValidationFinding[]>([])
   // Fields the live preview render had to truncate (e.g. ["event title"]).
   const [truncatedFields, setTruncatedFields] = useState<string[]>([])
+
+  // Transient toast with optional Undo action (#81, #82). Single-slot: a new
+  // toast replaces the previous one. 🧭 DECISION — undo toasts last 5s, plain
+  // toasts 3s; bottom-center placement; click anywhere dismisses. Revert by
+  // restoring confirm dialogs for removals.
+  type AppToast = { id: number; message: string; undo?: () => void }
+  const [toast, setToast] = useState<AppToast | null>(null)
+  const toastTimer = useRef<number | null>(null)
+  const toastIdRef = useRef(0)
+  const dismissToast = useCallback(() => {
+    if (toastTimer.current !== null) {
+      window.clearTimeout(toastTimer.current)
+      toastTimer.current = null
+    }
+    setToast(null)
+  }, [])
+  const showToast = useCallback((message: string, undo?: () => void, durationMs = undo ? 5000 : 3000) => {
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current)
+    toastIdRef.current += 1
+    setToast({ id: toastIdRef.current, message, undo })
+    toastTimer.current = window.setTimeout(() => {
+      toastTimer.current = null
+      setToast(null)
+    }, durationMs)
+  }, [])
+  useEffect(() => () => {
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current)
+  }, [])
   const validationErrorCount = validationFindings.filter((f) => f.severity === 'error').length
   const validationIssueCount = validationFindings.length
   const exportFindingsLabel =
@@ -143,12 +171,13 @@ function App() {
           if (!target) return
 
       // Scroll to the section
-      const sectionEl = document.getElementById(target.elementId) as HTMLDetailsElement | null
+      const sectionEl = document.getElementById(target.elementId)
       if (sectionEl) {
         sectionEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        // Open the section if it's collapsed
-        if (sectionEl.tagName === 'DETAILS' && !sectionEl.open) {
-          sectionEl.open = true
+        // Open the section if it's collapsed (through React state so the
+        // controlled <details> stays in sync).
+        if (sectionEl.tagName === 'DETAILS' && !(sectionEl as HTMLDetailsElement).open) {
+          setSectionOpen((prev) => ({ ...prev, [target.elementId]: true }))
         }
       }
 
@@ -183,6 +212,34 @@ function App() {
   const isSocialPromo = state.format === 'social_promo'
   const isMinimalCover = isLumaCover
   const isSpeakerPerBannerFormat = isSpeakerBanner || isSpeakerSquare
+
+  // #79: collapsible sidebar sections. Open/closed state lives in React (not
+  // the DOM) so it persists across format changes; only the format section is
+  // open by default because it is relevant to every format.
+  // 🧭 DECISION — question: which section should stay open by default, and
+  // should the default reset when the format changes?
+  //   options: (a) format section open, state persists; (b) collapse everything;
+  //   (c) reset to defaults on each format change.
+  //   investigation: the format section is the only section rendered for every
+  //   format, and it is the first thing users touch when changing output.
+  //   decision: (a) — format section open on load, user toggles persist across
+  //   format changes. Most conservative and easily reversible: revert this
+  //   commit to restore always-open sections.
+  const [openSections, setSectionOpen] = useState<Record<string, boolean>>({ 'section-format': true })
+  const handleSectionToggle = (id: string) => (event: ReactToggleEvent<HTMLDetailsElement>) => {
+    const open = (event.target as HTMLDetailsElement).open
+    setSectionOpen((prev) => (prev[id] === open ? prev : { ...prev, [id]: open }))
+  }
+  const renderedSectionIds = useMemo(() => {
+    const ids = ['section-event']
+    if (!isMinimalCover && !isSocialPromo) ids.push('section-speakers')
+    ids.push('section-format')
+    if (isSpeakerBanner || isSocialPromo) ids.push('section-organizer')
+    if (isLumaCover || isSocialPromo || isSpeakerBanner || isSpeakerSquare) ids.push('section-partners')
+    if (isSocialPromo || isSpeakerBanner) ids.push('section-registration')
+    return ids
+  }, [isMinimalCover, isSocialPromo, isSpeakerBanner, isLumaCover, isSpeakerSquare])
+  const allSectionsOpen = renderedSectionIds.every((id) => openSections[id])
   const isTallBanner = format.width === 1080 && format.height === 1350
   const previewBaseScale = isTallBanner ? 0.78 : 1
   const namedSpeakers = useMemo(
@@ -300,12 +357,19 @@ function App() {
           return
         }
       }
-      const findings = [...validateState(state, format.id, renderInfo), ...checkRenderedCanvas(targetCanvas, renderInfo)]
+      const findings = [
+        ...validateState(state, format.id, renderInfo),
+        ...checkRenderedCanvas(targetCanvas, renderInfo),
+      ]
+      // Test hook: lets Playwright specs inject findings (e.g. an 'error'
+      // severity, which real themes never produce) to verify badge styling.
+      const injected = (window as unknown as { __devdaysInjectedFindings?: typeof findings }).__devdaysInjectedFindings
+      const effectiveFindings = injected ?? findings
       if (cancelled) return
-      setValidationFindings(findings)
+      setValidationFindings(effectiveFindings)
       setTruncatedFields(renderInfo.truncatedFields)
-      // Exposed for Playwright visual-validation specs.
-      ;(window as unknown as { __devdaysValidation?: { findings: ValidationFinding[]; pixelChecks: typeof checkRenderedCanvas } }).__devdaysValidation = { findings, pixelChecks: checkRenderedCanvas }
+      // Exposed for Playwright visual-validation specs (reflects injected findings too).
+      ;(window as unknown as { __devdaysValidation?: { findings: ValidationFinding[]; pixelChecks: typeof checkRenderedCanvas } }).__devdaysValidation = { findings: effectiveFindings, pixelChecks: checkRenderedCanvas }
     }
 
     // Coalesce rapid state changes into a single redraw on the next animation
@@ -415,8 +479,20 @@ function App() {
         : { ...previous, speakers: [...previous.speakers, { id: uid(), name: '' }] },
     )
 
-  const removeSpeaker = (id: string) =>
+  const removeSpeaker = (id: string) => {
+    const index = state.speakers.findIndex((speaker) => speaker.id === id)
+    if (index === -1) return
+    const removed = state.speakers[index]
     setState((previous) => ({ ...previous, speakers: previous.speakers.filter((speaker) => speaker.id !== id) }))
+    showToast('Speaker removed.', () => {
+      setState((previous) => {
+        if (previous.speakers.some((speaker) => speaker.id === removed.id)) return previous
+        const speakers = [...previous.speakers]
+        speakers.splice(Math.min(index, speakers.length), 0, removed)
+        return { ...previous, speakers }
+      })
+    })
+  }
 
   const addCatalogSponsor = () => {
     const sponsor = catalogSponsors.find((item) => item.id === selectedSponsorId)
@@ -693,6 +769,16 @@ function App() {
               onClick={() => setSidebarCollapsed((value) => !value)}
             />
             <span className="sidebar-title">Design</span>
+            <button
+              type="button"
+              className="sections-toggle"
+              onClick={() => {
+                const open = !allSectionsOpen
+                setSectionOpen(Object.fromEntries(renderedSectionIds.map((id) => [id, open])))
+              }}
+            >
+              {allSectionsOpen ? 'Collapse all' : 'Show all'}
+            </button>
           </div>
 
           <div className="sidebar-content">
@@ -715,7 +801,12 @@ function App() {
           )}
           {backgroundFailed && <p className="warning">Background image unavailable: using gradient fallback for preview.</p>}
 
-          <details className="side-section" open id="section-event">
+          <details
+            className="side-section"
+            open={openSections['section-event']}
+            onToggle={handleSectionToggle('section-event')}
+            id="section-event"
+          >
             <summary>
               <span>Event</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -853,7 +944,12 @@ function App() {
           </details>
 
           {!isMinimalCover && !isSocialPromo && (
-          <details className="side-section" open id="section-speakers">
+          <details
+            className="side-section"
+            open={openSections['section-speakers']}
+            onToggle={handleSectionToggle('section-speakers')}
+            id="section-speakers"
+          >
             <summary>
               <span>Speakers <small className="section-count">{state.speakers.length} / {MAX_SPEAKERS}</small></span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -963,7 +1059,12 @@ function App() {
           </details>
           )}
 
-          <details className="side-section" open id="section-format">
+          <details
+            className="side-section"
+            open={openSections['section-format']}
+            onToggle={handleSectionToggle('section-format')}
+            id="section-format"
+          >
             <summary>
               <span>Format</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -987,7 +1088,14 @@ function App() {
                           aria-label={`${option.name}, ${option.width} by ${option.height}, ${option.description ?? ''}, ${option.channels?.join(', ') ?? ''}`}
                           className={`card-option format-card${state.format === option.id ? ' selected' : ''}`}
                           key={option.id}
-                          onClick={() => setState((previous) => ({ ...previous, format: option.id }))}
+                          onClick={() => {
+                            // #82: brief toast when the format changes and fields get
+                            // hidden/shown. Does not change state persistence.
+                            if (state.format !== option.id) {
+                              showToast('Format changed — edition and location fields updated.')
+                            }
+                            setState((previous) => ({ ...previous, format: option.id }))
+                          }}
                           type="button"
                         >
                           <span className="format-ratio-wrap" aria-hidden="true">
@@ -1017,7 +1125,12 @@ function App() {
           </details>
 
           {(isSpeakerBanner || isSocialPromo) && (
-          <details className="side-section" open id="section-organizer">
+          <details
+            className="side-section"
+            open={openSections['section-organizer']}
+            onToggle={handleSectionToggle('section-organizer')}
+            id="section-organizer"
+          >
             <summary>
               <span>Organizer</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -1055,7 +1168,12 @@ function App() {
           )}
 
           {(isLumaCover || isSocialPromo || isSpeakerBanner || isSpeakerSquare) && (
-          <details className="side-section" open id="section-partners">
+          <details
+            className="side-section"
+            open={openSections['section-partners']}
+            onToggle={handleSectionToggle('section-partners')}
+            id="section-partners"
+          >
             <summary>
               <span>Sponsors and collaborators</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -1136,12 +1254,24 @@ function App() {
                       variant="invisible"
                       size="small"
                       className="logo-remove"
-                      onClick={() =>
+                      onClick={() => {
+                        const index = state.partners.findIndex((item) => item.id === partner.id)
+                        const removed = index >= 0 ? state.partners[index] : null
                         setState((previous) => ({
                           ...previous,
                           partners: previous.partners.filter((item) => item.id !== partner.id),
                         }))
-                      }
+                        if (removed) {
+                          showToast('Partner logo removed.', () => {
+                            setState((previous) => {
+                              if (previous.partners.some((item) => item.id === removed.id)) return previous
+                              const partners = [...previous.partners]
+                              partners.splice(Math.min(index, partners.length), 0, removed)
+                              return { ...previous, partners }
+                            })
+                          })
+                        }
+                      }}
                     >
                       Remove
                     </Button>
@@ -1153,7 +1283,12 @@ function App() {
           )}
 
           {(isSocialPromo || isSpeakerBanner) && (
-          <details className="side-section" id="section-registration">
+          <details
+            className="side-section"
+            open={openSections['section-registration']}
+            onToggle={handleSectionToggle('section-registration')}
+            id="section-registration"
+          >
             <summary>
               <span>Advanced: registration footer</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -1277,58 +1412,10 @@ function App() {
                               </div>
 
           <div className="sidebar-footer">
-                      <Button variant="invisible" onClick={() => setResetConfirm(true)} title="Reset to defaults">
-              Reset
-            </Button>
-                      {draftStatus && (
-                        <span className="draft-status" aria-live="polite">
-                          {draftStatus === 'saving' && '⏳ Saving…'}
-                          {draftStatus === 'saved' && '✓ Saved'}
-                          {draftStatus === 'error' && '✗ Draft error'}
-                        </span>
-                      )}
-                      {resetConfirm && (
-                        <div className="reset-confirm-dialog">
-                          <p>Reset all fields to defaults? This will clear the current draft.</p>
-                          <div className="reset-confirm-actions">
-                            <Button variant="invisible" onClick={() => setResetConfirm(false)}>
-                              Cancel
-                            </Button>
-                            <Button variant="danger" onClick={resetAll}>
-                              Confirm Reset
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-            <div className="pack-download-block">
-              <Button
-                className="pack-download"
-                loading={isExportingPack}
-                leadingVisual={DownloadIcon}
-                trailingVisual={
-                  validationIssueCount > 0 ? (
-                    <CounterLabel
-                      className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
-                      aria-hidden="true"
-                    >
-                      {validationIssueCount}
-                    </CounterLabel>
-                  ) : null
-                }
-                onClick={() => {
-                  void exportEventPack()
-                }}
-                aria-label={exportFindingsLabel ? `Event pack (.zip). Findings: ${exportFindingsLabel}` : undefined}
-              >
-                Event pack (.zip)
-              </Button>
-              {packProgress && (
-                <small aria-live="polite">
-                  {packProgress.label}
-                  {packProgress.total > 0 ? ` ${packProgress.completed}/${packProgress.total}` : ''}
-                </small>
-              )}
-                          <div className="download-summary">
+            {/* #78: single clear download hierarchy in the sidebar —
+                primary PNG CTA, secondary Event pack, then meta row. */}
+            <div className="footer-download-stack">
+                        <div className="download-summary">
                             {isSpeakerPerBannerFormat ? (
                               <>
                                 <span>
@@ -1341,22 +1428,30 @@ function App() {
                               </>
                             )}
                           </div>
-                        </div>
-                        <div className="split-download">
+                          <div className="split-download">
                           <Button
                             className="download-main"
                             variant="primary"
                             leadingVisual={DownloadIcon}
                             trailingVisual={
                               validationIssueCount > 0 ? (
-                                <CounterLabel
-                                  className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
-                                  aria-hidden="true"
-                                >
-                                  {validationIssueCount}
-                                </CounterLabel>
+                                <>
+                                  {/* #80: badge shows an X icon (red) for errors and a
+                                      warning icon (amber, outline style so it does not
+                                      read as a blocker on the export CTA). 🧭 DECISION
+                                      — icons chosen: XIcon for errors, AlertIcon for
+                                      warnings; warning badge restyled as amber outline.
+                                      Revert by restoring the solid amber badge. */}
+                                  <CounterLabel
+                                    className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
+                                    aria-hidden="true"
+                                  >
+                                    {validationErrorCount > 0 ? <XIcon size={10} /> : <AlertIcon size={10} />}
+                                    {validationIssueCount}
+                                  </CounterLabel>
+                                </>
                               ) : null
-                            }
+                              }
                             onClick={() => {
                               void exportBanner()
                             }}
@@ -1368,7 +1463,63 @@ function App() {
                           >
                             {downloadLabel}
                           </Button>
-                        </div>
+                          </div>
+              <div className="pack-download-block">
+                <Button
+                  className="pack-download"
+                  loading={isExportingPack}
+                  leadingVisual={DownloadIcon}
+                  trailingVisual={
+                    validationIssueCount > 0 ? (
+                      <CounterLabel
+                        className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
+                        aria-hidden="true"
+                      >
+                        {validationErrorCount > 0 ? <XIcon size={10} /> : <AlertIcon size={10} />}
+                        {validationIssueCount}
+                      </CounterLabel>
+                    ) : null
+                  }
+                  onClick={() => {
+                    void exportEventPack()
+                  }}
+                  aria-label={exportFindingsLabel ? `Event pack (.zip). Findings: ${exportFindingsLabel}` : undefined}
+                >
+                  Event pack (.zip)
+                </Button>
+                {packProgress && (
+                  <small aria-live="polite">
+                    {packProgress.label}
+                    {packProgress.total > 0 ? ` ${packProgress.completed}/${packProgress.total}` : ''}
+                  </small>
+                )}
+              </div>
+            </div>
+            <div className="footer-meta-row">
+              <Button variant="invisible" onClick={() => setResetConfirm(true)} title="Reset to defaults">
+                Reset
+              </Button>
+              {draftStatus && (
+                <span className="draft-status" aria-live="polite">
+                  {draftStatus === 'saving' && '⏳ Saving…'}
+                  {draftStatus === 'saved' && '✓ Saved'}
+                  {draftStatus === 'error' && '✗ Draft error'}
+                </span>
+              )}
+            </div>
+            {resetConfirm && (
+              <div className="reset-confirm-dialog">
+                <p>Reset all fields to defaults? This will clear the current draft.</p>
+                <div className="reset-confirm-actions">
+                  <Button variant="invisible" onClick={() => setResetConfirm(false)}>
+                    Cancel
+                  </Button>
+                  <Button variant="danger" onClick={resetAll}>
+                    Confirm Reset
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </aside>
 
@@ -1433,17 +1584,6 @@ function App() {
               onClick={fitZoom}
               className="stage-icon-btn"
             />
-            <span className="toolbar-divider" aria-hidden="true" />
-            <IconButton
-              icon={DownloadIcon}
-              size="small"
-              variant="primary"
-                          title="Download PNG"
-                          aria-label={`Download PNG · ${format.width}×${format.height}`}
-              onClick={() => {
-                void exportBanner()
-              }}
-            />
           </div>
         </section>
 
@@ -1489,6 +1629,33 @@ function App() {
               </div>
             )}
           </aside>
+        )}
+
+        {toast && (
+          <div className="app-toast" role="status" onClick={dismissToast}>
+            <span className="app-toast-message">{toast.message}</span>
+            {toast.undo && (
+              <Button
+                size="small"
+                onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
+                  event.stopPropagation()
+                  toast.undo?.()
+                  dismissToast()
+                }}
+              >
+                Undo
+              </Button>
+            )}
+            <IconButton
+              icon={XIcon}
+              size="small"
+              aria-label="Dismiss notification"
+              onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
+                event.stopPropagation()
+                dismissToast()
+              }}
+            />
+          </div>
         )}
       </div>
     </div>

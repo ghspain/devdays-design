@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import JSZip from 'jszip'
 import { formatOptions } from '../../src/constants'
-import { formatCard, selectFormat, showPreviewForViewport } from './helpers'
+import { formatCard, openSection, selectFormat, showPreviewForViewport } from './helpers'
 
 const formats = formatOptions.map(({ id, width, height }) => ({ id, width, height }))
 
@@ -117,6 +117,8 @@ test('speaker banner renders selected organizer and sponsor logos', async ({ pag
   })
 
   await selectFormat(page, 'speaker_banner')
+  await openSection(page, 'section-organizer')
+  await openSection(page, 'section-partners')
   await page.getByLabel('Select organizer').selectOption('ghspain')
   await page.getByRole('button', { name: 'Use selected organizer' }).click()
   await page.getByLabel('Add from sponsor or collaborator catalogue').selectOption('celonis')
@@ -133,6 +135,7 @@ test('speaker banner renders selected organizer and sponsor logos', async ({ pag
 
 test('applying an event preset keeps the selected banner format', async ({ page }) => {
   await selectFormat(page, 'speaker_square')
+  await openSection(page, 'section-event')
   await page.getByLabel('Event preset').selectOption('meetup')
   await expect(formatCard(page, 'speaker_square')).toHaveAttribute('aria-pressed', 'true')
   await page.getByLabel('Event preset').selectOption('devdays')
@@ -146,6 +149,7 @@ test('formats are grouped into event and speaker families', async ({ page }) => 
 
 test('speaker avatars render inside the square canvas', async ({ page }) => {
   await selectFormat(page, 'speaker_square')
+  await openSection(page, 'section-speakers')
   const canvas = page.getByLabel('Banner preview')
   await expect
     .poll(() =>
@@ -180,6 +184,7 @@ test('speaker avatars render inside the square canvas', async ({ page }) => {
 
 test('catalogue speaker selection adds cumulatively with dedupe and a counter', async ({ page }) => {
   await selectFormat(page, 'speaker_square')
+  await openSection(page, 'section-speakers')
   const counter = page.locator('.section-count')
   await expect(counter).toHaveText('1 / 12')
 
@@ -211,6 +216,7 @@ test('sponsors section is available on the speaker square format', async ({ page
 test('partner logos toggle hides and shows the square footer logos', async ({ page }) => {
   test.setTimeout(90_000)
   await selectFormat(page, 'speaker_square')
+  await openSection(page, 'section-partners')
   const canvas = page.getByLabel('Banner preview')
   await expect.poll(() => canvas.evaluate((element) => (element as HTMLCanvasElement).width)).toBe(1080)
 
@@ -297,6 +303,10 @@ test('mobile footer does not overlap editor content', async ({ page }, testInfo)
     const contentElements = await contentLocators.all()
     const contentBoxes: Array<{ x: number; y: number; width: number; height: number }> = []
     for (const el of contentElements) {
+      // Collapsed <details> content in modern Chromium is skipped via
+      // content-visibility: hidden; its descendants still report layout boxes
+      // but paint nothing, so they cannot visually overlap the footer.
+      if (await el.evaluate((e) => e.closest('details') !== null && !e.closest('details')!.open)) continue
       const box = await el.boundingBox()
       if (box) contentBoxes.push(box)
     }
@@ -373,6 +383,7 @@ test('draft auto-saves and reloads on page refresh', async ({ page }, testInfo) 
 
   // Change the event title to something unique.
   const titleInput = page.locator('input[placeholder*="Event title"]').first()
+  await openSection(page, 'section-event')
   if (await titleInput.isVisible({ timeout: 3000 }).catch(() => false)) {
     await titleInput.fill('Draft Persistence Test Event')
     await page.waitForTimeout(1000) // Wait for debounced save
@@ -424,6 +435,7 @@ test('reset confirm clears the draft', async ({ page }, testInfo) => {
 
   // Change the event title.
   const titleInput = page.locator('input[placeholder*="Event title"]').first()
+  await openSection(page, 'section-event')
   if (await titleInput.isVisible({ timeout: 3000 }).catch(() => false)) {
     await titleInput.fill('Reset Test Event')
     await page.waitForTimeout(1000)
@@ -485,10 +497,9 @@ test('download button distinguishes PNG from ZIP export', async ({ page }) => {
   // The event pack button should say "Event pack (.zip)"
   await expect(page.getByRole('button', { name: 'Event pack (.zip)' })).toBeVisible()
 
-  // The canvas toolbar download should have an accessible name mentioning PNG
+  // #78: the canvas toolbar no longer has any download control.
   await showPreviewForViewport(page)
-  const toolbarDownload = page.locator('button[title="Download PNG"]')
-  await expect(toolbarDownload).toBeVisible()
+  await expect(page.locator('.stage-toolbar button[title="Download PNG"]')).toHaveCount(0)
 })
 
 test('download summary shows correct dimensions and count', async ({ page }) => {
@@ -500,6 +511,7 @@ test('download summary shows correct dimensions and count', async ({ page }) => 
   await expect(page.locator('.download-summary').first()).toContainText(/1 speaker banner\(s\) · 1080×1350/)
 
   // Add a second speaker and verify count updates
+  await openSection(page, 'section-speakers')
   await page.getByRole('button', { name: 'Add speaker' }).click()
   await page.getByRole('textbox', { name: 'Name' }).nth(1).fill('Second Speaker')
   await expect(page.locator('.download-summary').first()).toContainText(/2 speaker banner\(s\) · 1080×1350/)

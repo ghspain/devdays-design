@@ -23,11 +23,13 @@ test('mobile: validation panel content clears the sticky footer with a safe marg
   await page.setViewportSize({ width: 390, height: 844 })
 
   // Open every collapsible section so the sidebar is at its tallest,
-  // reproducing the worst-case scroll depth from the critique.
-  const sections = page.locator('.side-section:not([open]) > summary')
-  const sectionCount = await sections.count()
-  for (let i = 0; i < sectionCount; i += 1) {
-    await sections.nth(i).click()
+  // reproducing the worst-case scroll depth from the critique. Re-count
+  // after each click because the `:not([open])` list shrinks as sections open.
+  for (let i = 0; i < 10; i += 1) {
+    const next = page.locator('.side-section:not([open]) > summary').first()
+    if ((await next.count()) === 0) break
+    await next.click()
+    await page.waitForTimeout(100)
   }
 
   // Scroll to the true end of the page - the resting position a user lands

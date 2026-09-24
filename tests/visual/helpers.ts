@@ -19,7 +19,19 @@ export function themeCard(page: Page, id: EventThemeId) {
 }
 
 export async function selectTheme(page: Page, id: EventThemeId) {
+  await openSection(page, 'section-event')
   await themeCard(page, id).click()
+}
+
+// #79: sections start collapsed except the format section. Tests that
+// interact with fields inside a collapsed section must open it first.
+export async function openSection(page: Page, id: string) {
+  const section = page.locator(`details#${id}`)
+  // getAttribute('open') returns "" for an open <details>, which is falsy —
+  // use the element's `open` property instead.
+  if (!(await section.evaluate((el) => (el as HTMLDetailsElement).open))) {
+    await section.locator('summary').click()
+  }
 }
 
 export async function showPreviewForViewport(page: Page) {

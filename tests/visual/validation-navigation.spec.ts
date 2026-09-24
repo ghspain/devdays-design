@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { openSection } from './helpers'
 
 test.use({ viewport: { width: 1200, height: 800 } })
 
@@ -6,6 +7,7 @@ test('clicking a text-truncated finding scrolls to and focuses the Event title i
   await page.goto('/')
 
   // Set a very long event title that will trigger text-truncated validation
+  await openSection(page, 'section-event')
   await page.fill('input[id*="event-title"]', 'Esta es una conferencia internacional de tecnología y desarrollo de software con un nombre extremadamente largo que supera todos los límites')
   await page.waitForTimeout(1000) // Wait for validation
 
@@ -60,6 +62,7 @@ test('validation findings are programmatically associated with controls', async 
   await page.goto('/')
 
   // Set a long event title to trigger validation
+  await openSection(page, 'section-event')
   await page.fill('input[id*="event-title"]', 'Esta es una conferencia internacional de tecnología y desarrollo de software con un nombre extremadamente largo que supera todos los límites')
   await page.waitForTimeout(1000)
 
