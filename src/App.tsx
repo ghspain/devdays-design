@@ -1088,7 +1088,14 @@ function App() {
                           aria-label={`${option.name}, ${option.width} by ${option.height}, ${option.description ?? ''}, ${option.channels?.join(', ') ?? ''}`}
                           className={`card-option format-card${state.format === option.id ? ' selected' : ''}`}
                           key={option.id}
-                          onClick={() => setState((previous) => ({ ...previous, format: option.id }))}
+                          onClick={() => {
+                            // #82: brief toast when the format changes and fields get
+                            // hidden/shown. Does not change state persistence.
+                            if (state.format !== option.id) {
+                              showToast('Format changed — edition and location fields updated.')
+                            }
+                            setState((previous) => ({ ...previous, format: option.id }))
+                          }}
                           type="button"
                         >
                           <span className="format-ratio-wrap" aria-hidden="true">
