@@ -42,6 +42,8 @@ test('preset flow fills the event fields', async ({ page }) => {
 
 test('registration toggle exposes its accessible name and switches state', async ({ page }) => {
   await selectFormat(page, 'social_promo')
+  // The registration controls moved into the advanced section (#74).
+  await page.locator('#section-registration summary').click()
 
   const toggle = page.getByRole('button', { name: /show registration footer bar/i })
   await expect(toggle).toBeVisible()

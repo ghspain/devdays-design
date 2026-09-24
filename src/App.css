@@ -1406,6 +1406,8 @@ input[type='file'] {
 
   .sidebar-content {
     padding: 0.55rem;
+    /* Keep the sticky action bar from covering the last controls (#72). */
+    padding-bottom: 6.5rem;
   }
 
   .side-section > summary {
@@ -1425,4 +1427,63 @@ input[type='file'] {
     height: auto;
     aspect-ratio: 16 / 9;
   }
+}
+
+/* Field-level truncation indicator: shown when the live render had to cut
+   this control's text with an ellipsis (renderInfo.truncatedFields). */
+.fit-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-attention-fg, #9a6700);
+}
+
+.fit-warning input,
+.fit-warning textarea {
+  border-color: var(--color-attention-emphasis, #bf8700);
+}
+
+/* Miniature banner preview inside each theme card, built from the theme's
+   own palette so the cards are recognizable at a glance. */
+.theme-mini {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--borderColor-muted, rgba(31, 35, 40, 0.15));
+  overflow: hidden;
+}
+
+.theme-mini-accent {
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.theme-mini-title {
+  font-family: 'Mona Sans', sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theme-mini-line {
+  width: 80%;
+  height: 3px;
+  border-radius: 2px;
+  opacity: 0.55;
+}
+
+.theme-mini-line.short {
+  width: 55%;
 }

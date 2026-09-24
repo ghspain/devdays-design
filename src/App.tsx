@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { Banner, Button, Checkbox, CounterLabel, FormControl, IconButton, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
 import {
+  AlertIcon,
   ChevronDownIcon,
   CopilotIcon,
   DownloadIcon,
@@ -74,6 +75,8 @@ function App() {
   const [isExportingPack, setIsExportingPack] = useState(false)
   const [packProgress, setPackProgress] = useState<EventPackProgress | null>(null)
   const [validationFindings, setValidationFindings] = useState<ValidationFinding[]>([])
+  // Fields the live preview render had to truncate (e.g. ["event title"]).
+  const [truncatedFields, setTruncatedFields] = useState<string[]>([])
   const validationErrorCount = validationFindings.filter((f) => f.severity === 'error').length
   const validationIssueCount = validationFindings.length
   const exportFindingsLabel =
@@ -87,7 +90,7 @@ function App() {
               'missing-venue': { elementId: 'section-event', fieldId: 'event-location' },
               'missing-date': { elementId: 'section-event', fieldId: 'event-datetime' },
               'missing-hashtag': { elementId: 'section-event' },
-              'missing-url': { elementId: 'section-event', fieldId: 'registration-url' },
+              'missing-url': { elementId: 'section-registration', fieldId: 'registration-url' },
               'missing-description': { elementId: 'section-event' },
           'speakers-dropped': { elementId: 'section-speakers' },
           'logos-dropped': { elementId: 'section-partners' },
@@ -104,12 +107,26 @@ function App() {
               'date & time': { sectionId: 'section-event', fieldId: 'event-datetime' },
               'speaker name': { sectionId: 'section-speakers' },
               'speaker role': { sectionId: 'section-speakers' },
-              'registration label': { sectionId: 'section-event', fieldId: 'registration-text' },
-              'registration URL': { sectionId: 'section-event', fieldId: 'registration-url' },
+              'registration label': { sectionId: 'section-registration', fieldId: 'registration-text' },
+              'registration URL': { sectionId: 'section-registration', fieldId: 'registration-url' },
           'event title': { sectionId: 'section-event', fieldId: 'event-title' },
               'event details': { sectionId: 'section-event' },
               'location': { sectionId: 'section-event', fieldId: 'event-location' },
         }
+
+    /** Editor control id -> renderBanner truncated-field name, for inline fit warnings. */
+    const TRUNCATION_CONTROL_KEYS: Record<string, string> = {
+          'event-title': 'event title',
+          'event-edition': 'edition',
+          'event-city': 'city',
+          'event-datetime': 'date & time',
+          'registration-text': 'registration label',
+          'registration-url': 'registration URL',
+        }
+    const isControlTruncated = (controlId: string) => {
+      const key = TRUNCATION_CONTROL_KEYS[controlId]
+      return !!key && truncatedFields.includes(key)
+    }
 
         const navigateToField = (finding: ValidationFinding) => {
           // For text-truncated, use the specific field name to find the target
@@ -286,6 +303,7 @@ function App() {
       const findings = [...validateState(state, format.id, renderInfo), ...checkRenderedCanvas(targetCanvas, renderInfo)]
       if (cancelled) return
       setValidationFindings(findings)
+      setTruncatedFields(renderInfo.truncatedFields)
       // Exposed for Playwright visual-validation specs.
       ;(window as unknown as { __devdaysValidation?: { findings: ValidationFinding[]; pixelChecks: typeof checkRenderedCanvas } }).__devdaysValidation = { findings, pixelChecks: checkRenderedCanvas }
     }
@@ -697,53 +715,6 @@ function App() {
           )}
           {backgroundFailed && <p className="warning">Background image unavailable: using gradient fallback for preview.</p>}
 
-          <div className="format-bar">
-            <span className="picker-label" id="format-label">Format</span>
-            <div className="format-groups" role="group" aria-labelledby="format-label">
-              {[
-                { label: 'Event formats', ids: eventFormatIds },
-                { label: 'Speaker formats', ids: speakerFormatIds },
-              ].map((group) => (
-                <div className="format-group" key={group.label}>
-                  <h3>{group.label}</h3>
-                  <div className="format-grid-pair">
-                    {group.ids.map((id) => {
-                      const option = formatOptions.find((item) => item.id === id)
-                      if (!option) return null
-                      return (
-                        <button
-                          aria-pressed={state.format === option.id}
-                          aria-label={`${option.name}, ${option.width} by ${option.height}, ${option.description ?? ''}, ${option.channels?.join(', ') ?? ''}`}
-                          className={`card-option format-card${state.format === option.id ? ' selected' : ''}`}
-                          key={option.id}
-                          onClick={() => setState((previous) => ({ ...previous, format: option.id }))}
-                          type="button"
-                        >
-                          <span className="format-ratio-wrap" aria-hidden="true">
-                            <span
-                              className="format-ratio"
-                              style={{
-                                aspectRatio: `${option.width} / ${option.height}`,
-                                backgroundColor: state.colors.background,
-                                borderColor: state.colors.secondary,
-                              }}
-                            >
-                              <span style={{ backgroundColor: state.colors.accent }} />
-                            </span>
-                          </span>
-                          <strong>{option.name}</strong>
-                          <small>{option.width} × {option.height}</small>
-                          <small>{option.description}</small>
-                          <small>Channels: {option.channels?.join(', ')}</small>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <details className="side-section" open id="section-event">
             <summary>
               <span>Event</span>
@@ -772,6 +743,18 @@ function App() {
                     >
                       <strong>{theme.name}</strong>
                       <span
+                        className="theme-mini"
+                        aria-hidden="true"
+                        style={{ backgroundColor: theme.colors.background }}
+                      >
+                        <span className="theme-mini-accent" style={{ backgroundColor: theme.colors.accent }} />
+                        <span className="theme-mini-title" style={{ color: theme.colors.primary }}>
+                          {theme.fixedEventTitle}
+                        </span>
+                        <span className="theme-mini-line" style={{ backgroundColor: theme.colors.secondary }} />
+                        <span className="theme-mini-line short" style={{ backgroundColor: theme.colors.secondary }} />
+                      </span>
+                      <span
                         className="swatch-row"
                         aria-label={`Colors: ${theme.colors.primary}, ${theme.colors.accent}, ${theme.colors.background}`}
                       >
@@ -784,8 +767,13 @@ function App() {
                 </div>
               </div>
               <div className="form-grid single">
-                <FormControl id="event-title">
+                <FormControl id="event-title" className={isControlTruncated('event-title') ? 'fit-warning' : undefined}>
                   <FormControl.Label>Event title</FormControl.Label>
+                  {isControlTruncated('event-title') && (
+                    <span className="fit-indicator" title="This text was too long for the banner and will be cut with an ellipsis. Shorten it or pick a larger format.">
+                      <AlertIcon size={12} /> Truncates in banner
+                    </span>
+                  )}
                   <TextInput
                     id="event-title"
                     block
@@ -795,8 +783,13 @@ function App() {
                   />
                 </FormControl>
                 {isLumaCover && (
-                  <FormControl id="event-edition">
+                  <FormControl id="event-edition" className={isControlTruncated('event-edition') ? 'fit-warning' : undefined}>
                     <FormControl.Label>Event edition</FormControl.Label>
+                    {isControlTruncated('event-edition') && (
+                      <span className="fit-indicator" title="This text was too long for the banner and will be cut with an ellipsis. Shorten it or pick a larger format.">
+                        <AlertIcon size={12} /> Truncates in banner
+                      </span>
+                    )}
                     <TextInput
                       id="event-edition"
                       block
@@ -808,8 +801,13 @@ function App() {
                     <FormControl.Caption>Examples: Professional or Students</FormControl.Caption>
                   </FormControl>
                 )}
-                <FormControl id="event-city">
+                <FormControl id="event-city" className={isControlTruncated('event-city') ? 'fit-warning' : undefined}>
                   <FormControl.Label>City</FormControl.Label>
+                  {isControlTruncated('event-city') && (
+                    <span className="fit-indicator" title="This text was too long for the banner and will be cut with an ellipsis. Shorten it or pick a larger format.">
+                      <AlertIcon size={12} /> Truncates in banner
+                    </span>
+                  )}
                   <TextInput
                     id="event-city"
                     block
@@ -817,8 +815,13 @@ function App() {
                     onChange={(e) => updateEvent({ city: e.target.value })}
                   />
                 </FormControl>
-                <FormControl id="event-datetime">
+                <FormControl id="event-datetime" className={isControlTruncated('event-datetime') ? 'fit-warning' : undefined}>
                   <FormControl.Label>Date and time</FormControl.Label>
+                  {isControlTruncated('event-datetime') && (
+                    <span className="fit-indicator" title="This text was too long for the banner and will be cut with an ellipsis. Shorten it or pick a larger format.">
+                      <AlertIcon size={12} /> Truncates in banner
+                    </span>
+                  )}
                   <TextInput
                     id="event-datetime"
                     block
@@ -841,61 +844,9 @@ function App() {
                   </FormControl>
                 )}
                 {(isSocialPromo || isSpeakerBanner) && (
-                  <>
-                    <div className="resolution-toggle">
-                      <div>
-                        <strong id="registration-bar-label">Show registration footer bar</strong>
-                        <span>Adds a CTA + short URL strip at the bottom of the banner.</span>
-                      </div>
-                      <ToggleSwitch
-                        aria-labelledby="registration-bar-label"
-                        checked={state.event.registrationEnabled}
-                        onChange={(checked) => updateEvent({ registrationEnabled: checked })}
-                      />
-                    </div>
-
-                    {state.event.registrationEnabled && (
-                      <>
-                        <FormControl id="registration-style">
-                          <FormControl.Label>Registration bar style</FormControl.Label>
-                          <Select
-                            id="registration-style"
-                            block
-                            value={state.event.registrationStyle}
-                            onChange={(e) =>
-                              updateEvent({ registrationStyle: e.target.value as EventDetails['registrationStyle'] })
-                            }
-                          >
-                            <Select.Option value="cta_url">CTA + URL</Select.Option>
-                            <Select.Option value="url_only">URL only</Select.Option>
-                          </Select>
-                        </FormControl>
-
-                        <FormControl id="registration-text">
-                          <FormControl.Label>CTA text</FormControl.Label>
-                          <TextInput
-                            id="registration-text"
-                            block
-                            value={state.event.registrationText}
-                            onChange={(e) => updateEvent({ registrationText: e.target.value })}
-                            placeholder="Register now"
-                          />
-                        </FormControl>
-
-                        <FormControl id="registration-url" required>
-                          <FormControl.Label>Registration URL</FormControl.Label>
-                          <TextInput
-                            id="registration-url"
-                            block
-                            required
-                            value={state.event.registrationUrl}
-                            onChange={(e) => updateEvent({ registrationUrl: e.target.value })}
-                            placeholder="gh.io/devdays"
-                          />
-                        </FormControl>
-                      </>
-                    )}
-                  </>
+                  <p className="section-description">
+                    The registration footer controls live in the advanced section at the bottom of the sidebar.
+                  </p>
                 )}
               </div>
             </div>
@@ -1011,6 +962,53 @@ function App() {
             </div>
           </details>
           )}
+
+          <div className="format-bar">
+            <span className="picker-label" id="format-label">Format</span>
+            <div className="format-groups" role="group" aria-labelledby="format-label">
+              {[
+                { label: 'Event formats', ids: eventFormatIds },
+                { label: 'Speaker formats', ids: speakerFormatIds },
+              ].map((group) => (
+                <div className="format-group" key={group.label}>
+                  <h3>{group.label}</h3>
+                  <div className="format-grid-pair">
+                    {group.ids.map((id) => {
+                      const option = formatOptions.find((item) => item.id === id)
+                      if (!option) return null
+                      return (
+                        <button
+                          aria-pressed={state.format === option.id}
+                          aria-label={`${option.name}, ${option.width} by ${option.height}, ${option.description ?? ''}, ${option.channels?.join(', ') ?? ''}`}
+                          className={`card-option format-card${state.format === option.id ? ' selected' : ''}`}
+                          key={option.id}
+                          onClick={() => setState((previous) => ({ ...previous, format: option.id }))}
+                          type="button"
+                        >
+                          <span className="format-ratio-wrap" aria-hidden="true">
+                            <span
+                              className="format-ratio"
+                              style={{
+                                aspectRatio: `${option.width} / ${option.height}`,
+                                backgroundColor: state.colors.background,
+                                borderColor: state.colors.secondary,
+                              }}
+                            >
+                              <span style={{ backgroundColor: state.colors.accent }} />
+                            </span>
+                          </span>
+                          <strong>{option.name}</strong>
+                          <small>{option.width} × {option.height}</small>
+                          <small>{option.description}</small>
+                          <small>Channels: {option.channels?.join(', ')}</small>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {(isSpeakerBanner || isSocialPromo) && (
           <details className="side-section" open id="section-organizer">
@@ -1143,6 +1141,80 @@ function App() {
                   </div>
                 ))}
               </div>
+            </div>
+          </details>
+          )}
+
+          {(isSocialPromo || isSpeakerBanner) && (
+          <details className="side-section" id="section-registration">
+            <summary>
+              <span>Advanced: registration footer</span>
+              <ChevronDownIcon size={16} className="chevron" />
+            </summary>
+            <div className="section-block">
+              <div className="resolution-toggle">
+                <div>
+                  <strong id="registration-bar-label">Show registration footer bar</strong>
+                  <span>Adds a CTA + short URL strip at the bottom of the banner.</span>
+                </div>
+                <ToggleSwitch
+                  aria-labelledby="registration-bar-label"
+                  checked={state.event.registrationEnabled}
+                  onChange={(checked) => updateEvent({ registrationEnabled: checked })}
+                />
+              </div>
+
+              {state.event.registrationEnabled && (
+                <>
+                  <FormControl id="registration-style">
+                    <FormControl.Label>Registration bar style</FormControl.Label>
+                    <Select
+                      id="registration-style"
+                      block
+                      value={state.event.registrationStyle}
+                      onChange={(e) =>
+                        updateEvent({ registrationStyle: e.target.value as EventDetails['registrationStyle'] })
+                      }
+                    >
+                      <Select.Option value="cta_url">CTA + URL</Select.Option>
+                      <Select.Option value="url_only">URL only</Select.Option>
+                    </Select>
+                  </FormControl>
+
+                  <FormControl id="registration-text" className={isControlTruncated('registration-text') ? 'fit-warning' : undefined}>
+                    <FormControl.Label>CTA text</FormControl.Label>
+                    {isControlTruncated('registration-text') && (
+                      <span className="fit-indicator" title="This text was too long for the banner and will be cut with an ellipsis. Shorten it or pick a larger format.">
+                        <AlertIcon size={12} /> Truncates in banner
+                      </span>
+                    )}
+                    <TextInput
+                      id="registration-text"
+                      block
+                      value={state.event.registrationText}
+                      onChange={(e) => updateEvent({ registrationText: e.target.value })}
+                      placeholder="Register now"
+                    />
+                  </FormControl>
+
+                  <FormControl id="registration-url" required className={isControlTruncated('registration-url') ? 'fit-warning' : undefined}>
+                    <FormControl.Label>Registration URL</FormControl.Label>
+                    {isControlTruncated('registration-url') && (
+                      <span className="fit-indicator" title="This text was too long for the banner and will be cut with an ellipsis. Shorten it or pick a larger format.">
+                        <AlertIcon size={12} /> Truncates in banner
+                      </span>
+                    )}
+                    <TextInput
+                      id="registration-url"
+                      block
+                      required
+                      value={state.event.registrationUrl}
+                      onChange={(e) => updateEvent({ registrationUrl: e.target.value })}
+                      placeholder="gh.io/devdays"
+                    />
+                  </FormControl>
+                </>
+              )}
             </div>
           </details>
           )}
