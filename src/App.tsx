@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ToggleEvent as ReactToggleEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ToggleEvent as ReactToggleEvent } from 'react'
 import { Banner, Button, Checkbox, CounterLabel, FormControl, IconButton, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
 import {
   AlertIcon,
@@ -77,6 +77,34 @@ function App() {
   const [validationFindings, setValidationFindings] = useState<ValidationFinding[]>([])
   // Fields the live preview render had to truncate (e.g. ["event title"]).
   const [truncatedFields, setTruncatedFields] = useState<string[]>([])
+
+  // Transient toast with optional Undo action (#81, #82). Single-slot: a new
+  // toast replaces the previous one. 🧭 DECISION — undo toasts last 5s, plain
+  // toasts 3s; bottom-center placement; click anywhere dismisses. Revert by
+  // restoring confirm dialogs for removals.
+  type AppToast = { id: number; message: string; undo?: () => void }
+  const [toast, setToast] = useState<AppToast | null>(null)
+  const toastTimer = useRef<number | null>(null)
+  const toastIdRef = useRef(0)
+  const dismissToast = useCallback(() => {
+    if (toastTimer.current !== null) {
+      window.clearTimeout(toastTimer.current)
+      toastTimer.current = null
+    }
+    setToast(null)
+  }, [])
+  const showToast = useCallback((message: string, undo?: () => void, durationMs = undo ? 5000 : 3000) => {
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current)
+    toastIdRef.current += 1
+    setToast({ id: toastIdRef.current, message, undo })
+    toastTimer.current = window.setTimeout(() => {
+      toastTimer.current = null
+      setToast(null)
+    }, durationMs)
+  }, [])
+  useEffect(() => () => {
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current)
+  }, [])
   const validationErrorCount = validationFindings.filter((f) => f.severity === 'error').length
   const validationIssueCount = validationFindings.length
   const exportFindingsLabel =
@@ -451,8 +479,20 @@ function App() {
         : { ...previous, speakers: [...previous.speakers, { id: uid(), name: '' }] },
     )
 
-  const removeSpeaker = (id: string) =>
+  const removeSpeaker = (id: string) => {
+    const index = state.speakers.findIndex((speaker) => speaker.id === id)
+    if (index === -1) return
+    const removed = state.speakers[index]
     setState((previous) => ({ ...previous, speakers: previous.speakers.filter((speaker) => speaker.id !== id) }))
+    showToast('Speaker removed.', () => {
+      setState((previous) => {
+        if (previous.speakers.some((speaker) => speaker.id === removed.id)) return previous
+        const speakers = [...previous.speakers]
+        speakers.splice(Math.min(index, speakers.length), 0, removed)
+        return { ...previous, speakers }
+      })
+    })
+  }
 
   const addCatalogSponsor = () => {
     const sponsor = catalogSponsors.find((item) => item.id === selectedSponsorId)
@@ -1207,12 +1247,24 @@ function App() {
                       variant="invisible"
                       size="small"
                       className="logo-remove"
-                      onClick={() =>
+                      onClick={() => {
+                        const index = state.partners.findIndex((item) => item.id === partner.id)
+                        const removed = index >= 0 ? state.partners[index] : null
                         setState((previous) => ({
                           ...previous,
                           partners: previous.partners.filter((item) => item.id !== partner.id),
                         }))
-                      }
+                        if (removed) {
+                          showToast('Partner logo removed.', () => {
+                            setState((previous) => {
+                              if (previous.partners.some((item) => item.id === removed.id)) return previous
+                              const partners = [...previous.partners]
+                              partners.splice(Math.min(index, partners.length), 0, removed)
+                              return { ...previous, partners }
+                            })
+                          })
+                        }
+                      }}
                     >
                       Remove
                     </Button>
@@ -1570,6 +1622,33 @@ function App() {
               </div>
             )}
           </aside>
+        )}
+
+        {toast && (
+          <div className="app-toast" role="status" onClick={dismissToast}>
+            <span className="app-toast-message">{toast.message}</span>
+            {toast.undo && (
+              <Button
+                size="small"
+                onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
+                  event.stopPropagation()
+                  toast.undo?.()
+                  dismissToast()
+                }}
+              >
+                Undo
+              </Button>
+            )}
+            <IconButton
+              icon={XIcon}
+              size="small"
+              aria-label="Dismiss notification"
+              onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
+                event.stopPropagation()
+                dismissToast()
+              }}
+            />
+          </div>
         )}
       </div>
     </div>
