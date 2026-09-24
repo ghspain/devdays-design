@@ -305,11 +305,11 @@
   font-weight: 700;
   line-height: 1;
   color: #fff;
-  background: #d29922;
+  background: var(--app-warning);
 }
 
 .download-badge.error {
-  background: #f85149;
+  background: var(--app-error);
 }
 
 .pack-download-block {
@@ -1463,12 +1463,12 @@ input[type='file']::file-selector-button:hover {
   margin-bottom: 4px;
   font-size: 11px;
   font-weight: 500;
-  color: var(--color-attention-fg, #9a6700);
+  color: var(--color-attention-fg, var(--app-warning));
 }
 
 .fit-warning input,
 .fit-warning textarea {
-  border-color: var(--color-attention-emphasis, #bf8700);
+  border-color: var(--color-attention-emphasis, var(--app-warning));
 }
 
 /* Miniature banner preview inside each theme card, built from the theme's
@@ -1511,4 +1511,15 @@ input[type='file']::file-selector-button:hover {
 
 .theme-mini-line.short {
   width: 55%;
+}
+
+/* Accessibility: reduce motion for users who prefer it (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
