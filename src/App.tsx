@@ -329,12 +329,19 @@ function App() {
           return
         }
       }
-      const findings = [...validateState(state, format.id, renderInfo), ...checkRenderedCanvas(targetCanvas, renderInfo)]
+      const findings = [
+        ...validateState(state, format.id, renderInfo),
+        ...checkRenderedCanvas(targetCanvas, renderInfo),
+      ]
+      // Test hook: lets Playwright specs inject findings (e.g. an 'error'
+      // severity, which real themes never produce) to verify badge styling.
+      const injected = (window as unknown as { __devdaysInjectedFindings?: typeof findings }).__devdaysInjectedFindings
+      const effectiveFindings = injected ?? findings
       if (cancelled) return
-      setValidationFindings(findings)
+      setValidationFindings(effectiveFindings)
       setTruncatedFields(renderInfo.truncatedFields)
-      // Exposed for Playwright visual-validation specs.
-      ;(window as unknown as { __devdaysValidation?: { findings: ValidationFinding[]; pixelChecks: typeof checkRenderedCanvas } }).__devdaysValidation = { findings, pixelChecks: checkRenderedCanvas }
+      // Exposed for Playwright visual-validation specs (reflects injected findings too).
+      ;(window as unknown as { __devdaysValidation?: { findings: ValidationFinding[]; pixelChecks: typeof checkRenderedCanvas } }).__devdaysValidation = { findings: effectiveFindings, pixelChecks: checkRenderedCanvas }
     }
 
     // Coalesce rapid state changes into a single redraw on the next animation
@@ -1369,14 +1376,23 @@ function App() {
                             leadingVisual={DownloadIcon}
                             trailingVisual={
                               validationIssueCount > 0 ? (
-                                <CounterLabel
-                                  className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
-                                  aria-hidden="true"
-                                >
-                                  {validationIssueCount}
-                                </CounterLabel>
+                                <>
+                                  {/* #80: badge shows an X icon (red) for errors and a
+                                      warning icon (amber, outline style so it does not
+                                      read as a blocker on the export CTA). 🧭 DECISION
+                                      — icons chosen: XIcon for errors, AlertIcon for
+                                      warnings; warning badge restyled as amber outline.
+                                      Revert by restoring the solid amber badge. */}
+                                  <CounterLabel
+                                    className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
+                                    aria-hidden="true"
+                                  >
+                                    {validationErrorCount > 0 ? <XIcon size={10} /> : <AlertIcon size={10} />}
+                                    {validationIssueCount}
+                                  </CounterLabel>
+                                </>
                               ) : null
-                            }
+                              }
                             onClick={() => {
                               void exportBanner()
                             }}
@@ -1400,6 +1416,7 @@ function App() {
                         className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
                         aria-hidden="true"
                       >
+                        {validationErrorCount > 0 ? <XIcon size={10} /> : <AlertIcon size={10} />}
                         {validationIssueCount}
                       </CounterLabel>
                     ) : null
