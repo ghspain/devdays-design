@@ -1249,7 +1249,7 @@ function App() {
               <div className="logos-grid">
                 {state.partners.map((partner) => (
                   <div key={partner.id} className="logo-tile">
-                    <img src={partner.imageDataUrl} alt="Partner logo" />
+                    <img src={partner.imageDataUrl} alt={partner.name ? `${partner.name} logo` : 'Partner logo'} />
                     <Button
                       variant="invisible"
                       size="small"
