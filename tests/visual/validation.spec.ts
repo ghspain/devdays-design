@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { selectFormat } from './helpers'
+import { openSection, selectFormat } from './helpers'
 
 interface Finding {
   code: string
@@ -63,6 +63,7 @@ test('overlong city text is reported as truncated', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
 
+  await openSection(page, 'section-event')
   await page.getByLabel('City').fill('Buenos Aires Capital Federal Extendiiiisima')
 
   await expect
@@ -80,6 +81,7 @@ test('a single unbreakable word wider than the box is reported as truncated', as
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
 
   // No spaces at all: wrapText used to emit it as one overflowing line with no flag (#32).
+  await openSection(page, 'section-event')
   await page.getByLabel('City').fill('M'.repeat(200))
 
   await expect
@@ -114,6 +116,7 @@ test('export buttons show a findings badge that never blocks export', async ({ p
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
   await expect(page.locator('.download-badge')).toHaveCount(0)
 
+  await openSection(page, 'section-event')
   await page.getByLabel('City').fill('Buenos Aires Capital Federal Extendiiiisima')
   await expect
     .poll(() => findings(page), { timeout: 10_000 })
@@ -269,6 +272,7 @@ test('text-truncated city finding exposes a "Go to field" button that focuses th
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
 
   // Trigger a truncation finding by entering an overlong city name.
+  await openSection(page, 'section-event')
   await page.getByLabel('City').fill('Buenos Aires Capital Federal Extendiiiisima')
 
   await expect
@@ -350,6 +354,7 @@ test('validation-highlight animation class is applied to the focused field', asy
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
 
   // Trigger a truncation finding.
+  await openSection(page, 'section-event')
   await page.getByLabel('City').fill('Buenos Aires Capital Federal Extendiiiisima')
 
   await expect

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ToggleEvent as ReactToggleEvent } from 'react'
 import { Banner, Button, Checkbox, CounterLabel, FormControl, IconButton, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
 import {
   AlertIcon,
@@ -143,12 +143,13 @@ function App() {
           if (!target) return
 
       // Scroll to the section
-      const sectionEl = document.getElementById(target.elementId) as HTMLDetailsElement | null
+      const sectionEl = document.getElementById(target.elementId)
       if (sectionEl) {
         sectionEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        // Open the section if it's collapsed
-        if (sectionEl.tagName === 'DETAILS' && !sectionEl.open) {
-          sectionEl.open = true
+        // Open the section if it's collapsed (through React state so the
+        // controlled <details> stays in sync).
+        if (sectionEl.tagName === 'DETAILS' && !(sectionEl as HTMLDetailsElement).open) {
+          setSectionOpen((prev) => ({ ...prev, [target.elementId]: true }))
         }
       }
 
@@ -183,6 +184,34 @@ function App() {
   const isSocialPromo = state.format === 'social_promo'
   const isMinimalCover = isLumaCover
   const isSpeakerPerBannerFormat = isSpeakerBanner || isSpeakerSquare
+
+  // #79: collapsible sidebar sections. Open/closed state lives in React (not
+  // the DOM) so it persists across format changes; only the format section is
+  // open by default because it is relevant to every format.
+  // 🧭 DECISION — question: which section should stay open by default, and
+  // should the default reset when the format changes?
+  //   options: (a) format section open, state persists; (b) collapse everything;
+  //   (c) reset to defaults on each format change.
+  //   investigation: the format section is the only section rendered for every
+  //   format, and it is the first thing users touch when changing output.
+  //   decision: (a) — format section open on load, user toggles persist across
+  //   format changes. Most conservative and easily reversible: revert this
+  //   commit to restore always-open sections.
+  const [openSections, setSectionOpen] = useState<Record<string, boolean>>({ 'section-format': true })
+  const handleSectionToggle = (id: string) => (event: ReactToggleEvent<HTMLDetailsElement>) => {
+    const open = (event.target as HTMLDetailsElement).open
+    setSectionOpen((prev) => (prev[id] === open ? prev : { ...prev, [id]: open }))
+  }
+  const renderedSectionIds = useMemo(() => {
+    const ids = ['section-event']
+    if (!isMinimalCover && !isSocialPromo) ids.push('section-speakers')
+    ids.push('section-format')
+    if (isSpeakerBanner || isSocialPromo) ids.push('section-organizer')
+    if (isLumaCover || isSocialPromo || isSpeakerBanner || isSpeakerSquare) ids.push('section-partners')
+    if (isSocialPromo || isSpeakerBanner) ids.push('section-registration')
+    return ids
+  }, [isMinimalCover, isSocialPromo, isSpeakerBanner, isLumaCover, isSpeakerSquare])
+  const allSectionsOpen = renderedSectionIds.every((id) => openSections[id])
   const isTallBanner = format.width === 1080 && format.height === 1350
   const previewBaseScale = isTallBanner ? 0.78 : 1
   const namedSpeakers = useMemo(
@@ -693,6 +722,16 @@ function App() {
               onClick={() => setSidebarCollapsed((value) => !value)}
             />
             <span className="sidebar-title">Design</span>
+            <button
+              type="button"
+              className="sections-toggle"
+              onClick={() => {
+                const open = !allSectionsOpen
+                setSectionOpen(Object.fromEntries(renderedSectionIds.map((id) => [id, open])))
+              }}
+            >
+              {allSectionsOpen ? 'Collapse all' : 'Show all'}
+            </button>
           </div>
 
           <div className="sidebar-content">
@@ -715,7 +754,12 @@ function App() {
           )}
           {backgroundFailed && <p className="warning">Background image unavailable: using gradient fallback for preview.</p>}
 
-          <details className="side-section" open id="section-event">
+          <details
+            className="side-section"
+            open={openSections['section-event']}
+            onToggle={handleSectionToggle('section-event')}
+            id="section-event"
+          >
             <summary>
               <span>Event</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -853,7 +897,12 @@ function App() {
           </details>
 
           {!isMinimalCover && !isSocialPromo && (
-          <details className="side-section" open id="section-speakers">
+          <details
+            className="side-section"
+            open={openSections['section-speakers']}
+            onToggle={handleSectionToggle('section-speakers')}
+            id="section-speakers"
+          >
             <summary>
               <span>Speakers <small className="section-count">{state.speakers.length} / {MAX_SPEAKERS}</small></span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -963,7 +1012,12 @@ function App() {
           </details>
           )}
 
-          <details className="side-section" open id="section-format">
+          <details
+            className="side-section"
+            open={openSections['section-format']}
+            onToggle={handleSectionToggle('section-format')}
+            id="section-format"
+          >
             <summary>
               <span>Format</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -1017,7 +1071,12 @@ function App() {
           </details>
 
           {(isSpeakerBanner || isSocialPromo) && (
-          <details className="side-section" open id="section-organizer">
+          <details
+            className="side-section"
+            open={openSections['section-organizer']}
+            onToggle={handleSectionToggle('section-organizer')}
+            id="section-organizer"
+          >
             <summary>
               <span>Organizer</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -1055,7 +1114,12 @@ function App() {
           )}
 
           {(isLumaCover || isSocialPromo || isSpeakerBanner || isSpeakerSquare) && (
-          <details className="side-section" open id="section-partners">
+          <details
+            className="side-section"
+            open={openSections['section-partners']}
+            onToggle={handleSectionToggle('section-partners')}
+            id="section-partners"
+          >
             <summary>
               <span>Sponsors and collaborators</span>
               <ChevronDownIcon size={16} className="chevron" />
@@ -1153,7 +1217,12 @@ function App() {
           )}
 
           {(isSocialPromo || isSpeakerBanner) && (
-          <details className="side-section" id="section-registration">
+          <details
+            className="side-section"
+            open={openSections['section-registration']}
+            onToggle={handleSectionToggle('section-registration')}
+            id="section-registration"
+          >
             <summary>
               <span>Advanced: registration footer</span>
               <ChevronDownIcon size={16} className="chevron" />

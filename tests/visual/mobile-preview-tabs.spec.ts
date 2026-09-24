@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { selectFormat } from './helpers'
+import { openSection, selectFormat } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
@@ -18,6 +18,7 @@ test('mobile tabs switch between fields and the shared live preview', async ({ p
   await expect(page.locator('.stage')).toBeHidden()
 
   await selectFormat(page, 'speaker_banner')
+  await openSection(page, 'section-event')
   await page.getByLabel('Event title').fill('Community spring meetup')
   await previewTab.click()
 

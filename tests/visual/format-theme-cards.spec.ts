@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { EVENT_THEMES, formatOptions } from '../../src/constants'
-import { formatCard, selectFormat, selectTheme, themeCard } from './helpers'
+import { formatCard, openSection, selectFormat, selectTheme, themeCard } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
@@ -31,6 +31,7 @@ test('selecting format and theme cards updates the existing editor state', async
   await expect.poll(() => page.getByLabel('Banner preview').evaluate((canvas) => (canvas as HTMLCanvasElement).height))
     .toBe(1350)
 
+  await openSection(page, 'section-event')
   await selectTheme(page, 'community_meetup')
   await expect(themeCard(page, 'community_meetup')).toHaveAttribute('aria-pressed', 'true')
   const swatches = await themeCard(page, 'community_meetup').locator('.swatch-row span').evaluateAll((elements) =>
@@ -50,6 +51,7 @@ test('selecting format and theme cards updates the existing editor state', async
 test('format cards remain usable without horizontal overflow on narrow screens', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(formatCard(page, 'luma_cover')).toBeVisible()
+  await openSection(page, 'section-event')
   await expect(themeCard(page, 'devdays')).toBeVisible()
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth))
     .toBeLessThanOrEqual(1)

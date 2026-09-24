@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { selectFormat, themeCard } from './helpers'
+import { openSection, selectFormat, themeCard } from './helpers'
 
 // Phase 2 (#50): organizers can switch the event design theme from the
 // editor sidebar. The control is intentionally labeled "Design theme" and
@@ -30,6 +30,7 @@ test.beforeEach(async ({ page }) => {
 })
 
 test('the sidebar exposes visual Design theme cards distinct from Event preset', async ({ page }) => {
+  await openSection(page, 'section-event')
   const eventPreset = page.getByLabel('Event preset')
   await expect(eventPreset).toHaveAttribute('data-component', 'Select')
 
@@ -41,6 +42,7 @@ test('the sidebar exposes visual Design theme cards distinct from Event preset',
 
 test('switching the banner format does not change the selected design theme', async ({ page }) => {
   await selectFormat(page, 'speaker_square')
+  await openSection(page, 'section-event')
   await expect(themeCard(page, 'devdays')).toHaveAttribute('aria-pressed', 'true')
   await selectFormat(page, 'luma_cover')
   await expect(themeCard(page, 'devdays')).toHaveAttribute('aria-pressed', 'true')
@@ -58,6 +60,7 @@ test('reopening a saved history item restores its design theme', async ({ page }
   await expect(drawer).toBeVisible()
   await drawer.getByRole('button', { name: 'Open' }).click()
   await expect(drawer).toBeHidden()
+  await openSection(page, 'section-event')
 
   await expect(themeCard(page, 'devdays')).toHaveAttribute('aria-pressed', 'true')
 })

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { selectFormat, showPreviewForViewport } from './helpers'
+import { openSection, selectFormat, showPreviewForViewport } from './helpers'
 
 // Phase 4 (#43): Organizer, Sponsors, top bar, stage toolbar and the history
 // drawer are Primer controls (Select/FormControl, Button, IconButton,
@@ -31,6 +31,7 @@ test.beforeEach(async ({ page }) => {
 })
 
 test('organizer catalogue uses a Primer Select with a FormControl label', async ({ page }) => {
+  await openSection(page, 'section-organizer')
   const select = page.getByLabel('Select organizer')
   await expect(select).toHaveAttribute('data-component', 'Select')
   await expect(select).toHaveValue('')
@@ -48,6 +49,7 @@ test('organizer catalogue uses a Primer Select with a FormControl label', async 
 })
 
 test('sponsor catalogue, add/remove flow and ToggleSwitch are accessible', async ({ page }) => {
+  await openSection(page, 'section-partners')
   const toggle = page.getByRole('button', { name: /include partner logos/i })
   await expect(toggle).toHaveAttribute('aria-pressed', 'false')
   await toggle.click()
@@ -99,9 +101,11 @@ test('stage toolbar buttons are IconButtons readable over the dark stage', async
   await showPreviewForViewport(page)
   const toolbar = page.getByRole('toolbar', { name: 'Canvas tools' })
   await expect(toolbar).toBeVisible()
-  for (const name of ['Zoom in', 'Zoom out', 'Fit to screen', 'Download']) {
+  for (const name of ['Zoom in', 'Zoom out', 'Fit to screen']) {
     await expect(toolbar.getByRole('button', { name })).toHaveAttribute('data-component', 'IconButton')
   }
+  // #78: the toolbar no longer carries a Download button.
+  await expect(toolbar.getByRole('button', { name: 'Download' })).toHaveCount(0)
   // .stage-icon-btn in App.css inverts the icon colour for the dark canvas surface.
   const color = await toolbar.getByRole('button', { name: 'Zoom in' }).evaluate((el) => getComputedStyle(el).color)
   expect(color).toBe('rgb(230, 237, 243)')

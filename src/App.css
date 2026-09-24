@@ -149,6 +149,23 @@
   color: var(--vscode-text-muted);
 }
 
+/* #79: show/collapse-all toggle for the sidebar sections. */
+.sections-toggle {
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: var(--color-accent-fg);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+}
+
+.sections-toggle:hover {
+  text-decoration: underline;
+}
+
 .sidebar.collapsed .sidebar-title,
 .sidebar.collapsed .sidebar-content,
 .sidebar.collapsed .sidebar-footer {

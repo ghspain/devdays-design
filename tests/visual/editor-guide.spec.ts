@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openSection } from './helpers'
 
 const guideKey = 'devdays-editor-guide-dismissed-v1'
 
@@ -26,6 +27,7 @@ test('the quick guide explains formats, presets, themes, validation, and exports
 })
 
 test('dismissing the guide persists without changing the editor draft', async ({ page }) => {
+  await openSection(page, 'section-event')
   const title = page.getByLabel('Event title')
   await title.fill('Organizer draft title')
   await page.getByRole('button', { name: 'Dismiss' }).click()

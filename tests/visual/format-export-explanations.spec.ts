@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { openSection } from './helpers'
 
 test.describe('Format and export outputs are explained', () => {
   test('format cards show name and description for each format', async ({ page }) => {
@@ -41,6 +42,7 @@ test.describe('Format and export outputs are explained', () => {
     await page.getByRole('button', { name: /Speaker Banner/ }).click()
 
     // Add a second speaker via the "Add speaker" button
+    await openSection(page, 'section-speakers')
     const addSpeakerBtn = page.getByRole('button', { name: 'Add speaker' })
     await addSpeakerBtn.click()
 

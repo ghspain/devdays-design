@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { selectFormat } from './helpers'
+import { openSection, selectFormat } from './helpers'
 
 // Editor coherence pass (epic #71): one test per phase outcome.
 // - Sidebar reads as a top-to-bottom story: Event details, Speakers, then
@@ -65,6 +65,7 @@ test('main download is primary while pack and toolbar downloads stay secondary',
 
 test('fields the render truncates get an inline indicator that clears once the text fits', async ({ page }) => {
   await selectFormat(page, 'social_promo')
+  await openSection(page, 'section-event')
   // City is one of the fields the Social Promo render tracks for truncation.
   const city = page.locator('#event-city')
 
@@ -78,6 +79,7 @@ test('fields the render truncates get an inline indicator that clears once the t
 })
 
 test('theme cards show a mini preview painted with the theme palette', async ({ page }) => {
+  await openSection(page, 'section-event')
   const cards = page.locator('.theme-card')
   await expect(cards).toHaveCount(3)
 
