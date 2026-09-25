@@ -1437,7 +1437,7 @@ function App() {
                             {isSpeakerPerBannerFormat ? (
                               <>
                                 <span>
-                                  {namedSpeakers.length} speaker banner(s) · {format.width}×{format.height} each
+                                  {downloadFileCount} speaker banner(s) · {format.width}×{format.height} each
                                 </span>
                               </>
                             ) : (

@@ -56,6 +56,7 @@ test('two speakers share one vertical speaker banner', async ({ page }) => {
   await cards.nth(1).getByLabel('Role').fill('CTO · DevOps and ALM Consultant · Speaker role details remain readable')
   await page.getByRole('combobox', { name: 'Speakers per card' }).selectOption('2')
 
+  await expect(page.getByText('1 speaker banner(s) · 1080×1350 each')).toBeVisible()
   await expect(page.getByRole('button', { name: /Download PNG/ })).not.toContainText('2 files')
   await expect(page.locator('.validation-panel')).not.toContainText('"speaker role" is too long')
   await showPreviewForViewport(page)
