@@ -29,6 +29,7 @@ export function normalizeState(
     colors: input?.colors ?? defaultColors,
     event: normalizeEvent(input?.event),
     speakers: Array.isArray(input?.speakers) ? input.speakers : [],
+    speakersPerCard: input?.speakersPerCard === 2 ? 2 : 1,
     partners: Array.isArray(input?.partners) ? input.partners : [],
     export: {
       type: input?.export?.type ?? 'png',
