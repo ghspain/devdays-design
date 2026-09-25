@@ -105,10 +105,9 @@ export async function renderBanner(
     // Formats that draw a partner strip show at most 3 logos (covers/banners)
     // or 8 (square footer). Formats without a speaker row report no cap.
     renderInfo.logoCap = isLumaCover || isSpeakerBanner || isSocialPromo ? 3 : 8
-    // Only the row layout (speaker_square and generic formats) enforces the
-    // MAX_SPEAKERS cap; luma/social show no speakers and speaker_banner shows
-    // a single featured speaker by design.
-    const drawsSpeakerRow = !isLumaCover && !isSocialPromo && !isSpeakerBanner
+    // Luma/social show no speakers. Square and banner outputs are split into
+    // cards before rendering, with at most two profiles per card.
+    const drawsSpeakerRow = !isLumaCover && !isSocialPromo
     renderInfo.speakerCap = drawsSpeakerRow ? MAX_SPEAKERS : Number.POSITIVE_INFINITY
   }
 
@@ -491,6 +490,93 @@ export async function renderBanner(
 
   if (hasSpeakers) {
     if (isSpeakerBanner) {
+      if (state.speakers.length > 1) {
+        const speakers = state.speakers.slice(0, 2)
+        const profileGap = Math.round(width * 0.04)
+        const profileWidth = (width - padding * 2 - profileGap) / 2
+        const avatarSize = Math.round(width * 0.17)
+        const rowY = Math.round(height * 0.5)
+        let profileBottomY = rowY + avatarSize
+
+        for (let index = 0; index < speakers.length; index += 1) {
+          const speaker = speakers[index]
+          const profileX = padding + index * (profileWidth + profileGap)
+          const avatarX = profileX + (profileWidth - avatarSize) / 2
+          const avatarRadius = Math.round(avatarSize * 0.08)
+
+          ctx.save()
+          roundedRectPath(ctx, avatarX, rowY, avatarSize, avatarSize, avatarRadius)
+          ctx.clip()
+
+          if (speaker.photoDataUrl) {
+            try {
+              const photo = await loadImage(speaker.photoDataUrl)
+              if (isStale()) return
+              const sx = photo.width > photo.height ? (photo.width - photo.height) / 2 : 0
+              const sy = photo.height > photo.width ? (photo.height - photo.width) / 2 : 0
+              const side = Math.min(photo.width, photo.height)
+              ctx.drawImage(photo, sx, sy, side, side, avatarX, rowY, avatarSize, avatarSize)
+            } catch {
+              if (isStale()) return
+              ctx.fillStyle = state.colors.accent
+              ctx.fillRect(avatarX, rowY, avatarSize, avatarSize)
+            }
+          } else {
+            ctx.fillStyle = state.colors.accent
+            ctx.fillRect(avatarX, rowY, avatarSize, avatarSize)
+          }
+          ctx.restore()
+
+          ctx.save()
+          roundedRectPath(ctx, avatarX, rowY, avatarSize, avatarSize, Math.round(avatarSize * 0.08))
+          ctx.lineWidth = Math.max(4, Math.round(avatarSize * 0.02))
+          ctx.strokeStyle = '#0abf40'
+          ctx.stroke()
+          ctx.restore()
+
+          if (!speaker.photoDataUrl) {
+            ctx.fillStyle = '#ffffff'
+            ctx.textAlign = 'center'
+            ctx.font = `700 ${Math.round(avatarSize * 0.27)}px "Mona Sans", sans-serif`
+            ctx.fillText(getInitials(speaker.name), avatarX + avatarSize / 2, rowY + avatarSize * 0.58)
+          }
+
+          const nameSize = 40
+          const roleSize = 22
+          const textX = profileX + profileWidth / 2
+          const nameTopY = rowY + avatarSize + 22
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'top'
+          ctx.fillStyle = theme.lightAreaTitleColor
+          ctx.font = `500 ${nameSize}px "Mona Sans Mono", monospace`
+          ctx.letterSpacing = '2px'
+          const nameLines = wrapTracked('speaker name', (f) => wrapText(ctx, speaker.name || 'Speaker', profileWidth, 2, f))
+          nameLines.forEach((line, lineIndex) => {
+            ctx.fillText(line, textX, nameTopY + lineIndex * nameSize * 1.08)
+          })
+          ctx.letterSpacing = '0px'
+          trackRegion('speaker name', theme.lightAreaTitleColor, profileX, nameTopY, profileWidth, nameLines.length * nameSize * 1.08)
+
+          const speakerMeta = [speaker.role, speaker.talkTitle, speaker.talkTime].filter(Boolean).join(' · ')
+          if (speakerMeta) {
+            const roleTopY = nameTopY + nameLines.length * nameSize * 1.08 + 12
+            ctx.fillStyle = theme.lightAreaMutedColor
+            ctx.font = `500 ${roleSize}px "Mona Sans", sans-serif`
+            const roleLines = wrapTracked('speaker role', (f) => wrapText(ctx, speakerMeta, profileWidth, 3, f))
+            roleLines.forEach((line, lineIndex) => {
+              ctx.fillText(line, textX, roleTopY + lineIndex * roleSize * 1.12)
+            })
+            trackRegion('speaker role', theme.lightAreaMutedColor, profileX, roleTopY, profileWidth, roleLines.length * roleSize * 1.12)
+            profileBottomY = Math.max(profileBottomY, roleTopY + roleLines.length * roleSize * 1.12)
+          } else {
+            profileBottomY = Math.max(profileBottomY, nameTopY + nameLines.length * nameSize * 1.08)
+          }
+          ctx.textAlign = 'left'
+          ctx.textBaseline = 'alphabetic'
+        }
+
+        speakerBannerProfileBottomY = profileBottomY
+      } else {
       const speaker = state.speakers[0]
       const avatarSize = Math.round(width * 0.34)
       const avatarRadius = Math.round(avatarSize * 0.08)
@@ -587,6 +673,7 @@ export async function renderBanner(
       ctx.textBaseline = 'alphabetic'
 
       speakerBannerProfileBottomY = rowY + avatarSize
+      }
     } else {
       const visibleSpeakers = state.speakers.slice(0, MAX_SPEAKERS)
       const totalWidth = visibleSpeakers.reduce((sum, _, index) => {

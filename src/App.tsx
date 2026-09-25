@@ -249,13 +249,13 @@ function App() {
   )
   const speakerCards = useMemo(() => {
     if (!isSpeakerPerBannerFormat || !namedSpeakers.length) return []
-    const perCard = isSpeakerSquare ? state.speakersPerCard : 1
+    const perCard = state.speakersPerCard
     const cards: Speaker[][] = []
     for (let index = 0; index < namedSpeakers.length; index += perCard) {
       cards.push(namedSpeakers.slice(index, index + perCard))
     }
     return cards
-  }, [isSpeakerPerBannerFormat, isSpeakerSquare, namedSpeakers, state.speakersPerCard])
+  }, [isSpeakerPerBannerFormat, namedSpeakers, state.speakersPerCard])
   const showMultiSpeakerPreviewGrid = speakerCards.length > 1
   const downloadFileCount = speakerCards.length || 1
   const downloadLabel = `PNG · ${format.width}×${format.height}${downloadFileCount > 1 ? ` · ${downloadFileCount} files` : ''}`
@@ -958,7 +958,7 @@ function App() {
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
-              {isSpeakerSquare && (
+              {isSpeakerSquare || isSpeakerBanner ? (
                 <FormControl id="speakers-per-card">
                   <FormControl.Label>Speakers per card</FormControl.Label>
                   <Select
@@ -972,7 +972,7 @@ function App() {
                     <Select.Option value="2">Two speakers per card</Select.Option>
                   </Select>
                 </FormControl>
-              )}
+              ) : null}
               <fieldset className="catalog-picker">
                 <legend>Speakers from Planning</legend>
                 <FormControl id="catalog-event-filter">

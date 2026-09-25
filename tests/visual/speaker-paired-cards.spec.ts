@@ -46,6 +46,26 @@ test('paired speakers export as one image', async ({ page }) => {
   expect(downloads).toHaveLength(1)
 })
 
+test('two speakers share one vertical speaker banner', async ({ page }) => {
+  await selectFormat(page, 'speaker_banner')
+  const cards = page.locator('.speaker-card')
+  await cards.nth(0).getByLabel('Name').fill('Sergio Valverde')
+  await cards.nth(0).getByLabel('Role').fill('Platform Engineer · GitHub Star · Afilando el hacha: tunea GitHub Copilot')
+  await page.getByRole('button', { name: 'Add speaker' }).click()
+  await cards.nth(1).getByLabel('Name').fill('Luis Fraile')
+  await cards.nth(1).getByLabel('Role').fill('CTO · DevOps and ALM Consultant · Speaker role details remain readable')
+  await page.getByRole('combobox', { name: 'Speakers per card' }).selectOption('2')
+
+  await expect(page.getByRole('button', { name: /Download PNG/ })).not.toContainText('2 files')
+  await expect(page.locator('.validation-panel')).not.toContainText('"speaker role" is too long')
+  await showPreviewForViewport(page)
+  const preview = page.getByLabel('Banner preview for Sergio Valverde and Luis Fraile')
+  await expect(preview).toBeVisible()
+  await expect(preview).toHaveAttribute('width', '1080')
+  await expect(preview).toHaveAttribute('height', '1350')
+  await expect(page.locator('.speaker-preview-item')).toHaveCount(0)
+})
+
 test('two-per-card mode puts an odd final speaker on its own card', async ({ page }) => {
   const cards = page.locator('.speaker-card')
   await cards.nth(0).getByLabel('Name').fill('Ada Lovelace')
