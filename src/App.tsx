@@ -1017,7 +1017,14 @@ function App() {
                 </Button>
               </fieldset>
               {!state.speakers.length && (
-                <p className="section-description">No speakers yet. Add them from the Planning catalogue or create one manually.</p>
+                <div className="empty-speakers" role="status">
+                  <p className="section-description">
+                    No speakers yet. Pick them from the Planning catalogue above or add one manually to see them on the banner.
+                  </p>
+                  <Button type="button" variant="default" size="small" onClick={addManualSpeaker}>
+                    Add speaker
+                  </Button>
+                </div>
               )}
               {state.speakers.map((speaker, index) => {
                 const initials = speaker.name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word.charAt(0).toUpperCase()).join('') || '—'
@@ -1643,7 +1650,11 @@ function App() {
               </div>
             </div>
             {history.length === 0 ? (
-              <p className="history-empty">No previous banners yet. Export one to save it here.</p>
+              <div className="history-empty" role="status">
+                <HistoryIcon size={24} aria-hidden="true" />
+                <p><strong>No previous banners yet.</strong></p>
+                <p>Every export is saved here automatically, so you can restore or reuse it later.</p>
+              </div>
             ) : (
               <div className="history-list">
                 {history.map((item) => (

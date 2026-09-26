@@ -178,7 +178,7 @@ test('speaker avatars render inside the square canvas', async ({ page }) => {
   await expect(page.getByText('No speakers yet.')).toBeVisible()
   const baseline = await countAccentPixels()
 
-  await page.getByRole('button', { name: 'Add speaker' }).click()
+  await page.locator('.empty-speakers').getByRole('button', { name: 'Add speaker' }).click()
   await expect.poll(countAccentPixels).toBeGreaterThan(baseline + 5000)
 })
 
