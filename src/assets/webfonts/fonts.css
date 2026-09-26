@@ -8,7 +8,7 @@
 
 /* Mona Sans — upright */
 @font-face {
-  font-family: 'Mona Sans';
+  font-family: 'Mona Sans'; /* impeccable-disable-line overused-font -- GitHub first-party brand font (ghspain org) */
   font-style: normal;
   font-weight: 200 900;
   font-stretch: 75% 125%;
@@ -20,7 +20,7 @@
 
 /* Mona Sans Mono */
 @font-face {
-  font-family: 'Mona Sans Mono';
+  font-family: 'Mona Sans Mono'; /* impeccable-disable-line overused-font -- GitHub first-party brand font (ghspain org) */
   font-style: normal;
   font-weight: 200 900;
   font-stretch: 75% 125%;

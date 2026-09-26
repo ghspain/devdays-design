@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
 })
 
-// Wait for the luma background image to load (it's a large PNG that can be slow
+// Wait for the luma background image to load (it's a large background image that can be slow
 // when running tests in parallel with many workers). We wait for the canvas to
 // have non-zero alpha pixels, which indicates the background has been drawn.
 async function waitForLumaBackground(page: import('@playwright/test').Page) {

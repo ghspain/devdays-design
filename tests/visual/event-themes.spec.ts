@@ -14,7 +14,7 @@ import { selectFormat } from './helpers'
 // because canvas text antialiasing differs between OSes/Chromium builds and
 // makes byte-for-byte hashing flaky across local and CI runners.
 
-// Wait for the luma background image to load (it's a large PNG that can be slow
+// Wait for the luma background image to load (it's a large background image that can be slow
 // when running tests in parallel with many workers). We wait for the canvas to
 // have non-zero alpha pixels, which indicates the background has been drawn.
 async function waitForLumaBackground(page: import('@playwright/test').Page) {
@@ -62,7 +62,7 @@ for (const format of formatOptions) {
     // A blank/transparent canvas (all-zero pixel data) would mean the theme
     // failed to resolve and nothing got drawn - catch that without asserting
     // exact pixel values. Polled (not a single check) because formats with a
-    // large PNG background (e.g. luma_cover) can still be mid-decode under
+    // large background image (e.g. luma_cover) can still be mid-decode under
     // parallel test workers; a single early read would flake.
     await expect
       .poll(() =>

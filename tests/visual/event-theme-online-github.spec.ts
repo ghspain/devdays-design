@@ -7,7 +7,7 @@ import { selectFormat, selectTheme, themeCard } from './helpers'
 // event-theme-community-meetup.spec.ts (see event-themes.spec.ts for why
 // pixel/hash comparisons are avoided).
 
-// Wait for the luma background image to load (it's a large PNG that can be slow
+// Wait for the luma background image to load (it's a large background image that can be slow
 // when running tests in parallel with many workers).
 async function waitForLumaBackground(page: import('@playwright/test').Page) {
   await expect
@@ -56,7 +56,7 @@ for (const format of formatOptions) {
       )
       .toEqual({ width: format.width, height: format.height })
 
-    // Polled (not a single check) because formats with a large PNG background
+    // Polled (not a single check) because formats with a large background image
     // (e.g. luma_cover) can still be mid-decode under parallel test workers;
     // a single early read would flake.
     await expect

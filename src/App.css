@@ -27,6 +27,7 @@
   --app-side-section-bg: #ffffff;
   --app-swatch-border: rgba(0, 0, 0, 0.12);
   --app-warning: #9a6700;
+  --app-warning-bright: #d29922;
   --app-error: #cf222e;
   --app-shadow-soft: rgba(31, 35, 40, 0.04);
   --app-shadow-medium: rgba(31, 35, 40, 0.08);
@@ -130,8 +131,6 @@
   flex-direction: column;
   border-right: 1px solid var(--vscode-border);
   background: var(--app-panel-bg);
-  transition: width 160ms ease;
-  will-change: width;
 }
 
 .sidebar.collapsed {
@@ -365,9 +364,9 @@
 /* #80: warning badge on the export CTA is an amber outline, not a solid
   fill, so it reads as "heads-up" rather than a blocker. */
 .download-badge.warning {
-  color: #d29922;
+  color: var(--app-warning-bright);
   background: transparent;
-  box-shadow: inset 0 0 0 1px #d29922;
+  box-shadow: inset 0 0 0 1px var(--app-warning-bright);
 }
 
 .download-badge.error {
@@ -430,6 +429,7 @@
   position: relative;
 }
 
+/* impeccable-disable-next-line codex-grid-background -- .stage is the actual preview canvas surface */
 .stage {
   flex: 1;
   min-width: 0;
@@ -1278,7 +1278,6 @@ input[type='file']::file-selector-button:hover {
   padding: 0.5rem 0.75rem;
   background: color-mix(in srgb, var(--app-error) 8%, transparent);
   border-radius: 6px;
-  border-left: 3px solid var(--app-error);
 }
 
 @media (max-width: 980px) {
@@ -1587,7 +1586,7 @@ input[type='file']::file-selector-button:hover {
 }
 
 .theme-mini-title {
-  font-family: 'Mona Sans', sans-serif;
+  font-family: 'Mona Sans', sans-serif; /* impeccable-disable-line overused-font -- GitHub first-party brand font (ghspain org) */
   font-weight: 800;
   font-size: 0.6875rem;
   line-height: 1.1;
