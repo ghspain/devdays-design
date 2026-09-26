@@ -169,7 +169,9 @@
 
 .sidebar.collapsed .sidebar-title,
 .sidebar.collapsed .sidebar-content,
-.sidebar.collapsed .sidebar-footer {
+.sidebar.collapsed .sidebar-footer,
+.sidebar.collapsed .sections-toggle,
+.sidebar.collapsed .validation-panel {
   display: none;
 }
 
