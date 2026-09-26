@@ -26,9 +26,18 @@
   --app-surface-input: #ffffff;
   --app-side-section-bg: #ffffff;
   --app-swatch-border: rgba(0, 0, 0, 0.12);
+  --app-text-inverse: #ffffff;
+  --app-text-bright: #f0f6fc;
   --app-warning: #9a6700;
   --app-warning-bright: #d29922;
+  --app-warning-surface: #fff8c5;
+  --app-warning-ink: #5a3e00;
   --app-error: #cf222e;
+  --app-success: #3fb950;
+  --app-card-glow: #2f81f7;
+  --app-card-glow-deep: #1f6feb;
+  --app-stage-tool-fg: #e6edf3;
+  --app-stage-tool-fg-hover: #ffffff;
   --app-shadow-soft: rgba(31, 35, 40, 0.04);
   --app-shadow-medium: rgba(31, 35, 40, 0.08);
   --app-shadow-strong: rgba(31, 35, 40, 0.12);
@@ -163,6 +172,9 @@
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px; /* audit P3: WCAG 2.5.8 minimum target size */
   padding: 0.15rem 0.3rem;
   border-radius: 4px;
 }
@@ -357,16 +369,17 @@
   font-size: 0.68rem;
   font-weight: 700;
   line-height: 1;
-  color: #fff;
+  color: var(--app-text-inverse);
   background: var(--app-warning);
 }
 
-/* #80: warning badge on the export CTA is an amber outline, not a solid
-  fill, so it reads as "heads-up" rather than a blocker. */
+/* #80 + audit P1: the warning badge is a light amber chip so its text and
+  outline keep WCAG contrast (1.4.3 / 1.4.11) on any background, including
+  the green export CTA where the old amber outline failed. */
 .download-badge.warning {
-  color: var(--app-warning-bright);
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--app-warning-bright);
+  color: var(--app-warning-ink);
+  background: var(--app-warning-surface);
+  box-shadow: inset 0 0 0 1px var(--app-warning);
 }
 
 .download-badge.error {
@@ -491,11 +504,11 @@
 /* The stage toolbar floats over the dark canvas, so its IconButtons need
    inverted colors (v38 Primer has no sx prop). */
 .stage-toolbar .stage-icon-btn {
-  color: #e6edf3;
+  color: var(--app-stage-tool-fg);
 }
 
 .stage-toolbar .stage-icon-btn:hover:not(:disabled) {
-  color: #ffffff;
+  color: var(--app-stage-tool-fg-hover);
   background-color: rgba(255, 255, 255, 0.14);
 }
 
@@ -993,7 +1006,7 @@ input[type='file'] {
 }
 
 .logo-remove:hover {
-  color: #cf222e;
+  color: var(--vscode-danger);
 }
 
 input[type='file']::file-selector-button {
@@ -1617,8 +1630,8 @@ input[type='file']::file-selector-button:hover {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: #1f2328;
-  color: #ffffff;
+  background: var(--app-brand-bg);
+  color: var(--app-brand-color);
   border-radius: 6px;
   box-shadow: var(--app-elevation-3);
   cursor: pointer;

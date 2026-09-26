@@ -723,7 +723,7 @@ function App() {
         </div>
       </header>
 
-      <div className="editor-body">
+      <main className="editor-body">
         <div
           className="mobile-view-tabs"
           role={isMobileViewport ? 'tablist' : undefined}
@@ -1708,7 +1708,7 @@ function App() {
             />
           </div>
         )}
-      </div>
+      </main>
     </div>
   )
 }
