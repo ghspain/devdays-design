@@ -16,14 +16,18 @@ It does not replace the visual source material in `ghspain/devdays-design-system
 
 Use these sources in order:
 
-1. **`ghspain/devdays-design-system`** for the Dev Days / GitHub Copilot visual language used by generated artwork.
-2. **GitHub Primer** for application-shell controls, accessibility patterns, interaction semantics and light/dark UI surfaces.
+1. **`ghspain/devdays-design-system`** for the product's Dev Days / GitHub Copilot visual language: typography, color character, accents, gradients, spacing and composition.
+2. **GitHub Primer** for application-shell components, accessibility patterns, interaction semantics and light/dark surface roles.
 3. **This file** for how those systems are combined inside the Event Studio product.
 4. Local component styles only when the previous layers do not provide the required behavior.
 
 The design-system repository is derived from the official GitHub Dev Days decks and is intentionally dark-first. It defines Mona Sans typography, near-black surfaces, Copilot green/lime/purple/blue accents, gradients, spacing character and composition principles.
 
-The Event Studio application is allowed to have a light or dark editor shell. A light shell is **not** a mathematical color inversion of the dark Dev Days palette. It should use semantic Primer/GitHub light tokens while retaining the same typography, spacing discipline, interaction patterns and brand accents where appropriate.
+Those choices are also the visual foundation of the Event Studio shell. Primer provides component behavior and semantic surfaces, but it must not make the product look like an unrelated generic admin application.
+
+The Event Studio may have a light or dark editor shell. A light shell is **not** a mathematical color inversion of the dark Dev Days palette. It should use semantic Primer/GitHub light surfaces while carrying the same Mona Sans identity and selected Dev Days/Copilot brand accents where contrast permits.
+
+Once a light application-token mapping is validated, it should be considered for upstreaming to `ghspain/devdays-design-system` so both repositories continue to share one visual language rather than drifting independently.
 
 ## North star
 
@@ -31,7 +35,7 @@ The Event Studio application is allowed to have a light or dark editor shell. A 
 
 The generated asset is the protagonist. The application exists to help an organizer create it quickly, safely and consistently.
 
-The UI should feel like a lightweight GitHub-native production tool, not like a generic admin form and not like a full creative suite.
+The UI should feel like a lightweight GitHub-native production tool with a recognizable Dev Days/Copilot character, not like a generic admin form and not like a full creative suite.
 
 Core character:
 
@@ -55,10 +59,14 @@ Use:
 
 - Primer components and interaction patterns,
 - GitHub light/dark semantic surfaces,
+- Mona Sans product identity where appropriate,
+- Dev Days/Copilot brand accents selectively for navigation, selected states, task cards, progress and product identity,
 - restrained depth and borders,
 - one clear primary action per action group,
 - compact but readable tool density,
 - accessible keyboard/focus behavior.
+
+Brand accent does not mean every button becomes neon green or purple. Semantic actions must remain readable and predictable. In particular, `#5EEC83` is a strong brand accent but is not suitable as small body text on a white surface without contrast validation.
 
 ### 2. Generated artwork
 
@@ -72,32 +80,32 @@ Use:
 - template-specific layout rules,
 - explicit safe areas and validation constraints.
 
-The editor shell must not accidentally recolor generated artwork. Theme choice belongs to the asset, not to the surrounding tool chrome.
+The editor shell must not accidentally recolor generated artwork. Theme choice belongs to the asset, while the shell retains the broader GHSpain/Dev Days product identity.
 
 ## Color system
 
-### Canonical Dev Days artwork palette
+### Canonical Dev Days visual palette
 
 From `ghspain/devdays-design-system`:
 
 | Role | Value | Use |
 | --- | --- | --- |
 | Background base | `#000000` | Deep canvas/background |
-| Elevated dark | `#0C1116` | Cards / panels in generated artwork |
+| Elevated dark | `#0C1116` | Cards / panels |
 | Elevated dark 2 | `#121613` | Alternate dark surface |
 | Copilot green | `#5EEC83` | Primary brand accent |
 | Lime | `#D3FA36` | High-energy highlight |
 | Copilot purple | `#B870FF` | AI / Copilot accent |
 | Blue | `#3194FF` | Supporting cool accent |
 | Cyan | `#9EECFF` | Supporting highlight |
-| Primary text | `#FFFFFF` | Text on dark artwork |
-| Muted text | approx `#8B949E` | Secondary text on dark artwork |
+| Primary text | `#FFFFFF` | Text on dark surfaces |
+| Muted text | approx `#8B949E` | Secondary text on dark surfaces |
 
 Existing event-theme values in the application may differ because they predate the extracted design system. Do not perform a blind palette replacement inside this documentation PR. Palette convergence should be an implementation issue with screenshot/pixel review so existing event assets are not silently changed.
 
 ### Application shell light mode
 
-Use semantic Primer/GitHub light roles such as:
+Use semantic Primer/GitHub light surface roles such as:
 
 | Role | Current reference |
 | --- | --- |
@@ -106,15 +114,24 @@ Use semantic Primer/GitHub light roles such as:
 | Border | `#d1d9e0` |
 | Primary text | `#1f2328` |
 | Muted text | `#59636e` |
-| Interactive accent | `#0969da` |
+| Semantic link/action | `#0969da` |
 | Danger | `#cf222e` |
 | Warning | `#9a6700` |
 
-These are application semantics, not an alternative event brand.
+Then layer the canonical visual palette selectively:
+
+- green/lime for product identity, positive/high-energy emphasis and selected visual motifs when contrast is valid,
+- purple for Copilot/AI identity and supporting highlights,
+- blue/cyan for supporting cool accents,
+- Mona Sans to keep the shell connected to the generated artwork.
+
+The result should feel like the light counterpart of the same product, not like a separate white theme and not like a raw inversion.
 
 ### Application shell dark mode
 
-Dark mode should map the same semantic roles to Primer-compatible dark surfaces. Where the Dev Days palette already matches GitHub dark surfaces, reuse compatible values deliberately rather than by coincidence.
+Dark mode can stay much closer to the canonical design-system surfaces because the source system is already dark-first.
+
+Use semantic roles so application controls remain predictable, then map compatible Dev Days tokens deliberately. Avoid decorative gradients behind dense forms; reserve stronger visual treatments for navigation, empty states, task selection, artboard framing and intentional highlights.
 
 A future implementation issue should define the exact light/dark token mapping and remove legacy `--vscode-*` naming where it no longer reflects the product.
 
@@ -130,7 +147,7 @@ Use the design-system families:
 
 ### Application shell
 
-Primer/system UI typography remains appropriate for dense controls. Mona Sans may be used selectively for product identity or high-level headings, but the editor should not sacrifice control readability or native GitHub familiarity.
+Primer/system UI typography remains appropriate for dense controls. Mona Sans should provide product identity in navigation, task selection and high-level headings without sacrificing control readability or GitHub familiarity.
 
 The shell and the artwork do not need identical type scales.
 
@@ -184,6 +201,8 @@ Candidate task cards:
 - Attendee badges,
 - Event covers,
 - Print materials.
+
+Task cards are a good place to express more of the Dev Days design-system character than dense form controls. They can use dark or light theme variants, strong Mona Sans headings and controlled green/purple/blue accents without compromising form usability.
 
 After selecting the task, the product can show only compatible templates, data and controls.
 
@@ -351,12 +370,12 @@ Application UI:
 - pills only for statuses/tags,
 - no decorative glassmorphism.
 
-Generated artwork may use the stronger gradients, halos and visual motifs allowed by the event design system.
+Generated artwork and high-level product moments may use the stronger gradients, halos and visual motifs allowed by the external design system.
 
 ## Design rules
 
-1. **One visual authority.** Dev Days artwork follows `ghspain/devdays-design-system`; the application does not invent a competing local brand.
-2. **Semantic light/dark modes.** Primer tokens define app-shell surfaces. Never create light mode by mechanically inverting dark colors.
+1. **One visual authority.** The product follows `ghspain/devdays-design-system`; Primer supplies application semantics and components rather than a competing visual identity.
+2. **Semantic light/dark modes.** Never create light mode by mechanically inverting dark colors. Derive a validated semantic mapping and upstream stable tokens when appropriate.
 3. **Artwork is the hero.** Tool chrome supports the artboard rather than competing with it.
 4. **Task before implementation detail.** Users choose outcomes such as Speaker badge, not internal renderer IDs.
 5. **Properties follow selection.** Show controls relevant to the selected task/element instead of one permanent wall of fields.
@@ -373,7 +392,7 @@ Generated artwork may use the stronger gradients, halos and visual motifs allowe
 Before implementation epics for the full studio UI, create focused visual proposals for:
 
 1. task-first creation/home,
-2. the desktop studio workspace,
+2. the desktop studio workspace in light and dark variants,
 3. Speaker Badge front/back editing,
 4. attendee CSV mapping/validation,
 5. batch-generation progress,
