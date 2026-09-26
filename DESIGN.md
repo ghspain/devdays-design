@@ -100,6 +100,16 @@ Tres niveles de sombra tokenizados (nunca hardcodear):
 | `--app-shadow-medium` | `rgba(31,35,40,0.08)` | Elementos flotantes (toolbar, dropdowns) |
 | `--app-shadow-strong` | `rgba(31,35,40,0.12)` | Overlays (drawer de history, toasts) |
 
+Sombras compuestas (elevación) y anillos de foco, también tokenizados:
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--app-elevation-1` | `0 1px 3px rgba(31,35,40,0.16)` | Elementos con elevación sutil (botón de marca en topbar) |
+| `--app-elevation-2` | `0 4px 12px rgba(0,0,0,0.15)` | Diálogos flotantes (confirmación de reset) |
+| `--app-elevation-3` | `0 8px 24px rgba(31,35,40,0.3)` | Toasts / elementos overlay prominentes |
+| `--app-focus-ring` | `0 0 0 1px var(--vscode-accent)` | Foco exterior de inputs/selects/textareas |
+| `--app-focus-ring-inset` | `0 0 0 1px var(--vscode-accent) inset` | Selección de opciones tipo card (card-option, export-type) |
+
 En el escenario las sombras re-declaradas son más profundas
 (`rgba(1,4,9,0.45)`) porque el fondo es oscuro. El brillo ambiental del shell son
 dos `radial-gradient` muy tenues (`rgba(9,105,218,0.04/0.02)`), apenas un aliento
