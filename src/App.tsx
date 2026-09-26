@@ -74,6 +74,7 @@ function App() {
   const [speakerPreviews, setSpeakerPreviews] = useState<Array<{ id: string; name: string; previewDataUrl: string }>>([])
   const [fontsReady, setFontsReady] = useState(() => typeof document === 'undefined' || !document.fonts)
   const [isExportingPack, setIsExportingPack] = useState(false)
+  const [isExportingBanner, setIsExportingBanner] = useState(false)
   const [packProgress, setPackProgress] = useState<EventPackProgress | null>(null)
   const [validationFindings, setValidationFindings] = useState<ValidationFinding[]>([])
   // Fields the live preview render had to truncate (e.g. ["event title"]).
@@ -555,6 +556,10 @@ function App() {
   const fitZoom = () => setZoom(1)
 
   const exportBanner = async () => {
+    // Re-entrancy guard: a double click (or a slow multi-card render) must not
+    // fire duplicate downloads or duplicate history entries.
+    if (isExportingBanner) return
+    setIsExportingBanner(true)
     setError('')
     try {
       const mime = 'image/png'
@@ -607,12 +612,20 @@ function App() {
         writeBannerHistory(next)
         return next
       })
+      showToast(
+        exportStates.length > 1
+          ? `Downloaded ${exportStates.length} PNG files.`
+          : 'PNG downloaded.',
+      )
     } catch {
-      setError('Could not export the PNG.')
+      setError('Could not export the PNG. Try again — if it keeps failing, reload the page.')
+    } finally {
+      setIsExportingBanner(false)
     }
   }
 
   const exportEventPack = async () => {
+    if (isExportingPack) return
     setError('')
     setIsExportingPack(true)
     setPackProgress({ completed: 0, total: 0, label: 'Preparing' })
@@ -626,7 +639,7 @@ function App() {
       link.click()
       window.setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch {
-      setError('Could not create the event pack.')
+      setError('Could not create the event pack. Try again.')
     } finally {
       setIsExportingPack(false)
       setPackProgress(null)
@@ -1075,7 +1088,9 @@ function App() {
                                 const dataUrl = await handleFile(file)
                                 updateSpeaker(speaker.id, { photoDataUrl: dataUrl })
                             } catch (fileError) {
-                              setError(fileError instanceof Error ? fileError.message : 'Invalid file.')
+                              const message = fileError instanceof Error ? fileError.message : 'Invalid file.'
+                              setError(message)
+                              showToast(message)
                             }
                           })()
                         }}
@@ -1199,7 +1214,9 @@ function App() {
                     if (!file) return
                     updateEvent({ organizerLogoDataUrl: await handleFile(file) })
                   } catch (fileError) {
-                    setError(fileError instanceof Error ? fileError.message : 'Invalid file.')
+                    const message = fileError instanceof Error ? fileError.message : 'Invalid file.'
+                    setError(message)
+                    showToast(message)
                   }
                 })() }} />
               </FormControl>
@@ -1266,7 +1283,9 @@ function App() {
                         const file = event.target.files?.[0]
                         if (!file) return
                         if (state.partners.length >= 3) {
-                          setError('You can upload up to 3 partner logos.')
+                          const message = 'You can upload up to 3 partner logos.'
+                          setError(message)
+                          showToast(message)
                           return
                         }
                         const dataUrl = await handleFile(file)
@@ -1276,7 +1295,9 @@ function App() {
                           partners: [...previous.partners, { id: uid(), imageDataUrl: dataUrl }],
                         }))
                       } catch (fileError) {
-                        setError(fileError instanceof Error ? fileError.message : 'Invalid file.')
+                        const message = fileError instanceof Error ? fileError.message : 'Invalid file.'
+                        setError(message)
+                        showToast(message)
                       }
                     })()
                   }}
@@ -1403,7 +1424,7 @@ function App() {
           </details>
           )}
 
-          {error && <p className="error">{error}</p>}
+          {error && <p className="error" role="alert">{error}</p>}
           </div>
 
           <div className="validation-panel" aria-label="Validation findings" role="status">
@@ -1474,16 +1495,19 @@ function App() {
                           <Button
                             className="download-main"
                             variant="primary"
+                            loading={isExportingBanner}
                             leadingVisual={DownloadIcon}
                             trailingVisual={
                               validationIssueCount > 0 ? (
                                 <>
-                                  {/* #80: badge shows an X icon (red) for errors and a
-                                      warning icon (amber, outline style so it does not
-                                      read as a blocker on the export CTA). 🧭 DECISION
-                                      — icons chosen: XIcon for errors, AlertIcon for
-                                      warnings; warning badge restyled as amber outline.
-                                      Revert by restoring the solid amber badge. */}
+                                  {/* #80: badge shows an X icon (red) for errors and an
+                                      AlertIcon for warnings; both render as soft chips
+                                      (warning: bg #fff8c5, ink #5a3e00, inset amber ring;
+                                      error: red chip) so neither reads as a blocker on
+                                      the export CTA. 🧭 DECISION — icons chosen: XIcon
+                                      for errors, AlertIcon for warnings; warning chip
+                                      kept as soft amber surface. Revert by restoring the
+                                      solid amber badge. */}
                                   <CounterLabel
                                     className={`download-badge ${validationErrorCount > 0 ? 'error' : 'warning'}`}
                                     aria-hidden="true"
