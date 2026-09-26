@@ -32,6 +32,7 @@ import type {
   EventDetails,
   EventThemeId,
   Speaker,
+  SpeakersPerCard,
 } from './types'
 import { uid } from './lib/format'
 import { buildDefaultState, normalizeState, readBannerHistory, writeBannerHistory } from './lib/history'
@@ -246,9 +247,17 @@ function App() {
     () => state.speakers.filter((speaker) => speaker.name.trim().length > 0).slice(0, MAX_SPEAKERS),
     [state.speakers],
   )
-  const showMultiSpeakerPreviewGrid = isSpeakerPerBannerFormat && namedSpeakers.length > 1
-  const downloadFileCount =
-    isSpeakerPerBannerFormat && namedSpeakers.length > 1 ? namedSpeakers.length : 1
+  const speakerCards = useMemo(() => {
+    if (!isSpeakerPerBannerFormat || !namedSpeakers.length) return []
+    const perCard = state.speakersPerCard
+    const cards: Speaker[][] = []
+    for (let index = 0; index < namedSpeakers.length; index += perCard) {
+      cards.push(namedSpeakers.slice(index, index + perCard))
+    }
+    return cards
+  }, [isSpeakerPerBannerFormat, namedSpeakers, state.speakersPerCard])
+  const showMultiSpeakerPreviewGrid = speakerCards.length > 1
+  const downloadFileCount = speakerCards.length || 1
   const downloadLabel = `PNG · ${format.width}×${format.height}${downloadFileCount > 1 ? ` · ${downloadFileCount} files` : ''}`
   const catalogEventOptions = useMemo(() => {
     const labels = new Map<string, string>()
@@ -334,6 +343,7 @@ function App() {
     const draw = async () => {
       if (cancelled) return
       const renderInfo = createRenderInfo()
+      const previewState = speakerCards.length ? { ...state, speakers: speakerCards[0] } : state
       let targetCanvas: HTMLCanvasElement | null = null
       if (showMultiSpeakerPreviewGrid) {
         // The visible canvas is unmounted while the per-speaker grid is shown.
@@ -343,7 +353,7 @@ function App() {
         // an export would show.
         targetCanvas = document.createElement('canvas')
         try {
-          await renderBanner(targetCanvas, state, format, previewBackgroundFailed, 1, renderInfo)
+          await renderBanner(targetCanvas, previewState, format, previewBackgroundFailed, 1, renderInfo)
         } catch {
           return
         }
@@ -351,7 +361,7 @@ function App() {
         if (!canvasRef.current) return
         targetCanvas = canvasRef.current
         try {
-          await renderBanner(targetCanvas, state, format, previewBackgroundFailed, 1, renderInfo)
+          await renderBanner(targetCanvas, previewState, format, previewBackgroundFailed, 1, renderInfo)
         } catch {
           if (!cancelled) setError('Failed to render preview.')
           return
@@ -382,29 +392,29 @@ function App() {
       cancelled = true
       window.cancelAnimationFrame(frame)
     }
-  }, [state, format, previewBackgroundFailed, showMultiSpeakerPreviewGrid, fontsReady])
+  }, [state, format, previewBackgroundFailed, showMultiSpeakerPreviewGrid, fontsReady, speakerCards])
 
   useEffect(() => {
     let cancelled = false
 
     const drawSpeakerPreviews = async () => {
-      if (!isSpeakerPerBannerFormat || namedSpeakers.length <= 1) {
+      if (!isSpeakerPerBannerFormat || speakerCards.length <= 1) {
         setSpeakerPreviews([])
         return
       }
 
       const previews: Array<{ id: string; name: string; previewDataUrl: string }> = []
 
-      for (const speaker of namedSpeakers) {
+      for (const speakers of speakerCards) {
         const previewCanvas = document.createElement('canvas')
         const previewState: BannerState = {
           ...state,
-          speakers: [speaker],
+          speakers,
         }
         await renderBanner(previewCanvas, previewState, format, previewBackgroundFailed, 1)
         previews.push({
-          id: speaker.id,
-          name: speaker.name,
+          id: speakers.map((speaker) => speaker.id).join('-'),
+          name: speakers.map((speaker) => speaker.name).join(' + '),
           previewDataUrl: previewCanvas.toDataURL('image/jpeg', 0.8),
         })
       }
@@ -423,7 +433,7 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [state, format, previewBackgroundFailed, isSpeakerPerBannerFormat, namedSpeakers, fontsReady])
+  }, [state, format, previewBackgroundFailed, isSpeakerPerBannerFormat, speakerCards, fontsReady])
 
   useEffect(() => {
     if (!selectedBackgroundImage) return
@@ -548,16 +558,9 @@ function App() {
     setError('')
     try {
       const mime = 'image/png'
-      const speakersToExport = isSpeakerPerBannerFormat
-        ? state.speakers.filter((speaker) => speaker.name.trim().length > 0).slice(0, MAX_SPEAKERS)
-        : []
-      const exportStates =
-        speakersToExport.length > 1
-          ? speakersToExport.map((speaker) => ({
-              ...state,
-              speakers: [speaker],
-            }))
-          : [state]
+      const exportStates = speakerCards.length
+        ? speakerCards.map((speakers) => ({ ...state, speakers }))
+        : [state]
 
       const historyItems: BannerHistoryItem[] = []
 
@@ -580,7 +583,7 @@ function App() {
 
         const speakerSuffix =
           exportStates.length > 1
-            ? `-${(exportState.speakers[0]?.name || `speaker-${i + 1}`)
+            ? `-${(exportState.speakers.map((speaker) => speaker.name).join('-') || `speaker-${i + 1}`)
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-+|-+$/g, '') || `speaker-${i + 1}`}`
@@ -955,6 +958,36 @@ function App() {
               <ChevronDownIcon size={16} className="chevron" />
             </summary>
             <div className="section-block">
+              {isSpeakerSquare || isSpeakerBanner ? (
+                <FormControl id="speakers-per-card">
+                  <FormControl.Label>Speakers per card</FormControl.Label>
+                  <Select
+                    value={String(state.speakersPerCard)}
+                    onChange={(event) => setState((previous) => ({
+                      ...previous,
+                      speakersPerCard: Number(event.target.value) as SpeakersPerCard,
+                    }))}
+                  >
+                    <Select.Option value="1">One speaker per card</Select.Option>
+                    <Select.Option value="2">Two speakers per card</Select.Option>
+                  </Select>
+                </FormControl>
+              ) : null}
+              {isSpeakerBanner && state.speakersPerCard === 2 && (
+                <FormControl id="speaker-banner-pair-layout">
+                  <FormControl.Label>Pair layout</FormControl.Label>
+                  <Select
+                    value={state.speakerBannerPairLayout}
+                    onChange={(event) => setState((previous) => ({
+                      ...previous,
+                      speakerBannerPairLayout: event.target.value as BannerState['speakerBannerPairLayout'],
+                    }))}
+                  >
+                    <Select.Option value="side_by_side">Side by side</Select.Option>
+                    <Select.Option value="stacked">Stacked, text to the right</Select.Option>
+                  </Select>
+                </FormControl>
+              )}
               <fieldset className="catalog-picker">
                 <legend>Speakers from Planning</legend>
                 <FormControl id="catalog-event-filter">
@@ -1419,7 +1452,7 @@ function App() {
                             {isSpeakerPerBannerFormat ? (
                               <>
                                 <span>
-                                  {namedSpeakers.length} speaker banner(s) · {format.width}×{format.height} each
+                                  {downloadFileCount} speaker banner(s) · {format.width}×{format.height} each
                                 </span>
                               </>
                             ) : (
@@ -1537,20 +1570,25 @@ function App() {
                 className="canvas-wrap"
                 style={{ aspectRatio: `${format.width} / ${format.height}`, '--preview-zoom': zoom * previewBaseScale } as CSSProperties}
               >
-                <canvas ref={canvasRef} aria-label="Banner preview" />
+                <canvas
+                  ref={canvasRef}
+                  aria-label={speakerCards[0]?.length === 2
+                    ? `Banner preview for ${speakerCards[0].map((speaker) => speaker.name).join(' and ')}`
+                    : 'Banner preview'}
+                />
               </div>
             )}
 
             {showMultiSpeakerPreviewGrid && speakerPreviews.length > 0 && (
               <div className="speaker-preview-block">
                 <div className="history-header">
-                  <h3>Speaker banners</h3>
+                  <h3>Speaker cards</h3>
                   <span>{speakerPreviews.length} real-time preview(s)</span>
                 </div>
                 <div className="speaker-preview-grid">
                   {speakerPreviews.map((item) => (
                     <article key={item.id} className="speaker-preview-item">
-                      <img src={item.previewDataUrl} alt={`Preview banner for ${item.name}`} />
+                      <img src={item.previewDataUrl} alt={`Preview card for ${item.name}`} />
                       <strong>{item.name}</strong>
                     </article>
                   ))}
