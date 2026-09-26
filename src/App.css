@@ -316,7 +316,7 @@
   padding: 0.55rem 0.9rem;
   border-top: 1px solid var(--vscode-border);
   background: var(--app-header-bg);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
@@ -578,7 +578,7 @@
 
 .format-group h3 {
   margin: 0;
-  font-size: 0.96rem;
+  font-size: 0.95rem;
   color: var(--vscode-text-muted);
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -669,7 +669,7 @@
 
 .format-card strong,
 .theme-card strong {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   line-height: 1.25;
 }
 
@@ -707,7 +707,7 @@
 .picker-description {
   margin: -0.45rem 0 0.65rem;
   color: var(--vscode-text-muted);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1.4;
 }
 
@@ -756,7 +756,7 @@
   margin: 0.55rem 0 0;
   padding-left: 1.2rem;
   color: var(--vscode-text-muted);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1.45;
 }
 
@@ -801,7 +801,7 @@ input[type='file'] {
 
 .label-row small {
   color: var(--vscode-text-muted);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 500;
   line-height: 1.35;
 }
@@ -1095,6 +1095,7 @@ input[type='file']::file-selector-button:hover {
 .resolution-card strong {
   font-size: 2rem;
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .wizard-actions {
@@ -1113,7 +1114,7 @@ input[type='file']::file-selector-button:hover {
 .preview p {
   margin-top: 0;
   color: var(--vscode-text-muted);
-  font-size: 0.98rem;
+  font-size: 0.95rem;
 }
 
 .canvas-wrap {
@@ -1198,13 +1199,13 @@ input[type='file']::file-selector-button:hover {
 
 .history-empty p {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   max-width: 30ch;
 }
 
 .history-empty p:first-of-type {
   color: var(--vscode-text);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
 }
 
 .empty-speakers {
@@ -1256,7 +1257,7 @@ input[type='file']::file-selector-button:hover {
 
 .history-meta span {
   color: var(--vscode-text-muted);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
 }
 
 .history-actions {
@@ -1554,7 +1555,7 @@ input[type='file']::file-selector-button:hover {
   align-items: center;
   gap: 4px;
   margin-bottom: 4px;
-  font-size: 11px;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--color-attention-fg, var(--app-warning));
 }
@@ -1588,7 +1589,7 @@ input[type='file']::file-selector-button:hover {
 .theme-mini-title {
   font-family: 'Mona Sans', sans-serif;
   font-weight: 800;
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.1;
   white-space: nowrap;
   overflow: hidden;
@@ -1626,7 +1627,7 @@ input[type='file']::file-selector-button:hover {
 }
 
 .app-toast .app-toast-message {
-  font-size: 0.8125rem;
+  font-size: 0.8rem;
   line-height: 1.4;
 }
 
