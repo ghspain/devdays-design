@@ -55,6 +55,14 @@ test('two speakers share one vertical speaker banner', async ({ page }) => {
   await cards.nth(1).getByLabel('Name').fill('Luis Fraile')
   await cards.nth(1).getByLabel('Role').fill('CTO · DevOps and ALM Consultant · Speaker role details remain readable')
   await page.getByRole('combobox', { name: 'Speakers per card' }).selectOption('2')
+  const layout = page.getByRole('combobox', { name: 'Pair layout' })
+  await expect(layout).toHaveValue('side_by_side')
+  await layout.selectOption('stacked')
+  await expect(layout).toHaveValue('stacked')
+  await page.waitForTimeout(600)
+  await page.reload()
+  await openSection(page, 'section-speakers')
+  await expect(page.getByRole('combobox', { name: 'Pair layout' })).toHaveValue('stacked')
 
   await expect(page.getByText('1 speaker banner(s) · 1080×1350 each')).toBeVisible()
   await expect(page.getByRole('button', { name: /Download PNG/ })).not.toContainText('2 files')
@@ -64,6 +72,11 @@ test('two speakers share one vertical speaker banner', async ({ page }) => {
   await expect(preview).toBeVisible()
   await expect(preview).toHaveAttribute('width', '1080')
   await expect(preview).toHaveAttribute('height', '1350')
+  const stackedAvatarPixels = await preview.evaluate((element) => {
+    const context = (element as HTMLCanvasElement).getContext('2d')!
+    return [[80, 650], [80, 878]].map(([x, y]) => [...context.getImageData(x, y, 1, 1).data])
+  })
+  expect(stackedAvatarPixels).toEqual([[10, 191, 64, 255], [10, 191, 64, 255]])
   await expect(page.locator('.speaker-preview-item')).toHaveCount(0)
 })
 

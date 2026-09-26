@@ -7,6 +7,7 @@ export type BannerFormat =
 export type ExportType = 'png' | 'jpg'
 export type ExportScale = 1 | 2
 export type SpeakersPerCard = 1 | 2
+export type SpeakerBannerPairLayout = 'side_by_side' | 'stacked'
 
 /** Identifies a bundle of colors and fixed brand text the renderer draws with.
  *  Not to be confused with `lib/catalog.ts`'s `EventPreset` (a saved event-data
@@ -81,6 +82,7 @@ export interface BannerState {
   event: EventDetails
   speakers: Speaker[]
   speakersPerCard: SpeakersPerCard
+  speakerBannerPairLayout: SpeakerBannerPairLayout
   partners: PartnerLogo[]
   export: {
     type: ExportType

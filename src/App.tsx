@@ -973,6 +973,21 @@ function App() {
                   </Select>
                 </FormControl>
               ) : null}
+              {isSpeakerBanner && state.speakersPerCard === 2 && (
+                <FormControl id="speaker-banner-pair-layout">
+                  <FormControl.Label>Pair layout</FormControl.Label>
+                  <Select
+                    value={state.speakerBannerPairLayout}
+                    onChange={(event) => setState((previous) => ({
+                      ...previous,
+                      speakerBannerPairLayout: event.target.value as BannerState['speakerBannerPairLayout'],
+                    }))}
+                  >
+                    <Select.Option value="side_by_side">Side by side</Select.Option>
+                    <Select.Option value="stacked">Stacked, text to the right</Select.Option>
+                  </Select>
+                </FormControl>
+              )}
               <fieldset className="catalog-picker">
                 <legend>Speakers from Planning</legend>
                 <FormControl id="catalog-event-filter">

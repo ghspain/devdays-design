@@ -30,6 +30,7 @@ export function normalizeState(
     event: normalizeEvent(input?.event),
     speakers: Array.isArray(input?.speakers) ? input.speakers : [],
     speakersPerCard: input?.speakersPerCard === 2 ? 2 : 1,
+    speakerBannerPairLayout: input?.speakerBannerPairLayout === 'stacked' ? 'stacked' : 'side_by_side',
     partners: Array.isArray(input?.partners) ? input.partners : [],
     export: {
       type: input?.export?.type ?? 'png',

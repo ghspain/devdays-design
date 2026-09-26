@@ -492,16 +492,21 @@ export async function renderBanner(
     if (isSpeakerBanner) {
       if (state.speakers.length > 1) {
         const speakers = state.speakers.slice(0, 2)
+        const stackedPair = state.speakerBannerPairLayout === 'stacked'
         const profileGap = Math.round(width * 0.04)
         const profileWidth = (width - padding * 2 - profileGap) / 2
-        const avatarSize = Math.round(width * 0.17)
-        const rowY = Math.round(height * 0.5)
-        let profileBottomY = rowY + avatarSize
+        const avatarSize = Math.round(width * (stackedPair ? 0.18 : 0.17))
+        const firstRowY = Math.round(height * (stackedPair ? 0.46 : 0.5))
+        const stackedRowGap = Math.round(height * 0.025)
+        let profileBottomY = firstRowY + avatarSize
 
         for (let index = 0; index < speakers.length; index += 1) {
           const speaker = speakers[index]
           const profileX = padding + index * (profileWidth + profileGap)
-          const avatarX = profileX + (profileWidth - avatarSize) / 2
+          const rowY = stackedPair ? firstRowY + index * (avatarSize + stackedRowGap) : firstRowY
+          const avatarX = stackedPair ? padding : profileX + (profileWidth - avatarSize) / 2
+          const textX = stackedPair ? avatarX + avatarSize + profileGap : profileX + profileWidth / 2
+          const textWidth = stackedPair ? width - padding - textX : profileWidth
           const avatarRadius = Math.round(avatarSize * 0.08)
 
           ctx.save()
@@ -541,36 +546,43 @@ export async function renderBanner(
             ctx.fillText(getInitials(speaker.name), avatarX + avatarSize / 2, rowY + avatarSize * 0.58)
           }
 
-          const nameSize = 40
-          const roleSize = 22
-          const textX = profileX + profileWidth / 2
-          const nameTopY = rowY + avatarSize + 22
-          ctx.textAlign = 'center'
+          const nameSize = stackedPair ? 42 : 40
+          const roleSize = stackedPair ? 23 : 22
+          ctx.textAlign = stackedPair ? 'left' : 'center'
           ctx.textBaseline = 'top'
           ctx.fillStyle = theme.lightAreaTitleColor
           ctx.font = `500 ${nameSize}px "Mona Sans Mono", monospace`
           ctx.letterSpacing = '2px'
-          const nameLines = wrapTracked('speaker name', (f) => wrapText(ctx, speaker.name || 'Speaker', profileWidth, 2, f))
+          const nameLines = wrapTracked('speaker name', (f) => wrapText(ctx, speaker.name || 'Speaker', textWidth, 2, f))
+          const nameLineHeight = nameSize * 1.08
+          const speakerMeta = [speaker.role, speaker.talkTitle, speaker.talkTime].filter(Boolean).join(' · ')
+          const roleLineHeight = roleSize * 1.12
+          ctx.letterSpacing = '0px'
+          ctx.font = `500 ${roleSize}px "Mona Sans", sans-serif`
+          const roleLines = speakerMeta
+            ? wrapTracked('speaker role', (f) => wrapText(ctx, speakerMeta, textWidth, 3, f))
+            : []
+          const textHeight = nameLines.length * nameLineHeight + (roleLines.length ? 12 + roleLines.length * roleLineHeight : 0)
+          const nameTopY = stackedPair
+            ? rowY + Math.max(0, (avatarSize - textHeight) / 2)
+            : rowY + avatarSize + 22
+          ctx.font = `500 ${nameSize}px "Mona Sans Mono", monospace`
           nameLines.forEach((line, lineIndex) => {
-            ctx.fillText(line, textX, nameTopY + lineIndex * nameSize * 1.08)
+            ctx.fillText(line, textX, nameTopY + lineIndex * nameLineHeight)
           })
           ctx.letterSpacing = '0px'
-          trackRegion('speaker name', theme.lightAreaTitleColor, profileX, nameTopY, profileWidth, nameLines.length * nameSize * 1.08)
+          trackRegion('speaker name', theme.lightAreaTitleColor, textX, nameTopY, textWidth, nameLines.length * nameLineHeight)
 
-          const speakerMeta = [speaker.role, speaker.talkTitle, speaker.talkTime].filter(Boolean).join(' · ')
-          if (speakerMeta) {
-            const roleTopY = nameTopY + nameLines.length * nameSize * 1.08 + 12
+          if (roleLines.length) {
+            const roleTopY = nameTopY + nameLines.length * nameLineHeight + 12
             ctx.fillStyle = theme.lightAreaMutedColor
             ctx.font = `500 ${roleSize}px "Mona Sans", sans-serif`
-            const roleLines = wrapTracked('speaker role', (f) => wrapText(ctx, speakerMeta, profileWidth, 3, f))
             roleLines.forEach((line, lineIndex) => {
-              ctx.fillText(line, textX, roleTopY + lineIndex * roleSize * 1.12)
+              ctx.fillText(line, textX, roleTopY + lineIndex * roleLineHeight)
             })
-            trackRegion('speaker role', theme.lightAreaMutedColor, profileX, roleTopY, profileWidth, roleLines.length * roleSize * 1.12)
-            profileBottomY = Math.max(profileBottomY, roleTopY + roleLines.length * roleSize * 1.12)
-          } else {
-            profileBottomY = Math.max(profileBottomY, nameTopY + nameLines.length * nameSize * 1.08)
+            trackRegion('speaker role', theme.lightAreaMutedColor, textX, roleTopY, textWidth, roleLines.length * roleLineHeight)
           }
+          profileBottomY = Math.max(profileBottomY, rowY + avatarSize, nameTopY + textHeight)
           ctx.textAlign = 'left'
           ctx.textBaseline = 'alphabetic'
         }
