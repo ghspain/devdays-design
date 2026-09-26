@@ -1,15 +1,21 @@
-# 🎨 Dev Days: Social Image Creator
+# 🎨 GHSpain Event Studio
 
-**Create event and social media banners with live preview and one-click export.**
+**Create consistent event assets from reusable event data, with live preview, validation and local-first export.**
 
-This repository contains a browser-based app built to generate banners quickly with a guided workflow.
-It is ideal for event teams, communities, and social media operations that need fast, consistent visuals.
+This repository currently ships a mature social/banner generator and is evolving into a broader event asset studio for GitHub Community Spain.
+
+The existing Dev Days workflows remain supported. The next product direction expands the same foundation toward speaker badges, attendee badges, front/back assets, batch generation and print-ready event materials.
+
+See:
+
+- [`PRODUCT.md`](PRODUCT.md) for the product definition and boundaries.
+- [`ROADMAP.md`](ROADMAP.md) for the delivery plan and dependency order.
+- [`DESIGN.md`](DESIGN.md) for the application design direction.
+- [`ghspain/devdays-design-system`](https://github.com/ghspain/devdays-design-system) for the Dev Days visual source of truth.
 
 ---
 
 ## 🚀 Try It Locally
-
-Want to test the app quickly on your machine? Follow the steps below.
 
 1. 📦 Install dependencies:
 
@@ -29,74 +35,137 @@ Want to test the app quickly on your machine? Follow the steps below.
 	http://localhost:5173/devdays-design/
 	```
 
-## 🎯 About the Project
+## 🎯 Current Production Capabilities
 
-- **Live canvas rendering:** See banner updates in real time while editing (debounced for smooth typing).
-- **Ready-to-use formats:** Event Cover, Speaker Profile, Speaker Banner, Social Promo, and Luma Cover.
-- **Event variants:** Keep the city separate from an event edition such as Professional or Students.
-- **Branding support:** Upload speaker photos, organization logo, and up to three partner logos on Luma covers and social promos.
-- **Registration bar:** Add CTA + registration URL in Social Promo and Speaker Banner.
-- **Export pipeline:** Download in PNG/JPG with 1x or 2x scale.
-- **Local history:** Restore, delete, and manage recent generated banners (stored in `localStorage`).
+- **Live canvas rendering:** see asset updates in real time while editing.
+- **Ready-to-use formats:** Luma Cover, Social Promo, Speaker Profile and Speaker Banner.
+- **Multiple event themes:** Dev Days, Community Meetup and GitHub-style online events.
+- **Speaker workflows:** catalogue selection, editable profiles, multiple speakers and paired speaker layouts.
+- **Branding support:** organization and partner logos with format-aware limits.
+- **Registration content:** CTA + URL support where the selected format uses it.
+- **Visual validation:** truncation, dropped content, contrast and safe-area feedback before export.
+- **Export pipeline:** PNG/JPG plus ZIP event packs.
+- **Draft persistence and history:** recover current work and previously generated assets locally.
+- **Responsive editing:** desktop split view plus mobile Fields / Preview flow.
+- **Accessible controls:** Primer-based interaction patterns with Playwright visual coverage.
 
-## Local catalogues and presets
+These capabilities are foundations for the broader Event Studio roadmap, not legacy functionality scheduled for removal.
 
-The `data/` directory contains a deliberately reduced local catalogue for speakers, sponsors, and visual presets. It is intentionally separate from the richer canonical data in [ghspain/Planning](https://github.com/ghspain/Planning). See [ROADMAP.md](ROADMAP.md) for the bounded product scope.
+## 🧭 Product Direction
+
+The target model is:
+
+```text
+Event Project
+  +-- reusable event/person data
+  +-- theme
+  +-- templates
+  +-- assets
+      +-- event social
+      +-- speaker social
+      +-- covers
+      +-- speaker badges
+      +-- attendee badges
+      +-- print materials
+  +-- exports
+```
+
+Planned product areas include:
+
+- configurable QR destinations,
+- front/back badge designs,
+- public profile reuse from `ghspain/Planning`,
+- attendee CSV import and column mapping,
+- large batch generation,
+- print-ready PDF and duplex badge sheets,
+- a more visual artboard-based editing experience,
+- selectable Event Kits containing digital and printable materials.
+
+The application remains local-first and compatible with GitHub Pages for the planned phases. A backend is deferred until a concrete shared-project or synchronization requirement needs it.
+
+## Local Catalogues and Canonical Data
+
+The `data/` directory contains a deliberately reduced operational catalogue for the current application.
+
+Reusable public person and participation data should remain canonical in [`ghspain/Planning`](https://github.com/ghspain/Planning). This application should consume a safe projection of the fields it needs rather than creating a second canonical people database.
+
+Attendee imports are different: they are event-specific operational input and should be processed locally by default rather than committed to the repository or promoted into Planning automatically.
+
+## 🎨 Design System
+
+Generated Dev Days artwork follows the extracted visual language maintained in [`ghspain/devdays-design-system`](https://github.com/ghspain/devdays-design-system): Mona Sans, near-black surfaces, Copilot green/lime/purple/blue accents, gradients and composition principles.
+
+The application shell uses GitHub Primer interaction patterns and may support light or dark surfaces. Light mode should use semantic Primer/GitHub tokens, not a literal inversion of the dark artwork palette.
+
+See [`DESIGN.md`](DESIGN.md) for the mapping between the external design system and the editor workspace.
 
 ## 🛠️ Tech Stack
 
+Current implementation:
+
 - ⚛️ **React 19** + **TypeScript**
 - ⚡ **Vite 7** for dev server and bundling
-- 🎨 **HTML Canvas** for banner rendering
+- 🎨 **HTML Canvas** for current asset rendering
 - 🔤 **Mona Sans** & **Mona Sans Mono** variable fonts (self-hosted)
-- 🧩 **@primer/octicons-react** for icons
-- 🧹 **ESLint** (type-checked config)
+- 🧩 **@primer/react** + **@primer/octicons-react** for application controls/icons
+- 📦 **JSZip** for browser-side packages
+- 🧪 **Playwright** for visual and interaction coverage
+- 🧹 **ESLint**
 
-## 📁 Project Structure
+Future roadmap phases may introduce additional 2D editing and print-generation libraries after focused evaluation. Three.js is not planned as the core editor technology.
+
+## 📁 Current Project Structure
 
 ```text
 src/
-├─ App.tsx            # UI shell, state, and effects
-├─ types.ts           # Shared type definitions
-├─ constants.ts       # Formats, colors, and static config
+├─ App.tsx
+├─ App.css
+├─ types.ts
+├─ constants.ts
 ├─ lib/
-│  ├─ renderBanner.ts # Canvas rendering engine
-│  ├─ canvasText.ts   # Text wrapping / rounded-rect helpers
-│  ├─ image.ts        # Image cache, loading, and file helpers
-│  ├─ history.ts      # Default state + localStorage history
-│  └─ format.ts       # id / initials utilities
-└─ assets/            # Backgrounds and web fonts
-public/
-├─ favicon/           # Favicon set (ico, png, apple-touch, android-chrome)
-└─ site.webmanifest   # PWA manifest
+│  ├─ renderBanner.ts
+│  ├─ canvasText.ts
+│  ├─ catalog.ts
+│  ├─ draft.ts
+│  ├─ exportPack.ts
+│  ├─ history.ts
+│  ├─ image.ts
+│  ├─ pixelChecks.ts
+│  └─ validate.ts
+└─ assets/
+data/
+tests/
 ```
+
+The roadmap deliberately plans to split the large application/domain/renderer responsibilities before many new physical-asset formats are added.
 
 ## 🖥️ How to Run Locally
 
 Prerequisites:
+
 - Node.js 20+
 - npm 10+
 
 Commands:
 
 ```bash
-npm install      # install dependencies
-npm run dev      # start the dev server
-npm run lint     # run ESLint
-npm run build    # type-check + production build
-npm run preview  # preview the production build
+npm install
+npm run dev
+npm run lint
+npm run build
+npm run test:visual
+npm run preview
 ```
 
 ## 🤝 How to Contribute
 
-1. 🍴 Fork the repository
-2. 🌱 Create a branch: `git checkout -b my-feature`
-3. ✏️ Commit: `git commit -m 'feat: my new feature'`
-4. 🚀 Push: `git push origin my-feature`
-5. 🔄 Open a Pull Request
+1. Fork the repository.
+2. Create a focused branch.
+3. Keep changes aligned with `PRODUCT.md`, `ROADMAP.md` and `DESIGN.md`.
+4. Preserve or explicitly migrate current output behavior when changing domain/rendering architecture.
+5. Run lint, build and relevant Playwright coverage.
+6. Open a pull request with the user flow and validation evidence.
 
 ## 📬 Contact
 
-Open an issue for questions, suggestions, or bug reports.
-
-**✨ Build faster banners. Keep your brand consistent. 🚀**
+Open an issue for questions, suggestions or bug reports.
