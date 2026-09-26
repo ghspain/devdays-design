@@ -51,9 +51,12 @@ test('organizer catalogue uses a Primer Select with a FormControl label', async 
 test('sponsor catalogue, add/remove flow and ToggleSwitch are accessible', async ({ page }) => {
   await openSection(page, 'section-partners')
   const toggle = page.getByRole('button', { name: /include partner logos/i })
+  const toggleRow = page.locator('#section-partners .resolution-toggle')
   await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+  await expect(toggleRow).not.toContainText(/\b(On|Off)\b/)
   await toggle.click()
   await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+  await expect(toggleRow).not.toContainText(/\b(On|Off)\b/)
   await toggle.click()
   await expect(toggle).toHaveAttribute('aria-pressed', 'false')
 
@@ -89,12 +92,24 @@ test('top bar and sidebar controls are IconButtons with stable aria-labels', asy
   const collapse = page.getByRole('button', { name: 'Collapse panel' })
   await expect(collapse).toHaveAttribute('data-component', 'IconButton')
   await expect(collapse).toHaveAttribute('aria-expanded', 'true')
+  const sectionsToggle = page.locator('.sections-toggle')
+  const validationPanel = page.locator('.validation-panel')
+  await expect(sectionsToggle).toBeVisible()
+  await expect(validationPanel).toBeVisible()
   await collapse.click()
   await expect(page.locator('.sidebar.collapsed')).toBeVisible()
+  await expect(sectionsToggle).toBeHidden()
+  await expect(validationPanel).toBeHidden()
+  const hasHorizontalOverflow = await page
+    .locator('.sidebar.collapsed')
+    .evaluate((sidebar) => sidebar.scrollWidth > sidebar.clientWidth)
+  expect(hasHorizontalOverflow).toBe(false)
   const expand = page.getByRole('button', { name: 'Expand panel' })
   await expect(expand).toHaveAttribute('aria-expanded', 'false')
   await expand.click()
   await expect(page.locator('.sidebar.collapsed')).toHaveCount(0)
+  await expect(sectionsToggle).toBeVisible()
+  await expect(validationPanel).toBeVisible()
 })
 
 test('stage toolbar buttons are IconButtons readable over the dark stage', async ({ page }) => {

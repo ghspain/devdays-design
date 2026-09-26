@@ -1226,6 +1226,8 @@ function App() {
                 </div>
                 <ToggleSwitch
                   aria-labelledby="partner-logos-label"
+                  buttonLabelOn=""
+                  buttonLabelOff=""
                   checked={state.event.includeSupportedBy}
                   onChange={(checked) => updateEvent({ includeSupportedBy: checked })}
                 />
