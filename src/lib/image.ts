@@ -1,5 +1,5 @@
 import type { BannerFormat } from '../types'
-import lumaBackgroundImage from '../assets/img/luma-background.png'
+import lumaBackgroundImage from '../assets/img/luma-background.webp'
 import speakerBackgroundImage from '../assets/img/speaker-background.png'
 
 const imageCache = new Map<string, Promise<HTMLImageElement>>()

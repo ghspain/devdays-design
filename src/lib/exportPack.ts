@@ -1,4 +1,3 @@
-import JSZip from 'jszip'
 import { formatOptions, MAX_SPEAKERS } from '../constants'
 import type { BannerFormat, BannerState, Speaker } from '../types'
 import { renderBanner } from './renderBanner'
@@ -42,6 +41,8 @@ export async function buildEventPack(
   state: BannerState,
   onProgress?: (progress: EventPackProgress) => void,
 ) {
+  // Lazy-load JSZip so the ~100KB dependency stays out of the initial bundle.
+  const { default: JSZip } = await import('jszip')
   const zip = new JSZip()
   const speakers = state.speakers
     .filter((speaker) => speaker.name.trim().length > 0)

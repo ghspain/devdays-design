@@ -2,7 +2,7 @@
   min-height: 100vh;
   background: #f6f8fa;
   color: #1f2328;
-  font-family: "Mona Sans", system-ui, sans-serif;
+  font-family: "Mona Sans", system-ui, sans-serif; /* impeccable-disable-line overused-font -- GitHub first-party brand font (ghspain org) */
 }
 
 .proposal-header {
