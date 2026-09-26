@@ -1,179 +1,382 @@
 ---
 impeccable: design-schema 1
-name: DevDays Design
+name: GHSpain Event Studio
 mode: operate
 platform: web
-north-star: torre-de-control
+north-star: event-studio
 ---
 
-# Design — DevDays Design
+# Design - GHSpain Event Studio
 
-Editor web para que el equipo organizador de GitHub Community Spain genere imágenes
-de speakers y eventos (Canvas rendering, presets, speaker packs).
+This document defines the application-level design direction for `ghspain/devdays-design` as it evolves from a social banner editor into a broader event asset studio.
 
-## Overview
+It does not replace the visual source material in `ghspain/devdays-design-system`.
 
-**Estrella del Norte — "Torre de control".** La app es una herramienta precisa y
-confiable: el panel de UI claro (estética Primer/GitHub light) es la sala de control
-donde todo se lee y se ajusta con calma; el canvas oscuro (`#0d1117` / `#010409`) es
-el escenario iluminado donde la pieza final es la protagonista absoluta. El acento
-cambia con el tema del evento (verde Dev Days, púrpura Community Meetup, azul
-Online), pero la estructura —tipografía Mona Sans, tokens Primer, densidad sobria—
-nunca se mueve.
+## Design source hierarchy
 
-- **Modo:** Operate — el visitante completa una tarea (generar y descargar una imagen).
-- **Character:** técnico, sereno, preciso. Brand lives in precise details.
+Use these sources in order:
 
-## Colors
+1. **`ghspain/devdays-design-system`** for the Dev Days / GitHub Copilot visual language used by generated artwork.
+2. **GitHub Primer** for application-shell controls, accessibility patterns, interaction semantics and light/dark UI surfaces.
+3. **This file** for how those systems are combined inside the Event Studio product.
+4. Local component styles only when the previous layers do not provide the required behavior.
 
-### Tokens base (src/App.css `:root`)
+The design-system repository is derived from the official GitHub Dev Days decks and is intentionally dark-first. It defines Mona Sans typography, near-black surfaces, Copilot green/lime/purple/blue accents, gradients, spacing character and composition principles.
 
-| Token | Valor | Uso |
-|---|---|---|
-| `--vscode-bg` | `#ffffff` | Fondo de la UI clara |
-| `--vscode-bg-elev-1` | `#f6f8fa` | Superficies elevadas (paneles, secciones) |
-| `--vscode-border` | `#d1d9e0` | Bordes de paneles, inputs, secciones |
-| `--vscode-text` | `#1f2328` | Texto principal |
-| `--vscode-text-muted` | `#59636e` | Texto secundario/etiquetas |
-| `--vscode-accent` | `#0969da` | Acción primaria, enlaces |
-| `--vscode-accent-hover` | `#0550ae` | Hover de acción primaria |
-| `--vscode-danger` | `#cf222e` | Acciones destructivas |
-| `--app-warning` | `#9a6700` | Badges/severity de warning (token, nunca hardcodear) |
-| `--app-error` | `#cf222e` | Badges/severity de error (token, nunca hardcodear) |
-| `--app-canvas-bg` | `#010409` | Fondo del escenario (siempre oscuro) |
+The Event Studio application is allowed to have a light or dark editor shell. A light shell is **not** a mathematical color inversion of the dark Dev Days palette. It should use semantic Primer/GitHub light tokens while retaining the same typography, spacing discipline, interaction patterns and brand accents where appropriate.
 
-### Acentos por tema de evento (`src/constants.ts` — EVENT_THEMES)
+## North star
 
-| Tema | Accent | Fondo canvas | Aplicación |
-|---|---|---|---|
-| Dev Days | `#0abf40` (verde) | `#0d1117` | Verde GitHub sobre canvas oscuro |
-| Community Meetup | `#a371f7` (púrpura) | `#0d1117` | Púrpura Primer |
-| Online (GitHub style) | `#0969da` (azul) | `#ffffff` | Estética web de GitHub en claro |
+**Event Studio: structured control around a visual artboard.**
 
-El acento del evento se usa **solo dentro del canvas** (etiquetas, logo, Luma city
-color). La UI del editor nunca hereda el acento del tema: su acento propio es
-siempre `#0969da`.
+The generated asset is the protagonist. The application exists to help an organizer create it quickly, safely and consistently.
 
-### Carácter de color
+The UI should feel like a lightweight GitHub-native production tool, not like a generic admin form and not like a full creative suite.
 
-- Neutralidad Primer (grises `#1f2328`→`#59636e`→`#d1d9e0`) con un único acento.
-- Contraste doble: UI clara en el shell, canvas oscuro en el escenario; nunca
-  mezclar grises de ambos mundos (el re-declare de tokens en `.stage` lo garantiza).
-- Semántica estricta: warning ≠ error (`#9a6700` ámbar vs `#cf222e` rojo), siempre
-  vía token `--app-*`.
+Core character:
+
+- technical,
+- calm,
+- precise,
+- visual,
+- constrained,
+- fast to understand,
+- confident for batch production.
+
+## Product surfaces
+
+The product has two related but distinct visual surfaces.
+
+### 1. Application shell
+
+The editor/workspace around the asset.
+
+Use:
+
+- Primer components and interaction patterns,
+- GitHub light/dark semantic surfaces,
+- restrained depth and borders,
+- one clear primary action per action group,
+- compact but readable tool density,
+- accessible keyboard/focus behavior.
+
+### 2. Generated artwork
+
+The social, badge, cover or print asset being created.
+
+Use:
+
+- the selected event theme,
+- the GHSpain Dev Days design system where the event uses that identity,
+- Mona Sans / Mona Sans Mono,
+- template-specific layout rules,
+- explicit safe areas and validation constraints.
+
+The editor shell must not accidentally recolor generated artwork. Theme choice belongs to the asset, not to the surrounding tool chrome.
+
+## Color system
+
+### Canonical Dev Days artwork palette
+
+From `ghspain/devdays-design-system`:
+
+| Role | Value | Use |
+| --- | --- | --- |
+| Background base | `#000000` | Deep canvas/background |
+| Elevated dark | `#0C1116` | Cards / panels in generated artwork |
+| Elevated dark 2 | `#121613` | Alternate dark surface |
+| Copilot green | `#5EEC83` | Primary brand accent |
+| Lime | `#D3FA36` | High-energy highlight |
+| Copilot purple | `#B870FF` | AI / Copilot accent |
+| Blue | `#3194FF` | Supporting cool accent |
+| Cyan | `#9EECFF` | Supporting highlight |
+| Primary text | `#FFFFFF` | Text on dark artwork |
+| Muted text | approx `#8B949E` | Secondary text on dark artwork |
+
+Existing event-theme values in the application may differ because they predate the extracted design system. Do not perform a blind palette replacement inside this documentation PR. Palette convergence should be an implementation issue with screenshot/pixel review so existing event assets are not silently changed.
+
+### Application shell light mode
+
+Use semantic Primer/GitHub light roles such as:
+
+| Role | Current reference |
+| --- | --- |
+| Base surface | `#ffffff` |
+| Subtle/elevated surface | `#f6f8fa` |
+| Border | `#d1d9e0` |
+| Primary text | `#1f2328` |
+| Muted text | `#59636e` |
+| Interactive accent | `#0969da` |
+| Danger | `#cf222e` |
+| Warning | `#9a6700` |
+
+These are application semantics, not an alternative event brand.
+
+### Application shell dark mode
+
+Dark mode should map the same semantic roles to Primer-compatible dark surfaces. Where the Dev Days palette already matches GitHub dark surfaces, reuse compatible values deliberately rather than by coincidence.
+
+A future implementation issue should define the exact light/dark token mapping and remove legacy `--vscode-*` naming where it no longer reflects the product.
 
 ## Typography
 
-| Uso | Fuente | Peso |
-|---|---|---|
-| UI del editor | system stack (`-apple-system, Segoe UI, Noto Sans, …`) + Primer | 400 / 500 / 600 |
-| Canvas display (ciudad, título evento, speaker) | **Mona Sans** | 500 / 600 |
-| Canvas mono (edi­ción, fecha, footer, labels) | **Mona Sans Mono** | 500 / 600 |
+### Generated artwork
 
-- Escala UI: `0.72rem` (micro-labels) → `0.75–0.82rem` (labels/body) →
-  `0.875–0.95rem` (títulos de sección) → `1.05rem` (título topbar) → `1.85rem`
-  (heading de página). La UI vive en tamaños pequeños: densidad de herramienta.
-- El canvas es independiente: los tamaños se calculan en px sobre la resolución
-  final (1080/1350) y no siguen la escala de la UI.
-- Mona Sans/Mona Sans Mono son vinculantes (Brand Commitment en PRODUCT.md): no
-  sustituir en canvas, no usarlas como fuente de UI general.
+Use the design-system families:
 
-## Layout
+- **Mona Sans Display / Mona Sans** for display and headings,
+- **Mona Sans** for body content,
+- **Mona Sans Mono** for metadata, handles, technical labels and code-like content when appropriate.
 
-- **Shell:** `topbar` (52px) + `editor-body` de tres zonas — sidebar de controles,
-  escenario central, paneles de acción (downloads, presets). Altura 100vh, sin
-  scroll de página; cada zona scrollea por su cuenta.
-- **Sidebar:** secciones colapsables con cabecera sticky; cada sección es una
-  tarjeta `#ffffff` con borde `#d1d9e0`.
-- **Escenario:** centrado, con toolbar flotante; la pieza se escala al hueco
-  disponible manteniendo ratio.
-- **Espaciado:** gaps de `0.35rem` (pares de controles) / `0.6rem` (grupos) /
-  `0.9rem`–`1rem` (padding de paneles). Ritmo compacto pero respirado.
+### Application shell
 
-## Elevation & Depth
+Primer/system UI typography remains appropriate for dense controls. Mona Sans may be used selectively for product identity or high-level headings, but the editor should not sacrifice control readability or native GitHub familiarity.
 
-Tres niveles de sombra tokenizados (nunca hardcodear):
+The shell and the artwork do not need identical type scales.
 
-| Token | Valor | Uso |
-|---|---|---|
-| `--app-shadow-soft` | `rgba(31,35,40,0.04)` | Cards en reposo, secciones |
-| `--app-shadow-medium` | `rgba(31,35,40,0.08)` | Elementos flotantes (toolbar, dropdowns) |
-| `--app-shadow-strong` | `rgba(31,35,40,0.12)` | Overlays (drawer de history, toasts) |
+## Layout evolution
 
-Sombras compuestas (elevación) y anillos de foco, también tokenizados:
+### Current model
 
-| Token | Valor | Uso |
-|---|---|---|
-| `--app-elevation-1` | `0 1px 3px rgba(31,35,40,0.16)` | Elementos con elevación sutil (botón de marca en topbar) |
-| `--app-elevation-2` | `0 4px 12px rgba(0,0,0,0.15)` | Diálogos flotantes (confirmación de reset) |
-| `--app-elevation-3` | `0 8px 24px rgba(31,35,40,0.3)` | Toasts / elementos overlay prominentes |
-| `--app-focus-ring` | `0 0 0 1px var(--vscode-accent)` | Foco exterior de inputs/selects/textareas |
-| `--app-focus-ring-inset` | `0 0 0 1px var(--vscode-accent) inset` | Selección de opciones tipo card (card-option, export-type) |
+The current editor is primarily:
 
-En el escenario las sombras re-declaradas son más profundas
-(`rgba(1,4,9,0.45)`) porque el fondo es oscuro. El brillo ambiental del shell son
-dos `radial-gradient` muy tenues (`rgba(9,105,218,0.04/0.02)`), apenas un aliento
-azul — nunca decoración visible.
+```text
+controls | preview
+```
 
-## Shapes
+This remains valid during the transition and must not be broken before the studio workspace is ready.
 
-Radios en escala de 4 pasos (con `999px` para pills):
+### Target workspace
 
-| Radio | Uso |
-|---|---|
-| `6px` | Botones, inputs, badges (defecto) |
-| `8px` | Iconos contenedor (topbar-icon), cards pequeñas |
-| `10px` | Cards de sección, swatches |
-| `12–14px` | Cards grandes (theme preview, resolution cards), drawer |
-| `999px` | Pills de estado, badges redondos |
+The long-term desktop model is:
 
-Bordes de 1px `#d1d9e0` en light / `#30363d` en dark. Sin bordes gruesos ni
-sombras duras: la profundidad viene de sombras suaves, no de bordes.
+```text
++------------------+---------------------------+--------------------+
+| Assets/Templates |                           | Properties         |
+|                  |         ARTBOARD          |                    |
+| Event            |                           | selected element   |
+| Speakers         |                           | data + appearance  |
+| Attendees        |                           | QR / image / text  |
+| Sponsors         |                           |                    |
++------------------+---------------------------+--------------------+
+| Front / Back     | Zoom / validation         | Export             |
++------------------+---------------------------+--------------------+
+```
 
-## Components
+The exact panel arrangement can change after prototyping. The principles are more important than the diagram:
 
-Componentes canónicos observados en `src/App.tsx` + `src/App.css`:
+- the artboard gets the strongest visual priority,
+- context-specific properties replace a permanently huge form,
+- task/asset navigation is distinct from element properties,
+- export and validation remain visible without covering editable content,
+- multi-side assets expose Front / Back clearly,
+- mobile may use focused tabs rather than shrinking the full desktop studio.
 
-- **Download CTA hierarchy:** botón primario `#0969da` para la acción dominante
-  (descarga de la pieza actual), botones secundarios outline para formatos
-  alternativos. Un solo nivel de énfasis por grupo.
-- **Validation badges:** pill `999px` con token semántico — warning `--app-warning`,
-  error `--app-error` — con icono distinto por severidad. Nunca confundir tonos.
-- **Theme preview cards:** mini-cards (`14px` radius) con swatch del acento del
-  evento y nombre; estado seleccionado con borde de acento `#0969da`.
-- **Toast:** `--app-shadow-strong`, radio `10px`, aparece abajo; usa
-  `prefers-reduced-motion` (todas las animaciones se respetan).
-- **Collapsible section:** cabecera clickable con chevron, contenido en tarjeta
-  blanca; por defecto colapsadas las secciones secundarias (densidad cognitiva).
-- **Primer FormControl/Select:** para todos los inputs de formularios; los estilos
-  custom nunca reimplementan lo que Primer ya da.
+## Task-first entry
 
-## Do's and Don'ts
+The first question should increasingly become **what do you want to create?** rather than **which internal format ID do you want?**
 
-**Do**
-- Usar tokens `--app-*` y `--vscode-*` para todo color/sombra; añadir token nuevo
-  antes que hardcodear un valor.
-- Mantener el acento de evento confinado al canvas.
-- Respetar `prefers-reduced-motion` en cualquier animación nueva.
-- Mona Sans (display) + Mona Sans Mono (datos) en el canvas, siempre.
-- Distinguir warning de error con token, icono y texto.
+Candidate task cards:
 
-**Don't**
-- No introducir un segundo acento en la UI del editor (solo `#0969da`).
-- No mezclar grises del shell claro con los del escenario oscuro fuera de `.stage`.
-- No usar Mona Sans Mono como fuente de la UI general.
-- No crear sombras o radios fuera de la escala documentada.
-- No meter decoración (glows, gradients) visible: el brillo ambiental es subliminal.
+- Event social,
+- Speaker social,
+- Speaker badge,
+- Attendee badges,
+- Event covers,
+- Print materials.
 
-## Named Rules
+After selecting the task, the product can show only compatible templates, data and controls.
 
-1. **Dos mundos, un puente:** UI clara (Primer light) para controlar, canvas oscuro
-   para exhibir. Los tokens se re-declaran en `.stage`; nunca cruzar valores.
-2. **Acento del evento solo en la pieza:** el verde/púrpura/azul pertenece a la
-   imagen generada; la herramienta es siempre GitHub-azul.
-3. **Token primero:** cualquier color o sombra nueva entra como custom property
-   con nombre `--app-*` y uso documentado aquí.
-4. **Un énfasis por grupo:** en cada bloque de acciones hay exactamente un
-   primario; el resto son outline o quiet.
-5. **Densidad de herramienta, calma de sala de control:** compacto en píxeles,
-   generoso en claridad; todo lo destructivo pide confirmación.
+Internal format/template IDs remain implementation details.
+
+## Artboard interaction model
+
+The target editor is a constrained 2D production surface.
+
+Useful direct interactions include:
+
+- click/select text, image, QR or logo elements,
+- edit selected-element properties,
+- reposition elements only when the template allows it,
+- resize/crop images within allowed bounds,
+- alignment and snapping where useful,
+- show safe areas and print boundaries,
+- lock structural/brand elements,
+- restore template defaults.
+
+The template remains authoritative. Direct manipulation must not make it easy to create invalid or off-brand output.
+
+### Technology direction
+
+Before implementing direct manipulation, evaluate a 2D scene/editor layer such as:
+
+- Konva / react-konva,
+- Fabric.js,
+- a smaller adapter over existing Canvas rendering if interaction needs remain limited.
+
+Do not use Three.js as the core editor technology. Three.js may be evaluated later for optional 3D lanyard or badge mockups.
+
+## Multi-side assets
+
+Badges introduce first-class sides.
+
+The editor should represent them explicitly:
+
+```text
+[ Front ] [ Back ]
+```
+
+Requirements:
+
+- switching sides never loses edits,
+- front/back use the same asset record,
+- each side can have a different layer/template configuration,
+- validation runs per side and at the combined print level,
+- export labels clearly state whether the action exports one side, both sides or a print sheet.
+
+A CSS flip animation can be used as an optional preview interaction, but normal tab navigation must remain accessible and predictable.
+
+## QR component
+
+QR is a reusable content component.
+
+Properties should support:
+
+- destination type,
+- resolved URL,
+- profile source when destination is a person profile,
+- optional visible handle/URL,
+- error-correction/quiet-zone rules if needed by print validation,
+- size constrained by the template.
+
+QR selection should be presented as a meaningful destination choice, not as a raw URL field by default.
+
+## Badge design principles
+
+A networking badge must prioritize recognition before decoration.
+
+Front hierarchy should generally be:
+
+1. name,
+2. role or organization,
+3. badge type such as SPEAKER / ATTENDEE / STAFF,
+4. networking identity/handle,
+5. event identity,
+6. photo when the selected template uses one.
+
+Back hierarchy should generally be:
+
+1. QR destination,
+2. readable destination/handle,
+3. event or community context,
+4. optional agenda/event information.
+
+Do not overfill physical badges. Long bios and session descriptions belong elsewhere.
+
+## Attendee import UX
+
+CSV import is a dedicated flow, not another collapsible sidebar section.
+
+Recommended stages:
+
+```text
+Upload -> Map -> Validate -> Preview -> Configure -> Generate
+```
+
+The UI must show:
+
+- detected source columns,
+- mapped product fields,
+- required/optional status,
+- invalid-row count,
+- warnings,
+- records that will be excluded,
+- clear-data action,
+- privacy/local-processing explanation.
+
+Large datasets should use a virtualized/table-oriented review, not hundreds of rendered badge cards.
+
+## Batch generation UX
+
+Batch generation is a production operation and needs explicit feedback.
+
+Show:
+
+- total records/assets,
+- completed count,
+- current stage,
+- warnings/errors,
+- cancel when technically safe,
+- retry/re-run failed outputs where supported.
+
+Do not make the user infer whether the browser is frozen.
+
+## Print visualization
+
+Print-aware templates should be able to display overlays for:
+
+- trim boundary,
+- bleed,
+- safe area,
+- crop marks where relevant,
+- front/back orientation,
+- physical dimensions.
+
+These overlays are editor aids and must not appear in normal exported artwork unless explicitly requested as printer marks.
+
+## Existing component rules to preserve during transition
+
+Until the studio shell replaces them, current editor components remain valid:
+
+- Primer FormControl/Select/TextInput patterns,
+- accessible visual format/theme cards,
+- warning vs error severity distinction,
+- undo for reversible removals,
+- draft save status,
+- validation links to affected fields,
+- one dominant download action per action group,
+- mobile Fields / Preview separation,
+- `prefers-reduced-motion` support.
+
+## Depth and shape
+
+Keep depth restrained.
+
+Application UI:
+
+- borders first,
+- soft shadows for floating controls,
+- stronger shadows only for overlays/dialogs,
+- moderate radii,
+- pills only for statuses/tags,
+- no decorative glassmorphism.
+
+Generated artwork may use the stronger gradients, halos and visual motifs allowed by the event design system.
+
+## Design rules
+
+1. **One visual authority.** Dev Days artwork follows `ghspain/devdays-design-system`; the application does not invent a competing local brand.
+2. **Semantic light/dark modes.** Primer tokens define app-shell surfaces. Never create light mode by mechanically inverting dark colors.
+3. **Artwork is the hero.** Tool chrome supports the artboard rather than competing with it.
+4. **Task before implementation detail.** Users choose outcomes such as Speaker badge, not internal renderer IDs.
+5. **Properties follow selection.** Show controls relevant to the selected task/element instead of one permanent wall of fields.
+6. **Template constraints are a feature.** Brand-safe limits are more valuable than unlimited freedom.
+7. **Front/back is explicit.** Multi-side assets are modeled and navigated as such.
+8. **Batch is not a grid of hundreds of canvases.** Review data efficiently, preview representative cases, then generate.
+9. **Print gets physical rules.** Millimeters, bleed, safe area and duplex alignment are not approximated as social-pixel settings.
+10. **Accessibility remains structural.** Keyboard behavior, focus, semantics, motion preferences and non-color severity cues survive every visual redesign.
+11. **No forced 3D.** Use 2D tools for 2D production. Add 3D only for a later physical-preview use case.
+12. **Refactor without visual regression.** Existing event assets remain reproducible until a deliberate redesign is reviewed.
+
+## Immediate design work after this documentation is approved
+
+Before implementation epics for the full studio UI, create focused visual proposals for:
+
+1. task-first creation/home,
+2. the desktop studio workspace,
+3. Speaker Badge front/back editing,
+4. attendee CSV mapping/validation,
+5. batch-generation progress,
+6. print preview with safe/bleed overlays.
+
+Those proposals should use this design direction and the external Dev Days design system as constraints, then be validated before a large frontend rewrite begins.
