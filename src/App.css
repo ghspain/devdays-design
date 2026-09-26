@@ -1181,7 +1181,33 @@ input[type='file']::file-selector-button:hover {
 
 .history-empty {
   margin: 0;
+  padding: 1.25rem 0.75rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  text-align: center;
   color: var(--vscode-text-muted);
+}
+
+.history-empty p {
+  margin: 0;
+  font-size: 0.78rem;
+  max-width: 30ch;
+}
+
+.history-empty p:first-of-type {
+  color: var(--vscode-text);
+  font-size: 0.82rem;
+}
+
+.empty-speakers {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+}
+
+.empty-speakers .section-description {
+  margin: 0;
 }
 
 .history-list {
