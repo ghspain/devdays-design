@@ -26,6 +26,7 @@ Un editor de canvas guiado y coherente con validación visual integrada (overflo
 - Variantes de evento: ciudad separada de edición (Professional/Students).
 - Barra de registro (CTA + URL) en Social Promo y Speaker Banner; hasta 3 logos de partners en Luma covers y social promos.
 - Temas con tarjetas de vista previa; indicadores de truncado junto al campo.
+- Speaker Banner admite pareja de speakers con dos disposiciones (`speakerBannerPairLayout`): dos tarjetas en paralelo y apilado con texto a la derecha (PR #90).
 - Alcance explícitamente excluido (ROADMAP): sincronización con Planning/Luma/GitHub, publicación en redes, CRM de speakers, datos privados.
 - App desplegada como página de proyecto de GitHub (base `/devdays-design/`).
 
@@ -35,9 +36,9 @@ Un editor de canvas guiado y coherente con validación visual integrada (overflo
 - *Anotado por el usuario en sesión (no implementado aún):* uno de los meetups futuros debe tener un diseño "más parecido a la web de GitHub".
 
 ## Evidence on Hand
-- README.md, ROADMAP.md (alcance, épicos #12/#26/#53/#71 completados).
+- README.md, ROADMAP.md (alcance, épicos #12/#26/#53/#71/#83 completados).
 - Catálogos reales en `data/`: speakers (Celonis, GitHub Community Spain, TechRiders…), sponsors y presets.
-- Suite de tests visuales Playwright (~220 tests) que documenta comportamiento esperado por formato y anchura.
+- Suite de tests visuales Playwright (~254 tests) que documenta comportamiento esperado por formato y anchura.
 - No hay testimonios, métricas de uso ni casos de estudio: no fabricar.
 
 ## Product Principles
