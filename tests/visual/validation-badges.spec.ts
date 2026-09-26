@@ -40,15 +40,21 @@ test('warning findings render an amber warning-icon badge and do not block the e
   expect(ctaBackground).not.toBe('rgba(0, 0, 0, 0)')
 })
 
-test('warning badge uses outline styling so it does not read as a blocker', async ({ page }) => {
+test('warning badge uses soft amber chip styling so it does not read as a blocker', async ({ page }) => {
   const badge = primaryDownload(page).locator('.download-badge')
   await expect(badge).toHaveClass(/warning/)
   const style = await badge.evaluate((el) => {
     const cs = getComputedStyle(el)
-    return { background: cs.backgroundColor, shadow: cs.boxShadow }
+    return { background: cs.backgroundColor, shadow: cs.boxShadow, color: cs.color }
   })
-  expect(style.background).toBe('rgba(0, 0, 0, 0)')
+  // 🧭 DECISION — audit P1: the old transparent outline rendered the count at
+  // 1.79:1 against the button, so the badge is now a soft amber chip. It must
+  // stay a chip: never the solid red error fill (a warning is not a blocker).
+  expect(style.background).toBe('rgb(255, 248, 197)')
+  expect(style.background).not.toBe('rgb(207, 34, 46)')
   expect(style.shadow).not.toBe('none')
+  // Dark amber ink keeps the count readable on the chip (≥ 7:1).
+  expect(style.color).toBe('rgb(90, 62, 0)')
 })
 
 test('error findings render a red X-icon badge on both download buttons', async ({ page }) => {
