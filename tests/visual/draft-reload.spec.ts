@@ -52,7 +52,7 @@ test.describe('Event drafts survive reloads', () => {
 
       // Click Reset and confirm via custom dialog
       await page.getByRole('button', { name: 'Reset' }).click()
-      await page.getByRole('button', { name: 'Confirm Reset' }).click()
+      await page.getByRole('button', { name: 'Clear draft' }).click()
 
       // The title should be restored to default
       await expect(titleInput).toHaveValue('Dev Days', { timeout: 5000 })
