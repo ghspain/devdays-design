@@ -608,7 +608,7 @@ function App() {
         return next
       })
     } catch {
-      setError('Could not export file.')
+      setError('Could not export the PNG.')
     }
   }
 
@@ -1132,7 +1132,7 @@ function App() {
                             // #82: brief toast when the format changes and fields get
                             // hidden/shown. Does not change state persistence.
                             if (state.format !== option.id) {
-                              showToast('Format changed — edition and location fields updated.')
+                              showToast('Format changed — the fields shown adapt to this format.')
                             }
                             setState((previous) => ({ ...previous, format: option.id }))
                           }}
@@ -1545,7 +1545,7 @@ function App() {
                 <span className="draft-status" aria-live="polite">
                   {draftStatus === 'saving' && '⏳ Saving…'}
                   {draftStatus === 'saved' && '✓ Saved'}
-                  {draftStatus === 'error' && '✗ Draft error'}
+                  {draftStatus === 'error' && '✗ Could not save draft'}
                 </span>
               )}
             </div>
@@ -1557,7 +1557,7 @@ function App() {
                     Cancel
                   </Button>
                   <Button variant="danger" onClick={resetAll}>
-                    Confirm Reset
+                    Clear draft
                   </Button>
                 </div>
               </div>

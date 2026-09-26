@@ -419,7 +419,7 @@ test('reset dialog shows cancel and confirm buttons', async ({ page }, testInfo)
 
   // Verify the dialog is visible with cancel and confirm.
   await expect(page.getByText('Cancel')).toBeVisible()
-  await expect(page.getByText('Confirm Reset')).toBeVisible()
+  await expect(page.getByText('Clear draft')).toBeVisible()
 
   await testInfo.attach(`reset-dialog-${testInfo.project.name}`, {
     body: await page.locator('.sidebar').screenshot(),
@@ -444,7 +444,7 @@ test('reset confirm clears the draft', async ({ page }, testInfo) => {
   // Open and confirm the reset dialog.
   await page.getByRole('button', { name: /reset/i }).click()
   await expect(page.locator('.reset-confirm-dialog')).toBeVisible()
-  await page.getByRole('button', { name: /confirm reset/i }).click()
+  await page.getByRole('button', { name: /clear draft/i }).click()
 
   // Wait for the state to reset.
   await page.waitForTimeout(500)

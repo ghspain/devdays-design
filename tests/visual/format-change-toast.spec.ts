@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 test('changing format shows the format-changed toast', async ({ page }) => {
   await selectFormat(page, 'speaker_square')
   const toast = page.locator('.app-toast')
-  await expect(toast).toContainText('Format changed — edition and location fields updated.')
+  await expect(toast).toContainText('Format changed — the fields shown adapt to this format.')
   // No undo action on this toast.
   await expect(toast.getByRole('button', { name: 'Undo' })).toHaveCount(0)
 })
