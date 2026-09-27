@@ -17,8 +17,8 @@ const pairedBadgeContract: AssetDefinition = {
 
 test('asset templates expose stable identity, sides, and independent export profiles', () => {
   const templates = assetCatalog.flatMap((asset) => asset.templates)
-  const expectedTemplateIds = ['social-promo', 'luma-cover', 'speaker-profile', 'speaker-banner']
-  const expectedCatalogFormats = ['social_promo', 'luma_cover', 'speaker_square', 'speaker_banner']
+  const expectedTemplateIds = ['luma-cover', 'social-promo', 'speaker-profile', 'speaker-banner']
+  const expectedCatalogFormats = ['luma_cover', 'social_promo', 'speaker_square', 'speaker_banner']
   const expectedExportOrder = ['speaker_square', 'speaker_banner', 'social_promo', 'luma_cover']
 
   expect(templates.map((template) => template.id)).toEqual(expectedTemplateIds)
@@ -61,6 +61,8 @@ test('format picker still exposes the same four production outputs by asset fami
   await expect(page.locator('.format-group').nth(0).locator('.format-card')).toHaveCount(2)
   await expect(page.locator('.format-group').nth(1).locator('.format-card')).toHaveCount(2)
   await expect(page.locator('.format-card')).toHaveCount(4)
+  await expect(page.locator('.format-group').nth(0).locator('.format-card').nth(0)).toHaveAttribute('aria-label', /Luma Cover/)
+  await expect(page.locator('.format-group').nth(0).locator('.format-card').nth(1)).toHaveAttribute('aria-label', /Social Promo/)
 
   for (const option of formatOptions) {
     await expect(page.getByRole('button', { name: new RegExp(option.name) })).toBeVisible()

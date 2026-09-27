@@ -39,15 +39,6 @@ export const assetCatalog: readonly AssetDefinition[] = [
     name: 'Event formats',
     templates: [
       {
-        id: 'social-promo',
-        legacyFormat: 'social_promo',
-        name: 'Social Promo',
-        description: 'Event promotion banner for social feeds',
-        channels: ['Instagram', 'LinkedIn', 'X', 'Facebook', 'BlueSky', 'Threads'],
-        sides: ['front'],
-        exportProfiles: [{ id: 'social-portrait', width: 1080, height: 1350, types: imageTypes, scales: imageScales }],
-      },
-      {
         id: 'luma-cover',
         legacyFormat: 'luma_cover',
         name: 'Luma Cover',
@@ -55,6 +46,15 @@ export const assetCatalog: readonly AssetDefinition[] = [
         channels: ['Luma'],
         sides: ['front'],
         exportProfiles: [{ id: 'luma-square', width: 1000, height: 1000, types: imageTypes, scales: imageScales }],
+      },
+      {
+        id: 'social-promo',
+        legacyFormat: 'social_promo',
+        name: 'Social Promo',
+        description: 'Event promotion banner for social feeds',
+        channels: ['Instagram', 'LinkedIn', 'X', 'Facebook', 'BlueSky', 'Threads'],
+        sides: ['front'],
+        exportProfiles: [{ id: 'social-portrait', width: 1080, height: 1350, types: imageTypes, scales: imageScales }],
       },
     ],
   },
