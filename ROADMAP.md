@@ -582,36 +582,8 @@ These are not part of the near-term implementation roadmap:
 - mandatory backend infrastructure,
 - 3D-first editing.
 
-# Next planning step after this roadmap is approved
+# Execution tracker
 
-Create a new implementation epic tree beginning with the dependency leaves rather than opening every future feature at once.
+The near-term roadmap is decomposed in the [GHSpain Event Studio tracker](https://github.com/ghspain/devdays-design/issues/146), including the dependency graph and phase acceptance criteria. Follow that tracker when implementing; do not create a duplicate epic tree. The roadmap defines product direction and longer-term scope, while the tracker is authoritative for execution order.
 
-Recommended first issue graph:
-
-```text
-Product/architecture approved
-  |
-  +-- Domain/asset registry foundation
-  |     |
-  |     +-- existing-state migration
-  |     +-- renderer boundary refactor
-  |
-  +-- Planning public-profile projection
-  |
-  +-- QR destination model
-        |
-        +-- multi-side asset model
-              |
-              +-- Speaker badge vertical slice
-                    |
-                    +-- Studio workspace evolution
-                    +-- Attendee CSV import
-                          |
-                          +-- Attendee badge
-                                |
-                                +-- Batch pipeline
-                                      |
-                                      +-- Print-ready PDF
-```
-
-The exact issue decomposition should be created after review of this documentation PR so the backlog reflects the approved product rather than encoding provisional assumptions as implementation commitments.
+Phases 10+ remain intentionally at roadmap level. Decompose them only after the P0/P1 path proves the shared asset, template, batch and print abstractions in production.
