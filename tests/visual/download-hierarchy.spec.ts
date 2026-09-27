@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import type { BannerFormat } from '../../src/types'
 import { selectFormat } from './helpers'
 
 // #78: one clear download hierarchy — a single primary PNG CTA in the
@@ -30,7 +31,8 @@ test('the Event pack (.zip) is a secondary action in the same footer', async ({ 
 
 test('the stage toolbar has no download control on any format', async ({ page }) => {
   await page.goto('/')
-  for (const format of ['luma_cover', 'speaker_banner', 'social_promo', 'speaker_square']) {
+  const formats: BannerFormat[] = ['luma_cover', 'speaker_banner', 'social_promo', 'speaker_square']
+  for (const format of formats) {
     await selectFormat(page, format)
     await expect(page.locator('.stage-toolbar button[title="Download PNG"]')).toHaveCount(0)
     await expect(page.locator('.stage-toolbar [aria-label*="Download"]')).toHaveCount(0)

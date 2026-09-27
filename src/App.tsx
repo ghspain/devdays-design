@@ -16,7 +16,6 @@ import {
 } from '@primer/octicons-react'
 import './App.css'
 import {
-  eventFormatIds,
   EVENT_THEMES,
   filenamePrefixByFormat,
   formatOptions,
@@ -24,8 +23,8 @@ import {
   MAX_HISTORY_ITEMS,
   MAX_SPEAKERS,
   REPOSITORY_URL,
-  speakerFormatIds,
 } from './constants'
+import { assetCatalog } from './domain/assets'
 import type {
   BannerHistoryItem,
   BannerState,
@@ -1127,15 +1126,12 @@ function App() {
             <div className="section-block format-bar">
               <span className="picker-label" id="format-label">Choose a banner size</span>
               <div className="format-groups" role="group" aria-labelledby="format-label">
-              {[
-                { label: 'Event formats', ids: eventFormatIds },
-                { label: 'Speaker formats', ids: speakerFormatIds },
-              ].map((group) => (
-                <div className="format-group" key={group.label}>
-                  <h3>{group.label}</h3>
+              {assetCatalog.map((asset) => (
+                <div className="format-group" key={asset.id}>
+                  <h3>{asset.name}</h3>
                   <div className="format-grid-pair">
-                    {group.ids.map((id) => {
-                      const option = formatOptions.find((item) => item.id === id)
+                    {asset.templates.map((template) => {
+                      const option = formatOptions.find((item) => item.id === template.legacyFormat)
                       if (!option) return null
                       return (
                         <button

@@ -1,39 +1,23 @@
 import type { BannerFormat, EventTheme, EventThemeId, FormatOption } from './types'
+import { assetCatalog, legacyFormatOrder } from './domain/assets'
 
-export const formatOptions: FormatOption[] = [
-  {
-    id: 'speaker_square',
-    name: 'Speaker Profile',
-    width: 1080,
-    height: 1080,
-    channels: ['Instagram', 'LinkedIn', 'X', 'BlueSky'],
-    description: 'Square profile banner for social media posts',
-  },
-  {
-    id: 'speaker_banner',
-    name: 'Speaker Banner',
-    width: 1080,
-    height: 1350,
-    channels: ['Instagram', 'LinkedIn', 'X', 'Facebook', 'BlueSky', 'Threads'],
-    description: 'Tall speaker banner with talk details',
-  },
-  {
-    id: 'social_promo',
-    name: 'Social Promo',
-    width: 1080,
-    height: 1350,
-    channels: ['Instagram', 'LinkedIn', 'X', 'Facebook', 'BlueSky', 'Threads'],
-    description: 'Event promotion banner for social feeds',
-  },
-  {
-    id: 'luma_cover',
-    name: 'Luma Cover',
-    width: 1000,
-    height: 1000,
-    channels: ['Luma'],
-    description: 'Square cover image for Luma event pages',
-  },
-]
+const legacyTemplates = assetCatalog.flatMap((asset) => asset.templates)
+
+/** Compatibility metadata consumed by the existing editor and export pipeline. */
+export const formatOptions: FormatOption[] = legacyFormatOrder.map((id) => {
+  const template = legacyTemplates.find((candidate) => candidate.legacyFormat === id)
+  const profile = template?.exportProfiles[0]
+  if (!template || !profile) throw new Error(`Missing asset template for legacy format: ${id}`)
+
+  return {
+    id,
+    name: template.name,
+    width: profile.width,
+    height: profile.height,
+    channels: [...template.channels],
+    description: template.description,
+  }
+})
 
 // Every visual theme the app can render. New themes are added here (and picked
 // in the sidebar) without touching the renderer, which only reads through
@@ -128,8 +112,6 @@ export const BANNER_HISTORY_STORAGE_KEY = 'banner-history-v1'
 export const MAX_HISTORY_ITEMS = 20
 export const MAX_SPEAKERS = 12
 export const REPOSITORY_URL = 'https://github.com/ghspain/devdays-design'
-export const eventFormatIds: BannerFormat[] = ['luma_cover', 'social_promo']
-export const speakerFormatIds: BannerFormat[] = ['speaker_square', 'speaker_banner']
 export const filenamePrefixByFormat: Record<BannerFormat, string> = {
   luma_cover: 'luma',
   social_promo: 'social',
