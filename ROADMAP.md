@@ -15,7 +15,7 @@ The roadmap preserves the existing social-image workflows and uses them as the p
 5. Keep reusable public person/event data canonical in `ghspain/Planning`.
 6. Treat attendee imports as event-specific operational data, not as a new CRM.
 7. Use `ghspain/devdays-design-system` as the visual authority for Dev Days artwork and Primer for application-shell interaction patterns.
-8. Create implementation epics only after the product, data, design and dependency boundaries in this roadmap are accepted.
+8. Use the existing master tracker #146 for phase issues and dependencies; its existence does not waive review and merge of this product direction before implementation begins. Do not create duplicate P0/P1 epics. Decompose future P2+ work only after the P0/P1 path validates the shared abstractions.
 
 ## What remains in scope from the current product
 
