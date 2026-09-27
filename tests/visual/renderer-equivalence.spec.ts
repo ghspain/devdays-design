@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { EVENT_THEMES, formatOptions } from '../../src/constants'
-import type { BannerState, EventThemeId, FormatOption } from '../../src/types'
+import type { BannerState, FormatOption } from '../../src/types'
 import type { RenderInfo } from '../../src/lib/validate'
 
 type Renderer = (
@@ -34,7 +34,8 @@ test('registered dispatch preserves legacy pixels and render metadata for every 
       for (const theme of themes) {
         const state = buildDefaultState()
         state.format = format.id
-        state.theme = theme as EventThemeId
+        state.theme = theme.id
+        state.colors = { ...theme.colors }
         const routedCanvas = document.createElement('canvas')
         const legacyCanvas = document.createElement('canvas')
         const routedInfo = createRenderInfo()
@@ -48,11 +49,11 @@ test('registered dispatch preserves legacy pixels and render metadata for every 
         const pixelsEqual = routedCanvas.width === legacyCanvas.width && routedCanvas.height === legacyCanvas.height &&
           routedPixels.length === legacyPixels.length && routedPixels.every((pixel, index) => pixel === legacyPixels[index])
         const metadataEqual = JSON.stringify(routedInfo) === JSON.stringify(legacyInfo)
-        comparisons.push({ format: format.id, theme, pixelsEqual, metadataEqual })
+        comparisons.push({ format: format.id, theme: theme.id, pixelsEqual, metadataEqual })
       }
     }
     return comparisons
-  }, { formats: formatOptions, themes: Object.keys(EVENT_THEMES) })
+  }, { formats: formatOptions, themes: Object.values(EVENT_THEMES) })
 
   await testInfo.attach('renderer-equivalence-12-combinations.json', {
     body: JSON.stringify(results, null, 2),
