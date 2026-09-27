@@ -89,7 +89,7 @@ Goal: agree on the product before multiplying formats and editor conditionals.
 - [x] Establish `ghspain/devdays-design-system` as visual source of truth for Dev Days artwork.
 - [x] Define Primer light/dark application surfaces as a semantic mapping, not a literal inverse of the dark deck palette.
 - [ ] Review and approve this product direction.
-- [ ] Derive implementation epics and issue dependencies from the approved roadmap.
+- [x] Track implementation epics and issue dependencies in [the GHSpain Event Studio tracker](https://github.com/ghspain/devdays-design/issues/146); follow its dependency graph.
 
 ### Exit criterion
 
