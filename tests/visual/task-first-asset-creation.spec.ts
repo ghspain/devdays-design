@@ -36,6 +36,9 @@ test('asset browser starts from production intent and returns to the shared edit
   await expect(page.getByRole('tab', { name: 'Front' })).toBeVisible()
   await expect(page.getByRole('tab', { name: 'Back' })).toBeVisible()
 
+  if (testInfo.project.name === 'mobile-chromium') {
+    await page.getByRole('tab', { name: 'Fields' }).click()
+  }
   await page.getByRole('button', { name: 'Choose asset' }).click()
   await page.getByRole('button', { name: 'Back to editor' }).click()
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
