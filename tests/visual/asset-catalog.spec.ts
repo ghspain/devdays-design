@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { formatOptions } from '../../src/constants'
 import { assetCatalog, type AssetDefinition } from '../../src/domain/assets'
-import { resolveRenderer, type AssetRenderer } from '../../src/lib/renderers/registry'
+import { resolveRenderer, resolveTemplateRenderer, type AssetRenderer } from '../../src/lib/renderers/registry'
 
 const testRenderer: AssetRenderer = async () => {}
 
@@ -49,8 +49,17 @@ test('asset templates expose stable identity, sides, and independent export prof
     })
   }
 
-  expect(pairedBadgeContract.templates[0].sides).toEqual(['front', 'back'])
-  expect(pairedBadgeContract.templates[0].legacyFormat).toBeUndefined()
+})
+
+test('a test-only asset resolves by template and renderer metadata without a legacy format', () => {
+  const testCatalog = [...assetCatalog, pairedBadgeContract]
+  const template = testCatalog.flatMap((asset) => asset.templates).find(({ id }) => id === 'speaker-badge-v1')!
+
+  expect(assetCatalog).not.toContain(pairedBadgeContract)
+  expect(template.legacyFormat).toBeUndefined()
+  expect(template.sides).toEqual(['front', 'back'])
+  expect(template.exportProfiles[0]).toMatchObject({ id: 'badge-image', width: 900, height: 1200, types: ['png'], scales: [1] })
+  expect(resolveTemplateRenderer(template, { badge: testRenderer })).toBe(testRenderer)
 })
 
 test('format picker still exposes the same four production outputs by asset family', async ({ page }, testInfo) => {
