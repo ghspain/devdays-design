@@ -490,7 +490,7 @@ Support template/export metadata such as:
 - [x] Badge export profiles can declare configurable trim width/height in millimetres, target DPI, bleed and safe area.
 - [x] Raster trim pixels use deterministic nearest-integer mm-to-pixel conversion; existing social profiles remain pixel-only.
 - [x] Editor format cards show the selected badge's physical profile and explicitly keep it outside the print-ready claim until calibration (#145).
-- [ ] PDF/sheet output, crop marks and duplex alignment remain follow-up phases (#143/#144).
+- [ ] Duplex alignment remains follow-up phase (#144); calibration remains the physical-production gate (#145).
 
 The initial badge example is 80 × 120 mm at 254 DPI with 3 mm bleed and 5 mm safe area. It is
 configurable metadata, not a universal stock or printer guarantee; the current 800 × 1200
@@ -503,17 +503,22 @@ pixel trim is preserved until print calibration validates a physical workflow.
 - **Decision**: expose 80 × 120 mm, 254 DPI, 3 mm bleed and 5 mm safe area as configurable metadata, with an explicit not-print-ready disclaimer.
 - **To revert**: change or remove the badge profile metadata in `src/domain/assets.ts`; social export profiles are independent.
 
+### Phase 9.2 - Single-sided badge PDF proofs (#143)
+
+- [x] Selected attendee rows compose into deterministic A4/A3 sheets with physical mm geometry, margins, gaps and crop marks.
+- [x] The proof summary shows selected count and predictable page count before export; rendered PNGs retain the 800 × 1200 source density required by the 254 DPI profile.
+- [x] Output is explicitly front-only and calibration-pending; duplex imposition remains #144 and physical validation remains #145.
+
 ### Exports
 
 - individual high-resolution assets,
 - SVG where the renderer permits it,
-- print-ready PDF,
-- A4/A3 badge sheets,
+- single-sided A4/A3 badge-sheet PDF proofs (calibration pending #145),
 - front/back sheets aligned for duplex printing.
 
 ### Exit criterion
 
-The generated output can be sent to a printer with known physical dimensions and predictable front/back registration.
+The generated output can be sent to a printer with known physical dimensions and predictable front/back registration only after the #145 calibration gate; the current single-sided PDF is a proof, not a print-ready claim.
 
 ---
 
