@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { planBadgeSheet, cropMarkLines, getBadgeSheetProfile, pairDuplexBadgeAssets, planDuplexBadgeSheet, duplexFlipAxis } from '../../src/lib/printSheets'
+import { hasDuplexBadgePair, planBadgeSheet, cropMarkLines, getBadgeSheetProfile, pairDuplexBadgeAssets, planDuplexBadgeSheet, duplexFlipAxis } from '../../src/lib/printSheets'
 
 const geometry = { widthMm: 80, heightMm: 120, dpi: 254 }
 
@@ -58,6 +58,14 @@ test('duplex fixture mirrors every uniquely numbered badge and preserves incompl
     [{ id: 'unrelated-back', filename: 'other-back.png', blob: new Blob(), side: 'back', sourceRowNumber: 7 }],
   )
   expect(ambiguous.map(({ back }) => back)).toEqual([undefined, undefined, undefined])
+  expect(hasDuplexBadgePair([
+    { id: 'row-8-front', filename: '8-front.png', blob: new Blob(), side: 'front', sourceRowNumber: 8 },
+    { id: 'orphan-back', filename: 'orphan-back.png', blob: new Blob(), side: 'back', sourceRowNumber: 99 },
+  ])).toBe(false)
+  expect(hasDuplexBadgePair([
+    { id: 'row-8-front', filename: '8-front.png', blob: new Blob(), side: 'front', sourceRowNumber: 8 },
+    { id: 'row-8-back', filename: '8-back.png', blob: new Blob(), side: 'back', sourceRowNumber: 8 },
+  ])).toBe(true)
 })
 
 test('single-sided proof previews stay front-only and hide duplex controls', async ({ page }) => {

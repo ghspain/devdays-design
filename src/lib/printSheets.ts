@@ -226,6 +226,12 @@ export function pairDuplexBadgeAssets(fronts: readonly BadgeSheetAsset[], backs:
   })
 }
 
+export function hasDuplexBadgePair(assets: readonly BadgeSheetAsset[]): boolean {
+  const fronts = assets.filter((asset) => assetSide(asset, 'front'))
+  const backs = assets.filter((asset) => assetSide(asset, 'back'))
+  return pairDuplexBadgeAssets(fronts, backs).some((pair) => Boolean(pair.back))
+}
+
 /** Front-only proofs remain unchanged; when backs are present, pages alternate front/matching back sheets. */
 export async function buildBadgeSheetPdf(
   assets: readonly BadgeSheetAsset[],
@@ -238,7 +244,7 @@ export async function buildBadgeSheetPdf(
   const backs = assets.filter((asset) => assetSide(asset, 'back'))
   const pairs = pairDuplexBadgeAssets(fronts, backs)
   const pairedBacks = pairs.map((pair) => pair.back)
-  const hasBacks = pairedBacks.some(Boolean)
+  const hasBacks = hasDuplexBadgePair(assets)
   const profile = getBadgeSheetProfile(profileId)
   const duplexPlan = hasBacks ? planDuplexBadgeSheet(fronts.length, geometry, profile, flipMode) : undefined
   const plan = duplexPlan?.front ?? planBadgeSheet(fronts.length, geometry, profile)

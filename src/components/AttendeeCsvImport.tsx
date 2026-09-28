@@ -18,7 +18,7 @@ import { resolveCatalogQRDestination } from '../lib/qrDestinationResolver'
 import { validateAttendeeRows, type ValidatedAttendeeRow } from '../lib/attendeeValidation'
 import { selectRepresentativeAttendees } from '../lib/attendeePreviews'
 import { buildAttendeeBadgePack, type AttendeeBatchProgress, type AttendeeBatchResult } from '../lib/exportPack'
-import { BADGE_SHEET_PROFILES, buildBadgeSheetPdf, DUPLEX_FLIP_MODES, getBadgeSheetProfile, planDuplexBadgeSheet, type DuplexFlipMode } from '../lib/printSheets'
+import { BADGE_SHEET_PROFILES, buildBadgeSheetPdf, DUPLEX_FLIP_MODES, getBadgeSheetProfile, hasDuplexBadgePair, planDuplexBadgeSheet, type DuplexFlipMode } from '../lib/printSheets'
 import { buildDefaultState } from '../lib/history'
 import { QRDestinationControls } from './QRDestinationControls'
 import AttendeeBadgePreview from './AttendeeBadgePreview'
@@ -166,7 +166,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const sheetBadgeCount = batchResult ? generatedFrontCount : includedCount
   const sheetBadgeLabel = batchResult ? 'generated front badge' : 'selected front badge'
   const sheetProfile = getBadgeSheetProfile(sheetProfileId)
-  const sheetHasDuplex = batchResult?.files.some((file) => file.side === 'back' || (!file.side && file.id.endsWith('-back'))) ?? false
+  const sheetHasDuplex = batchResult ? hasDuplexBadgePair(batchResult.files) : false
   const sheetPlan = planDuplexBadgeSheet(sheetBadgeCount, speakerBadgePrintGeometry, sheetProfile, sheetFlipMode)
   const representativeRows = useMemo(() => selectRepresentativeAttendees(
     validatedRows?.filter((row) => row.status !== 'error' && (selectedRows?.has(row.sourceRowNumber) ?? true)) ?? [],
