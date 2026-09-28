@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openSection } from './helpers'
 
 test('attendee CSV import parses local quoted data and keeps it out of durable storage', async ({ page }, testInfo) => {
   await page.addInitScript(() => {
@@ -99,14 +100,26 @@ test('replacing an imported file discards prior rows and malformed input exposes
 test('organizers can explicitly clear imported attendee data', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+  const eventTitle = page.getByLabel('Event title')
+  await openSection(page, 'section-event')
+  await eventTitle.fill('Keep this unrelated event draft')
+  await expect(page.locator('.draft-status')).toContainText('Saved', { timeout: 5000 })
   await page.getByRole('button', { name: 'Import attendee CSV' }).click()
   const dialog = page.getByRole('dialog', { name: 'Import attendee CSV' })
   const file = dialog.getByLabel('Choose a CSV file')
   await file.setInputFiles({ name: 'valid.csv', mimeType: 'text/csv', buffer: Buffer.from('name\nTaylor Sample\n') })
   await expect(dialog.getByRole('status')).toContainText('Total 1; valid 1; warnings 0; errors 0; selected for generation 1.')
-  await dialog.getByRole('button', { name: 'Clear imported data' }).click()
+  await dialog.getByRole('button', { name: 'Clear attendee data' }).click()
   await expect(dialog.getByText('No attendee data imported.', { exact: true })).toBeVisible()
   await expect(file).toHaveValue('')
+  await expect(eventTitle).toHaveValue('Keep this unrelated event draft')
+  await page.reload()
+  await page.getByRole('button', { name: 'Import attendee CSV' }).click()
+  const reloadedDialog = page.getByRole('dialog', { name: 'Import attendee CSV' })
+  await expect(reloadedDialog.getByText('No attendee data imported.', { exact: true })).toBeVisible()
+  await reloadedDialog.getByRole('button', { name: 'Close' }).last().click()
+  await openSection(page, 'section-event')
+  await expect(page.getByLabel('Event title')).toHaveValue('Keep this unrelated event draft')
 })
 
 test('the attendee import dialog fits a 320px viewport', async ({ page }) => {
