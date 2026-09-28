@@ -485,6 +485,24 @@ Support template/export metadata such as:
 - duplex front/back alignment,
 - long-edge / short-edge flip where relevant.
 
+### Phase 9.1 - Badge physical geometry (#142)
+
+- [x] Badge export profiles can declare configurable trim width/height in millimetres, target DPI, bleed and safe area.
+- [x] Raster trim pixels use deterministic nearest-integer mm-to-pixel conversion; existing social profiles remain pixel-only.
+- [x] Editor format cards show the selected badge's physical profile and explicitly keep it outside the print-ready claim until calibration (#145).
+- [ ] PDF/sheet output, crop marks and duplex alignment remain follow-up phases (#143/#144).
+
+The initial badge example is 80 × 120 mm at 254 DPI with 3 mm bleed and 5 mm safe area. It is
+configurable metadata, not a universal stock or printer guarantee; the current 800 × 1200
+pixel trim is preserved until print calibration validates a physical workflow.
+
+🧭 DECISION — expose a reversible configurable badge profile
+- **Question**: What initial physical geometry should the badge family expose before calibration?
+- **Options**: omit geometry / invent a universal stock / expose a clearly configurable example.
+- **Investigation**: #142 requires a documented profile while #145 is the calibration gate; 80 × 120 mm at 254 DPI maps to the existing 800 × 1200 trim canvas with nearest-pixel rounding.
+- **Decision**: expose 80 × 120 mm, 254 DPI, 3 mm bleed and 5 mm safe area as configurable metadata, with an explicit not-print-ready disclaimer.
+- **To revert**: change or remove the badge profile metadata in `src/domain/assets.ts`; social export profiles are independent.
+
 ### Exports
 
 - individual high-resolution assets,

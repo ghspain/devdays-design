@@ -26,6 +26,7 @@ export default function AssetStartScreen({ onBack, onSelectAsset }: AssetStartSc
               {asset.templates.map((template) => {
                 const option = formatOptions.find((item) => item.id === template.legacyFormat)
                 if (!option) return null
+                const printGeometry = template.exportProfiles[0]?.printGeometry
                 return (
                   <button
                     className="asset-start-card"
@@ -40,6 +41,8 @@ export default function AssetStartScreen({ onBack, onSelectAsset }: AssetStartSc
                       <strong>{option.name}</strong>
                       <span>{option.description}</span>
                       <small>{option.width} × {option.height} · {option.channels?.join(', ')}</small>
+                      {printGeometry && <small>{printGeometry.widthMm} × {printGeometry.heightMm} mm · {printGeometry.dpi} DPI · configurable example</small>}
+                      {printGeometry && <small>Not print-ready; calibration is a later phase.</small>}
                       {template.sides.length > 1 && <small className="asset-start-sides">Front and back sides</small>}
                     </span>
                     <span className="asset-start-card-action" aria-hidden="true">Create</span>

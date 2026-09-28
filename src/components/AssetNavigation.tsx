@@ -25,9 +25,10 @@ export default function AssetNavigation({ format, open, onFormatSelect, onToggle
               {asset.templates.map((template) => {
                 const option = formatOptions.find((item) => item.id === template.legacyFormat)
                 if (!option) return null
+                const printGeometry = template.exportProfiles[0]?.printGeometry
                 return (
                   <button
-                    aria-label={`${option.name}, ${option.width} by ${option.height}, ${option.description ?? ''}, ${option.channels?.join(', ') ?? ''}`}
+                    aria-label={`${option.name}, ${option.width} by ${option.height}, ${option.description ?? ''}, ${option.channels?.join(', ') ?? ''}${printGeometry ? `, ${printGeometry.widthMm} by ${printGeometry.heightMm} millimetres at ${printGeometry.dpi} DPI` : ''}`}
                     aria-current={format === option.id ? 'page' : undefined}
                     aria-pressed={format === option.id}
                     className={`asset-navigation-item format-card${format === option.id ? ' selected' : ''}`}
@@ -39,7 +40,9 @@ export default function AssetNavigation({ format, open, onFormatSelect, onToggle
                     <span className="asset-navigation-copy">
                       <strong>{option.name}</strong>
                       <small>{option.width} × {option.height}</small>
+                      {printGeometry && <small className="asset-navigation-print-profile">{printGeometry.widthMm} × {printGeometry.heightMm} mm · {printGeometry.dpi} DPI</small>}
                       <small className="asset-navigation-description">{option.description}</small>
+                      {printGeometry && <small className="asset-navigation-print-note">Configurable example · not print-ready</small>}
                       {template.sides.length > 1 && <small>Front / back</small>}
                     </span>
                   </button>

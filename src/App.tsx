@@ -153,6 +153,7 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
               'missing-organizer': { elementId: 'section-organizer', fieldId: 'organizer-select' },
               'missing-organizer-url': { elementId: 'section-organizer', fieldId: 'registration-url' },
           'invalid-qr-destination': { elementId: 'section-qr' },
+          'invalid-print-geometry': { elementId: 'section-format' },
         }
 
         /** Map truncated field names (from renderBanner.ts) to their editor field IDs. */
@@ -291,8 +292,10 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
     () => formatOptions.find((item) => item.id === state.format) ?? formatOptions[0],
     [state.format],
   )
-  const templateSides = assetCatalog.flatMap((asset) => asset.templates)
-    .find((template) => template.legacyFormat === state.format)?.sides ?? ['front']
+  const selectedTemplate = assetCatalog.flatMap((asset) => asset.templates)
+    .find((template) => template.legacyFormat === state.format)
+  const printGeometry = selectedTemplate?.exportProfiles[0]?.printGeometry
+  const templateSides = selectedTemplate?.sides ?? ['front']
   const hasMultipleSides = templateSides.length > 1
   const activeSide = state.activeSide ?? 'front'
   const isLumaCover = state.format === 'luma_cover'
@@ -496,7 +499,7 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
         }
       }
       const findings = [
-        ...validateState(state, format.id, renderInfo),
+        ...validateState(state, format.id, renderInfo, printGeometry),
         ...checkRenderedCanvas(targetCanvas, renderInfo),
       ]
       if (qrTemplate?.qr && qrDestination) {
@@ -534,7 +537,7 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
       cancelled = true
       window.cancelAnimationFrame(frame)
     }
-  }, [state, format, previewBackgroundFailed, showMultiSpeakerPreviewGrid, fontsReady, speakerCards, qrTemplate, qrDestination, qrReadableText])
+  }, [state, format, previewBackgroundFailed, showMultiSpeakerPreviewGrid, fontsReady, speakerCards, qrTemplate, qrDestination, qrReadableText, printGeometry])
 
   useEffect(() => {
     let cancelled = false
@@ -751,7 +754,7 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
           const checkCanvas = document.createElement('canvas')
           await renderBanner(checkCanvas, exportState, format, backgroundFailed, 1, info)
           const findings = [
-            ...validateState(exportState, format.id, info),
+            ...validateState(exportState, format.id, info, printGeometry),
             ...checkRenderedCanvas(checkCanvas, info),
           ]
           const template = assetCatalog.flatMap((asset) => asset.templates)
