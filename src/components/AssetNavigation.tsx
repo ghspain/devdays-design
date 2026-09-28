@@ -28,7 +28,7 @@ export default function AssetNavigation({ format, open, onFormatSelect, onToggle
                 const printGeometry = template.exportProfiles[0]?.printGeometry
                 return (
                   <button
-                    aria-label={`${option.name}, ${option.width} by ${option.height}, ${option.description ?? ''}, ${option.channels?.join(', ') ?? ''}${printGeometry ? `, ${printGeometry.widthMm} by ${printGeometry.heightMm} millimetres at ${printGeometry.dpi} DPI` : ''}`}
+                    aria-label={`${option.name}, ${option.width} by ${option.height}, ${option.description ?? ''}, ${option.channels?.join(', ') ?? ''}${printGeometry ? `, ${printGeometry.widthMm} by ${printGeometry.heightMm} millimetres at ${printGeometry.dpi} DPI, configurable example, not print-ready` : ''}`}
                     aria-current={format === option.id ? 'page' : undefined}
                     aria-pressed={format === option.id}
                     className={`asset-navigation-item format-card${format === option.id ? ' selected' : ''}`}
