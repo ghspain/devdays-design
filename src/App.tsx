@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ToggleEvent as ReactToggleEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type SetStateAction, type ToggleEvent as ReactToggleEvent } from 'react'
 import { Banner, Button, Checkbox, CounterLabel, FormControl, IconButton, Select, TextInput, Textarea, ToggleSwitch } from '@primer/react'
 import {
   AlertIcon,
@@ -26,6 +26,8 @@ import {
   REPOSITORY_URL,
 } from './constants'
 import { assetCatalog } from './domain/assets'
+import { saveActiveSide, switchAssetSide } from './domain/assetSides'
+import type { AssetSide } from './domain/assets'
 import { QRDestinationControls } from './components/QRDestinationControls'
 import { defaultQRDestination, getQRDestinationControlId, qrDestinationErrorMessage } from './lib/qrDestinationControls'
 import type {
@@ -207,7 +209,12 @@ function App() {
 
     const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  const [state, setState] = useState<BannerState>(() => buildDefaultState())
+  const [state, setStateRaw] = useState<BannerState>(() => buildDefaultState())
+  const setState = (action: SetStateAction<BannerState>) => setStateRaw((previous) => {
+    const next = typeof action === 'function' ? action(previous) : action
+    const template = assetCatalog.flatMap((asset) => asset.templates).find((item) => item.legacyFormat === next.format)
+    return template && template.sides.length > 1 ? saveActiveSide(next) : next
+  })
   const [draftStatus, setDraftStatus] = useState<'saving' | 'saved' | 'error' | null>(null)
   const [draftMessage, setDraftMessage] = useState('')
   const [draftReady, setDraftReady] = useState(false)
@@ -218,6 +225,10 @@ function App() {
     () => formatOptions.find((item) => item.id === state.format) ?? formatOptions[0],
     [state.format],
   )
+  const templateSides = assetCatalog.flatMap((asset) => asset.templates)
+    .find((template) => template.legacyFormat === state.format)?.sides ?? ['front']
+  const hasMultipleSides = templateSides.length > 1
+  const activeSide = state.activeSide ?? 'front'
   const isLumaCover = state.format === 'luma_cover'
   const isSpeakerBanner = state.format === 'speaker_banner'
   const isSpeakerSquare = state.format === 'speaker_square'
@@ -751,6 +762,21 @@ function App() {
     const view = event.key === 'ArrowRight' ? 'preview' : 'fields'
     switchMobileView(view)
     document.getElementById(`mobile-${view}-tab`)?.focus()
+  }
+
+  const changeAssetSide = (side: AssetSide) => setStateRaw((previous) => switchAssetSide(previous, side))
+  const handleAssetSideKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    const index = templateSides.indexOf(activeSide)
+    let nextIndex = index
+    if (event.key === 'ArrowRight') nextIndex = (index + 1) % templateSides.length
+    else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + templateSides.length) % templateSides.length
+    else if (event.key === 'Home') nextIndex = 0
+    else if (event.key === 'End') nextIndex = templateSides.length - 1
+    else return
+    event.preventDefault()
+    const nextSide = templateSides[nextIndex]
+    changeAssetSide(nextSide)
+    document.getElementById(`asset-side-${nextSide}`)?.focus()
   }
 
   const dismissEditorGuide = () => {
@@ -1690,8 +1716,30 @@ function App() {
           tabIndex={isMobileViewport ? -1 : undefined}
         >
           <div className="stage-canvas">
+            {hasMultipleSides && (
+              <div className="asset-side-tabs" role="tablist" aria-label="Asset side">
+                {templateSides.map((side) => (
+                  <button
+                    key={side}
+                    id={`asset-side-${side}`}
+                    type="button"
+                    role="tab"
+                    aria-controls="asset-side-preview"
+                    aria-selected={activeSide === side}
+                    tabIndex={activeSide === side ? 0 : -1}
+                    onKeyDown={handleAssetSideKeyDown}
+                    onClick={() => changeAssetSide(side)}
+                  >
+                    {side === 'front' ? 'Front' : 'Back'}
+                  </button>
+                ))}
+              </div>
+            )}
             {!showMultiSpeakerPreviewGrid && (
               <div
+                id={hasMultipleSides ? 'asset-side-preview' : undefined}
+                role={hasMultipleSides ? 'tabpanel' : undefined}
+                aria-labelledby={hasMultipleSides ? `asset-side-${activeSide}` : undefined}
                 className="canvas-wrap"
                 style={{ aspectRatio: `${format.width} / ${format.height}`, '--preview-zoom': zoom * previewBaseScale } as CSSProperties}
               >
