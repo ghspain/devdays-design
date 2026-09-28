@@ -19,6 +19,10 @@ interface AttendeeBadgePreviewProps {
 export default function AttendeeBadgePreview({ sourceRowNumber, attendee, reasons, theme, colors, event }: AttendeeBadgePreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const roleLabel = BADGE_ROLE_PRESENTATIONS[attendee.badgeRole ?? 'attendee'].label.toLowerCase().replace(/^./, (letter) => letter.toUpperCase())
+  const qrSummary = attendee.qrDestination?.kind === 'none' ? 'No QR selected'
+    : attendee.qrDestination?.kind === 'person-profile' ? 'Public profile'
+      : attendee.qrDestination?.kind === 'sponsor-website' ? 'Sponsor website'
+        : attendee.qrDestination?.url ?? 'No QR selected'
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -38,6 +42,7 @@ export default function AttendeeBadgePreview({ sourceRowNumber, attendee, reason
     <article className="attendee-badge-preview" aria-label={`Row ${sourceRowNumber}: ${attendee.name}`}>
       <h4>{attendee.name}</h4>
       <canvas ref={canvasRef} role="img" aria-label={`${roleLabel} Badge front preview for ${attendee.name}`} />
+      {attendee.qrDestination && <p>Back QR: {attendee.qrWarning ?? qrSummary}</p>}
       <p>Row {sourceRowNumber}</p>
       <ul aria-label="Preview reasons">
         {reasons.map((reason) => <li key={reason}>{reason}</li>)}

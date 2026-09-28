@@ -48,6 +48,8 @@ export function mapAttendeeCsvRows(dataset: AttendeeCsvDataset, mapping: Attende
       ...(values.organization ? { organization: values.organization } : {}),
       ...(values.role ? { role: values.role } : {}),
       ...(values.githubHandle ? { githubHandle: values.githubHandle } : {}),
+      ...(values.personId ? { personId: values.personId } : {}),
+      ...(values.qrDestinationUrl ? { qrDestinationUrl: values.qrDestinationUrl, qrDestination: { kind: 'custom-url', url: values.qrDestinationUrl } } : {}),
     }
   })
 }

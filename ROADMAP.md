@@ -376,6 +376,7 @@ Goal: generalize the speaker badge template family to attendee and event-team ro
 
 - [x] Phase 1: Attendee records render through the same badge template family as speakers. (#134)
 - [x] Phase 2: Badge roles change labels and visual treatment without duplicating layouts. (#135)
+- [x] Phase 3: Badge roles provide editable QR defaults without overriding imported choices. (#136)
 
 ### Initial badge roles
 
