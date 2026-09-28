@@ -334,6 +334,13 @@ Upload CSV
 - The UI offers an explicit clear-data action.
 - No attendee CSV is committed or uploaded to GitHub Pages infrastructure.
 
+### Delivery phases
+
+- [x] Attendee CSV files are parsed locally without persisting rows by default. (#129)
+- [ ] Organizers can map arbitrary CSV columns to the attendee badge contract. (#130)
+- [ ] Imported attendees are validated row by row before badge generation. (#131)
+- [ ] Organizers preview representative attendee badges and can clear imported data explicitly. (#132)
+
 ### Representative preview strategy
 
 Do not render hundreds of badges in the editor at once.

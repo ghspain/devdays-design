@@ -15,6 +15,7 @@ import {
   ZoomOutIcon,
 } from '@primer/octicons-react'
 import './App.css'
+import AttendeeCsvImport from './components/AttendeeCsvImport'
 import {
   EVENT_THEMES,
   filenamePrefixByFormat,
@@ -772,6 +773,7 @@ function App() {
         </div>
 
         <div className="topbar-actions">
+          <AttendeeCsvImport />
           <IconButton
             as="a"
             href={REPOSITORY_URL}
