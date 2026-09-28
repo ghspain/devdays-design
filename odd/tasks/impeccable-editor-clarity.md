@@ -25,8 +25,9 @@
 - Focused desktop/mobile suite after the final UI/test edit — 42 passed.
 - `git diff --check` — passed (only CRLF normalization warnings on modified test files).
 - Impeccable `detect --json` — only generic Mona Sans warning; preserved because brand/design docs require Mona Sans.
-- Commit: `f7b4e86` (`Fix editor contrast and clarify badge workflow`), on `codex/impeccable-dark-primer-contrast`; local task-document commit still to record.
+- Commit: `f7b4e86` (`Fix editor contrast and clarify badge workflow`), on `codex/impeccable-dark-primer-contrast`; task-document commit `0244505` is local and unpushed because remote authorization is still pending.
 
 ## Next step
 
 Ask for explicit authorization to continue remote GitHub operations on `ghspain/devdays-design` PR #183 and issues #182/#146, naming the credential/session to use. Then independently review under current RDD policy, run permitted remote checks, address review findings, and merge only if authorized and all gates pass.
+
