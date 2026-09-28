@@ -99,6 +99,25 @@ test('newer draft data is preserved and explains the reset fallback', async ({ p
   }))
   expect(invalidStored).toMatchObject(invalid)
 
+  const malformed = {
+    version: 1,
+    state: { ...legacyState, event: { ...legacyState.event, city: 42 } },
+    marker: 'keep-malformed',
+  }
+  await writeDraftRecord(page, malformed)
+  await page.reload()
+  await expect(page.locator('.draft-status')).toContainText('not supported')
+  const malformedStored = await page.evaluate(() => new Promise<unknown>((resolve, reject) => {
+    const request = indexedDB.open('devdays-banner-draft', 1)
+    request.onsuccess = () => {
+      const get = request.result.transaction('drafts', 'readonly').objectStore('drafts').get('current')
+      get.onsuccess = () => resolve(get.result)
+      get.onerror = () => reject(new Error(get.error?.message ?? 'IndexedDB read failed'))
+    }
+    request.onerror = () => reject(new Error(request.error?.message ?? 'IndexedDB open failed'))
+  }))
+  expect(malformedStored).toMatchObject(malformed)
+
   const reset = page.getByRole('button', { name: 'Reset' })
   await reset.focus()
   await reset.press('Enter')

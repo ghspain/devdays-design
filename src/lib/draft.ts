@@ -25,11 +25,21 @@ function isSupportedState(value: unknown): value is BannerState {
   if (!isRecord(value)) return false
   if (value.format !== undefined && !formatOptions.some(({ id }) => id === value.format)) return false
   if (value.theme !== undefined && (typeof value.theme !== 'string' || !Object.hasOwn(EVENT_THEMES, value.theme))) return false
-  if (value.event !== undefined && !isRecord(value.event)) return false
+  if (value.colors !== undefined && (!isRecord(value.colors) ||
+    ['primary', 'secondary', 'accent', 'background'].some((color) => typeof (value.colors as Record<string, unknown>)[color] !== 'string'))) return false
+  if (value.event !== undefined && (!isRecord(value.event) ||
+    ['title', 'edition', 'city', 'dateTime', 'location', 'organizerName', 'organizerLogoDataUrl', 'registrationText', 'registrationUrl']
+      .some((field) => (value.event as Record<string, unknown>)[field] !== undefined && typeof (value.event as Record<string, unknown>)[field] !== 'string') ||
+    ['includeSupportedBy', 'registrationEnabled']
+      .some((field) => (value.event as Record<string, unknown>)[field] !== undefined && typeof (value.event as Record<string, unknown>)[field] !== 'boolean') ||
+    (value.event.registrationStyle !== undefined && value.event.registrationStyle !== 'cta_url' && value.event.registrationStyle !== 'url_only'))) return false
   if (value.speakers !== undefined && (!Array.isArray(value.speakers) || value.speakers.some((speaker) =>
-    !isRecord(speaker) || typeof speaker.id !== 'string' || typeof speaker.name !== 'string'))) return false
+    !isRecord(speaker) || typeof speaker.id !== 'string' || typeof speaker.name !== 'string' ||
+    ['role', 'photoDataUrl', 'talkTitle', 'talkTime', 'catalogId']
+      .some((field) => speaker[field] !== undefined && typeof speaker[field] !== 'string')))) return false
   if (value.partners !== undefined && (!Array.isArray(value.partners) || value.partners.some((partner) =>
-    !isRecord(partner) || typeof partner.id !== 'string' || typeof partner.imageDataUrl !== 'string'))) return false
+    !isRecord(partner) || typeof partner.id !== 'string' || typeof partner.imageDataUrl !== 'string' ||
+    (partner.name !== undefined && typeof partner.name !== 'string')))) return false
   if (value.export !== undefined && (!isRecord(value.export) ||
     (value.export.type !== undefined && value.export.type !== 'png' && value.export.type !== 'jpg') ||
     (value.export.scale !== undefined && value.export.scale !== 1 && value.export.scale !== 2))) return false
