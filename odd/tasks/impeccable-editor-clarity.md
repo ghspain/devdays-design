@@ -4,7 +4,7 @@
 - **Problem / why**: Dark Primer field labels were hard to read; design validation could be mistaken for print approval; event context was hidden; the speaker catalogue was long; export choices had unclear scope.
 - **Authorized scope**: Contrast, readiness copy, initial Event context, local speaker/session catalogue search and selected summary, badge export hierarchy; focused Playwright coverage.
 - **Constraints**: Keep Primer and existing React flows; keep Mona Sans; no new editor/parser dependency; never describe uncalibrated badge output as print-ready. User confirmed Event should open at first load.
-- **Route**: Implementation was performed inline before the current ODD routing rules replaced the prior AGENTS.md. This feature crosses 4+ files and would route to delegated mapping/writer under current rules; no implementation delegation occurred. Do not misrepresent that as compliant. An independent reviewer was delegated, then interrupted when the replacement AGENTS.md required explicit credential/session authorization for remote work. The user has now authorized the active GitHub CLI session for repository operations.
+- **Route**: Prior implementation was inline before the current ODD routing rules replaced the prior AGENTS.md; under current rules it would have required delegated mapping/writer work. This follow-up used a delegated language-policy audit (mapping trigger), then an inline one-file AGENTS.md change plus PR body update. Ledger and mirror upkeep is delegated because two artifacts must stay synchronized. Do not claim application tests were rerun for the docs-only change.
 - **TDD mode/source/runner**: No project TDD mode was identified in inspected instructions; ordinary validation used npm + Playwright. No RED-before-implementation evidence is claimed.
 - **Delivery strategy**: `single-pr`; one combined issue/PR because all five concerns converge on the editor flow and share App.tsx behavior.
 
@@ -15,7 +15,8 @@
 - [x] **C3: Show event context at first load** — Event and Format open by default while user accordion state persists across format changes; user chose this option. **Evidence**: `tests/visual/sidebar-sections.spec.ts`.
 - [x] **C4: Make Planning speakers scannable** — local search across name/session, results/empty state, pending count, and compact selected summary ahead of cards. **Evidence**: `tests/visual/primer-speakers.spec.ts`.
 - [x] **C5: Clarify badge export scope** — single primary PNG CTA, explicit both-side and Event Pack secondary controls and count copy. **Evidence**: `tests/visual/download-hierarchy.spec.ts`, `tests/visual/speaker-badge-export.spec.ts`, `tests/visual/format-export-explanations.spec.ts`.
-- [ ] **C6: Finish remote delivery** — PR #183 exists and closes #182, and the user has explicitly authorized remote operations on this repository using the active GitHub CLI session. CI `visual-smoke` now passes and the independent reviewer found no blocking issues on head `075bc7e`. GitHub rejected the APPROVE submission because the active CLI account owns the PR. Formal approval from a different eligible account is still required; do not merge until approved.
+- [ ] **C6: Finish remote delivery** — PR #183 exists and closes #182. Current head is `987c6d9`; `gh pr checks 183` showed `visual-smoke` pending at update time. The independent reviewer found no blocking issues on prior head `075bc7e`. GitHub rejected the APPROVE submission because the active CLI account owns the PR. Formal approval from a different eligible account is still required; do not merge until approved.
+- [x] **C7: Correct PR language and repository policy** — Verified no language requirement in AGENTS.md or `.github/skills/phased-delivery/SKILL.md`, no PR template/config, and English issue #182 plus PRs #172–#180; Spanish PR text came from the Spanish chat default, not repository settings. Updated PR #183 body in English and added the English repo-content policy to AGENTS.md. Commit `987c6d9` pushed; the push also delivered local ledger commit `aa190ad`, making `987c6d9` the current PR head. **Evidence**: `git diff --check` passed for AGENTS.md; no application tests rerun for this docs-only change.
 
 ## Verification
 
@@ -26,7 +27,7 @@
 - `git diff --check` — passed (only CRLF normalization warnings on modified test files).
 - Native RDD assessment: gentle-ai is unavailable in this environment; assessment and preflight STATUS could not run. Treat review as due; do not infer low risk.
 - Impeccable `detect --json` — only generic Mona Sans warning; preserved because brand/design docs require Mona Sans.
-- Implementation commit: `f7b4e86` (`Fix editor contrast and clarify badge workflow`); ODD docs commits were pushed to PR head `075bc7e`.
+- Implementation commit: `f7b4e86` (`Fix editor contrast and clarify badge workflow`); ODD docs commit `aa190ad` was delivered by the push with `987c6d9` (`docs: require English repository content`). Current PR head is `987c6d9`; `gh pr checks 183` showed `visual-smoke` pending at the time of this update. Formal approval from a different eligible account remains outstanding.
 
 ## Next step
 
