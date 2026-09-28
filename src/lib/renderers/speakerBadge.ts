@@ -11,6 +11,13 @@ import { constrainSpeakerNameOffset } from '../../domain/templateManipulation'
 
 const generations = new WeakMap<HTMLCanvasElement, number>()
 
+/** Text limits shared by badge preflight validation. Keep renderer and import checks in sync. */
+export const SPEAKER_BADGE_TEXT_LAYOUT = {
+  name: { fontSize: 57, maxLines: 2 },
+  role: { fontSize: 29, maxLines: 2 },
+  githubHandle: { fontSize: 25, maxLines: 1 },
+} as const
+
 export async function renderSpeakerBadge(
   canvas: HTMLCanvasElement,
   state: BannerState,
@@ -187,19 +194,19 @@ export async function renderSpeakerBadge(
   ctx.restore()
 
   const name = speaker?.name.trim() || 'Speaker name'
-  const nameSize = 57
+  const nameSize = SPEAKER_BADGE_TEXT_LAYOUT.name.fontSize
   const nameY = 800 + nameOffset.y
-  const nameLines = wrapped('Speaker name', name, left + nameOffset.x, nameY, contentWidth, 2, nameSize, primary, 66)
+  const nameLines = wrapped('Speaker name', name, left + nameOffset.x, nameY, contentWidth, SPEAKER_BADGE_TEXT_LAYOUT.name.maxLines, nameSize, primary, 66)
   const nameRegion = renderInfo?.textRegions.find((region) => region.field === 'Speaker name')
   if (nameRegion) nameRegion.elementId = 'speaker-name'
   const role = speaker?.role?.trim()
   let nextY = nameY + nameLines * 66 + 12
   if (role) {
-    const roleLines = wrapped('Speaker title', role, left, nextY, contentWidth, 2, 29, muted, 38)
+    const roleLines = wrapped('Speaker title', role, left, nextY, contentWidth, SPEAKER_BADGE_TEXT_LAYOUT.role.maxLines, SPEAKER_BADGE_TEXT_LAYOUT.role.fontSize, muted, 38)
     nextY += roleLines * 38 + 12
   }
   if (showHandle && handle) {
-    wrapped('Networking handle', handle, left, Math.min(nextY, 1010), contentWidth, 1, 25, state.colors.accent, 32)
+    wrapped('Networking handle', handle, left, Math.min(nextY, 1010), contentWidth, SPEAKER_BADGE_TEXT_LAYOUT.githubHandle.maxLines, SPEAKER_BADGE_TEXT_LAYOUT.githubHandle.fontSize, state.colors.accent, 32)
   }
 
   const eventTitle = state.event.title.trim() || theme.fixedEventTitle

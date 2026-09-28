@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { Button, Dialog, FormControl } from '@primer/react'
 import {
   getDuplicateAttendeeMappings,
@@ -9,6 +9,7 @@ import {
   type AttendeeCsvDataset,
 } from '../lib/attendeeCsv'
 import { attendeeBadgeFields, type AttendeeCsvColumnMapping } from '../domain/attendee'
+import { validateAttendeeRows } from '../lib/attendeeValidation'
 
 const INVALID_CSV_MESSAGE = 'This file could not be read as CSV. Check the file format and try another file.'
 
@@ -16,6 +17,8 @@ export default function AttendeeCsvImport() {
   const [isOpen, setIsOpen] = useState(false)
   const [dataset, setDataset] = useState<AttendeeCsvDataset | null>(null)
   const [mapping, setMapping] = useState<AttendeeCsvColumnMapping>({})
+  const [rowFilter, setRowFilter] = useState<'all' | 'warning' | 'error'>('all')
+  const [selectedRows, setSelectedRows] = useState<Set<number> | null>(null)
   const [error, setError] = useState('')
   const launcherRef = useRef<HTMLButtonElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -25,6 +28,8 @@ export default function AttendeeCsvImport() {
     readId.current += 1
     setDataset(null)
     setMapping({})
+    setSelectedRows(null)
+    setRowFilter('all')
     setError('')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
@@ -36,6 +41,8 @@ export default function AttendeeCsvImport() {
     const currentRead = ++readId.current
     setDataset(null)
     setMapping({})
+    setSelectedRows(null)
+    setRowFilter('all')
     setError('')
 
     try {
@@ -52,9 +59,22 @@ export default function AttendeeCsvImport() {
 
   const missingRequired = getUnmappedRequiredAttendeeFields(mapping)
   const duplicateTargets = getDuplicateAttendeeMappings(mapping)
-  const normalizedRows = dataset && missingRequired.length === 0 && duplicateTargets.length === 0
+  const normalizedRows = useMemo(() => dataset && missingRequired.length === 0 && duplicateTargets.length === 0
     ? mapAttendeeCsvRows(dataset, mapping)
-    : null
+    : null, [dataset, mapping, missingRequired.length, duplicateTargets.length])
+  const validatedRows = useMemo(() => {
+    if (!normalizedRows) return null
+    const context = document.createElement('canvas').getContext('2d')
+    return context ? validateAttendeeRows(normalizedRows, context) : null
+  }, [normalizedRows])
+  const visibleRows = validatedRows?.filter((row) => rowFilter === 'all' || row.status === rowFilter) ?? []
+  const counts = validatedRows?.reduce((result, row) => {
+    result[row.status] += 1
+    return result
+  }, { valid: 0, warning: 0, error: 0 })
+  const isIncluded = (row: NonNullable<typeof validatedRows>[number]) => row.status !== 'error' &&
+    (selectedRows?.has(row.sourceRowNumber) ?? true)
+  const includedCount = validatedRows?.filter(isIncluded).length ?? 0
 
   return (
     <>
@@ -105,7 +125,11 @@ export default function AttendeeCsvImport() {
                       <select
                         aria-label={`Map column ${header || index + 1}`}
                         value={mapping[index] ?? 'ignore'}
-                        onChange={(event) => setMapping((current) => ({ ...current, [index]: event.target.value as AttendeeCsvColumnMapping[number] }))}
+                        onChange={(event) => {
+                          setSelectedRows(null)
+                          setRowFilter('all')
+                          setMapping((current) => ({ ...current, [index]: event.target.value as AttendeeCsvColumnMapping[number] }))
+                        }}
                       >
                         <option value="ignore">Ignore column</option>
                         {attendeeBadgeFields.map((field) => {
@@ -116,7 +140,46 @@ export default function AttendeeCsvImport() {
                     </FormControl>
                   ))}
                 </div>
-                {normalizedRows ? <p role="status">{normalizedRows.length} attendee row{normalizedRows.length === 1 ? '' : 's'} ready for badge fields.</p> : null}
+                {validatedRows && counts ? (
+                  <section aria-label="Attendee row validation">
+                    <h3>Review imported rows</h3>
+                    <p role="status">Total {validatedRows.length}; valid {counts.valid}; warnings {counts.warning}; errors {counts.error}; selected for generation {includedCount}.</p>
+                    <FormControl id="attendee-row-filter">
+                      <FormControl.Label>Filter rows</FormControl.Label>
+                      <select aria-label="Filter attendee rows" value={rowFilter} onChange={(event) => setRowFilter(event.target.value as typeof rowFilter)}>
+                        <option value="all">All rows</option>
+                        <option value="warning">Warnings</option>
+                        <option value="error">Errors</option>
+                      </select>
+                    </FormControl>
+                    <ul className="attendee-validation-rows" aria-label="Validated attendee rows">
+                      {visibleRows.map((row) => (
+                        <li key={row.sourceRowNumber}>
+                          <div className="attendee-validation-row-heading">
+                            <strong>Row {row.sourceRowNumber}: {row.status}</strong>
+                            <label>
+                              <input
+                                type="checkbox"
+                                aria-label={`Include row ${row.sourceRowNumber} in generation`}
+                                checked={isIncluded(row)}
+                                disabled={row.status === 'error'}
+                                onChange={(event) => setSelectedRows((current) => {
+                                  const next = current ?? new Set(validatedRows.filter((item) => item.status !== 'error').map((item) => item.sourceRowNumber))
+                                  const updated = new Set(next)
+                                  if (event.target.checked) updated.add(row.sourceRowNumber)
+                                  else updated.delete(row.sourceRowNumber)
+                                  return updated
+                                })}
+                              />
+                              Include
+                            </label>
+                          </div>
+                          {row.findings.length > 0 && <ul>{row.findings.map((finding) => <li key={`${finding.code}-${finding.field}`}>{finding.field}: {finding.message}</li>)}</ul>}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : normalizedRows ? <p role="alert">Row validation is unavailable in this browser.</p> : null}
                 <Button onClick={clearData}>Clear imported data</Button>
               </section>
             ) : !error ? (

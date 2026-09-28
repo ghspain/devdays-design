@@ -182,6 +182,28 @@
   margin-block: 16px;
 }
 
+.attendee-validation-rows {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+}
+
+.attendee-validation-rows > li {
+  border: 1px solid var(--borderColor-default);
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.attendee-validation-row-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+
 .topbar-theme-toggle {
   min-height: 44px;
   padding: 0 0.65rem;
