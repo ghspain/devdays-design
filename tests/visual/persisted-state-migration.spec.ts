@@ -29,6 +29,18 @@ async function writeDraftRecord(page: import('@playwright/test').Page, record: u
   }), record)
 }
 
+async function readDraftRecord(page: import('@playwright/test').Page) {
+  return page.evaluate(() => new Promise<unknown>((resolve, reject) => {
+    const request = indexedDB.open('devdays-banner-draft', 1)
+    request.onsuccess = () => {
+      const get = request.result.transaction('drafts', 'readonly').objectStore('drafts').get('current')
+      get.onsuccess = () => resolve(get.result)
+      get.onerror = () => reject(new Error(get.error?.message ?? 'IndexedDB read failed'))
+    }
+    request.onerror = () => reject(new Error(request.error?.message ?? 'IndexedDB open failed'))
+  }))
+}
+
 test('pre-migration draft restores editor state and autosaves the versioned normalized form', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
@@ -41,15 +53,7 @@ test('pre-migration draft restores editor state and autosaves the versioned norm
   await expect(page.locator('.speaker-card').first().getByLabel('Name')).toHaveValue('Synthetic One')
   await expect(page.locator('.draft-status')).toContainText('Saved', { timeout: 5000 })
 
-  const stored = await page.evaluate(() => new Promise<unknown>((resolve, reject) => {
-    const request = indexedDB.open('devdays-banner-draft', 1)
-    request.onsuccess = () => {
-      const get = request.result.transaction('drafts', 'readonly').objectStore('drafts').get('current')
-      get.onsuccess = () => resolve(get.result)
-      get.onerror = () => reject(new Error(get.error?.message ?? 'IndexedDB read failed'))
-    }
-    request.onerror = () => reject(new Error(request.error?.message ?? 'IndexedDB open failed'))
-  }))
+  const stored = await readDraftRecord(page)
   expect(stored).toMatchObject({
     version: 2,
     state: {
@@ -73,30 +77,14 @@ test('newer draft data is preserved and explains the reset fallback', async ({ p
   await page.getByLabel('Event title').fill('Unsaved synthetic edit')
   await page.waitForTimeout(700)
 
-  const stored = await page.evaluate(() => new Promise<unknown>((resolve, reject) => {
-    const request = indexedDB.open('devdays-banner-draft', 1)
-    request.onsuccess = () => {
-      const get = request.result.transaction('drafts', 'readonly').objectStore('drafts').get('current')
-      get.onsuccess = () => resolve(get.result)
-      get.onerror = () => reject(new Error(get.error?.message ?? 'IndexedDB read failed'))
-    }
-    request.onerror = () => reject(new Error(request.error?.message ?? 'IndexedDB open failed'))
-  }))
+  const stored = await readDraftRecord(page)
   expect(stored).toMatchObject(newer)
 
   const invalid = { version: 1, state: { ...legacyState, format: 'future_format' }, marker: 'keep-invalid' }
   await writeDraftRecord(page, invalid)
   await page.reload()
   await expect(page.locator('.draft-status')).toContainText('not supported')
-  const invalidStored = await page.evaluate(() => new Promise<unknown>((resolve, reject) => {
-    const request = indexedDB.open('devdays-banner-draft', 1)
-    request.onsuccess = () => {
-      const get = request.result.transaction('drafts', 'readonly').objectStore('drafts').get('current')
-      get.onsuccess = () => resolve(get.result)
-      get.onerror = () => reject(new Error(get.error?.message ?? 'IndexedDB read failed'))
-    }
-    request.onerror = () => reject(new Error(request.error?.message ?? 'IndexedDB open failed'))
-  }))
+  const invalidStored = await readDraftRecord(page)
   expect(invalidStored).toMatchObject(invalid)
 
   const malformed = {
@@ -107,16 +95,19 @@ test('newer draft data is preserved and explains the reset fallback', async ({ p
   await writeDraftRecord(page, malformed)
   await page.reload()
   await expect(page.locator('.draft-status')).toContainText('not supported')
-  const malformedStored = await page.evaluate(() => new Promise<unknown>((resolve, reject) => {
-    const request = indexedDB.open('devdays-banner-draft', 1)
-    request.onsuccess = () => {
-      const get = request.result.transaction('drafts', 'readonly').objectStore('drafts').get('current')
-      get.onsuccess = () => resolve(get.result)
-      get.onerror = () => reject(new Error(get.error?.message ?? 'IndexedDB read failed'))
-    }
-    request.onerror = () => reject(new Error(request.error?.message ?? 'IndexedDB open failed'))
-  }))
+  const malformedStored = await readDraftRecord(page)
   expect(malformedStored).toMatchObject(malformed)
+
+  for (const state of [
+    { ...legacyState, speakersPerCard: 3 },
+    { ...legacyState, speakerBannerPairLayout: 'diagonal' },
+  ]) {
+    const invalidEnum = { version: 1, state, marker: 'keep-invalid-enum' }
+    await writeDraftRecord(page, invalidEnum)
+    await page.reload()
+    await expect(page.locator('.draft-status')).toContainText('not supported')
+    expect(await readDraftRecord(page)).toMatchObject(invalidEnum)
+  }
 
   const reset = page.getByRole('button', { name: 'Reset' })
   await reset.focus()

@@ -25,6 +25,8 @@ function isSupportedState(value: unknown): value is BannerState {
   if (!isRecord(value)) return false
   if (value.format !== undefined && !formatOptions.some(({ id }) => id === value.format)) return false
   if (value.theme !== undefined && (typeof value.theme !== 'string' || !Object.hasOwn(EVENT_THEMES, value.theme))) return false
+  if (value.speakersPerCard !== undefined && value.speakersPerCard !== 1 && value.speakersPerCard !== 2) return false
+  if (value.speakerBannerPairLayout !== undefined && value.speakerBannerPairLayout !== 'side_by_side' && value.speakerBannerPairLayout !== 'stacked') return false
   if (value.colors !== undefined && (!isRecord(value.colors) ||
     ['primary', 'secondary', 'accent', 'background'].some((color) => typeof (value.colors as Record<string, unknown>)[color] !== 'string'))) return false
   if (value.event !== undefined && (!isRecord(value.event) ||
