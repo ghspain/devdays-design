@@ -97,9 +97,10 @@ test('replacing the CSV during a slow batch drops the stale result without downl
     mimeType: 'text/csv',
     buffer: Buffer.from('name,role\nReplacement Person,Attendee'),
   })
-  await expect(dialog.getByRole('status')).toContainText('selected for generation 1')
+  await expect(dialog.getByRole('status').filter({ hasText: 'selected for generation 1' })).toBeVisible()
   await page.waitForTimeout(250)
   expect(downloads).toEqual([])
+  await expect(dialog.getByRole('status', { name: 'Badge batch progress' })).toHaveCount(0)
   await expect(dialog).not.toContainText('Generated ')
 })
 

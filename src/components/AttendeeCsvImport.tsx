@@ -177,7 +177,10 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
       state.theme = theme
       state.colors = colors
       state.event = event
-      const pack = await buildAttendeeBadgePack(state, rows, setBatchProgress, retry && batchResult
+      const onBatchProgress = (progress: AttendeeBatchProgress) => {
+        if (batchControllerRef.current === controller) setBatchProgress(progress)
+      }
+      const pack = await buildAttendeeBadgePack(state, rows, onBatchProgress, retry && batchResult
         ? { signal: controller.signal, retryIds: batchResult.failures.map((failure) => failure.id), previousFiles: batchResult.files }
         : { signal: controller.signal })
       if (batchControllerRef.current !== controller) return
