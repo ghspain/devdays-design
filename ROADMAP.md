@@ -159,7 +159,7 @@ The local `data/people.csv` currently contains only the subset needed by the ban
 
 ### Work
 
-- Define the safe public projection needed by this application.
+- [ ] Event Studio defines a safe public person projection from Planning. (#110)
 - Keep `person_id` stable across Planning and the local projection.
 - Add an import/sync generation path that can refresh the static local catalogue without adding runtime credentials.
 - Continue supporting local/fallback avatar uploads where remote assets cannot be exported safely.
