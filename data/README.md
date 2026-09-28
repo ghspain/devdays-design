@@ -6,15 +6,52 @@ replacement for Planning.
 
 ## `people.csv`
 
-Only include public data needed to create speaker assets:
+The Event Studio projection joins to `ghspain/Planning/data/people.csv` only by
+the stable `person_id`; never match people by name. Planning remains canonical.
+The projection is limited to these public identity fields:
 
-- `person_id`: stable slug shared with Planning when available.
-- `name`: public name.
-- `role`: short display role, not a full biography.
-- `avatar_url`: optional public avatar URL. A local upload remains the fallback when
-  a remote image cannot be exported because of CORS or availability.
+| Projection field | Planning field | Event Studio use |
+| --- | --- | --- |
+| `person_id` | `person_id` | Stable identity key for speaker/catalogue joins; required. |
+| `name` | `name` | Public name shown on speaker assets and selection controls; required. |
+| `github` | `github` | Optional public profile destination for speaker details and future QR assets; Planning stores the username without `@`. |
+| `linkedin` | `linkedin` | Optional public profile destination for speaker details and future QR assets. |
+| `x` | `x` | Optional public profile destination for speaker details and future QR assets. |
+| `website` | `website` | Optional public website destination for speaker details and future QR assets. |
+| `avatar_url` | `avatar_url` | Optional portrait used on speaker assets; a local upload remains the fallback if a remote image is unavailable or cannot be exported because of CORS. |
+| `professional_title` | `professional_title` | Optional public subtitle for speaker assets and future badges; it is not inferred from an event role. |
+| `last_verified` | `last_verified` | Optional ISO date shown as the source's last verification signal for profile fields that age. |
 
-Do not copy email, private notes, social profiles, or full biographies here.
+All fields except `person_id` and `name` may be empty. Preserve empty values;
+do not guess, scrape, or fabricate missing details. The current `role` column
+in the local catalogue is a legacy display label and stays separate from
+Planning's `professional_title` so existing catalogue consumers remain
+compatible during the transition. Phase #111 owns adding projected columns and
+refreshing the static catalogue; this documentation phase does not copy new
+profile data or add runtime credentials.
+
+### Provenance and freshness
+
+Copy public values from the Planning row for the matching `person_id` and keep
+`last_verified` exactly as published there. It is one source-level date for
+ageing profile data, not a per-URL verification claim. A missing date means
+freshness is unknown. Event Studio does not invent a timestamp, auto-expire a
+value on an arbitrary local time-to-live, or independently verify/refresh a
+profile. Before using an old or undated title or public URL in a publication,
+follow Planning's manual review guidance and confirm it at the source. The
+future UI may surface the source date/unknown state; absence of verification
+must not block catalogue selection or be presented as current.
+
+`bio` is intentionally excluded: current speaker assets and selection flows
+have no concrete need for it. Do not copy email, phone, private notes, or other
+non-public metadata into this repository.
+
+🧭 DECISION — keep the first person projection minimal and source-dated
+- **Question**: Should Event Studio include the public bio and enforce its own staleness cutoff for profile data?
+- **Options**: Project bio and invent a local freshness TTL now; or use only fields with a direct asset/profile-destination use and retain Planning's verification date without a second policy.
+- **Investigation**: Planning `data/README.md` defines `last_verified` as the date of the last check of ageing data and instructs authors to validate bio/title/social fields before important publication. No current Event Studio template uses bio, and no per-field timestamps or TTL are defined.
+- **Decision**: Exclude bio; preserve `last_verified` as the only freshness signal, treat missing as unknown, and defer any automated expiry rule until Planning defines one.
+- **To revert**: Add an explicit consumer and source mapping before adding bio, or agree a source-backed freshness threshold and apply it consistently in a later phase.
 
 ## `participations.csv`
 
