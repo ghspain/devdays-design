@@ -254,6 +254,13 @@ Potential template fields:
 - CSS 3D flip may be used as a presentation interaction, but Three.js is not required.
 - Existing form controls remain available while the new workspace model is introduced.
 
+### Phase delivery
+
+- [x] Organizers can navigate front and back sides of one asset. (#118)
+- [x] A selected speaker renders a branded networking badge front. (#119)
+- [x] Speaker badge backs can carry a configurable networking QR. (#120)
+- [ ] Speaker badges export both sides with validation and predictable filenames. (#121)
+
 ### Exports
 
 First slice:

@@ -12,7 +12,7 @@ test('Speaker Badge is a distinct front template with a reusable renderer', () =
   expect(badgeTemplate).toMatchObject({
     id: 'speaker-badge-front',
     legacyFormat: 'speaker_badge',
-    sides: ['front'],
+    sides: ['front', 'back'],
     rendererId: 'speaker-badge',
     exportProfiles: [{ width: 800, height: 1200, types: ['png', 'jpg'] }],
   })
@@ -144,4 +144,73 @@ test('long names/titles truncate safely and a missing profile/avatar uses initia
   if (await page.locator('.app-toast').count()) await page.locator('.app-toast').click()
   await showPreviewForViewport(page)
   await page.locator('canvas').screenshot({ path: test.info().outputPath('speaker-badge-fallback.png') })
+})
+
+test('Speaker Badge back defaults to an available GitHub profile and supports profile overrides', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+  await selectFormat(page, 'speaker_badge')
+  await openSection(page, 'section-speakers')
+  await page.locator('.speaker-card').first().getByRole('button', { name: 'Remove' }).click()
+  const option = page.locator('.catalog-option').first()
+  await option.locator('input[type="checkbox"]').check()
+  await page.getByRole('button', { name: /Add selected speakers/ }).click()
+
+  await page.getByRole('tab', { name: 'Back' }).click()
+  await openSection(page, 'section-qr')
+  const destinationType = page.locator('#qr-destination-type')
+  await expect(destinationType).toHaveValue('person-profile')
+  const profileField = page.locator('#qr-person-profile')
+  const choices = await profileField.locator('option').evaluateAll((options) => options.map((item) => (item as HTMLOptionElement).value))
+  expect(choices.length).toBeGreaterThan(0)
+  const preferred = choices.find((value) => value.endsWith('|github')) ?? choices.find((value) => value.endsWith('|website')) ?? choices[0]
+  await expect(profileField).toHaveValue(preferred)
+  await expect(page.locator('canvas')).toHaveAttribute('width', '800')
+  await page.locator('canvas').screenshot({ path: test.info().outputPath('speaker-badge-back-profile.png') })
+
+  for (const theme of ['devdays', 'community_meetup', 'online_github'] as const) {
+    await selectTheme(page, theme)
+    await expect.poll(() => page.evaluate(() => (window as ValidationWindow).__devdaysValidation?.findings ?? null)).not.toBeNull()
+    const findings = await page.evaluate(() => (window as ValidationWindow).__devdaysValidation!.findings)
+    expect(findings.filter(({ code }) => code === 'safe-area' || code === 'low-contrast')).toEqual([])
+  }
+
+  const override = choices.find((value) => value.endsWith('|linkedin')) ?? choices.find((value) => value !== preferred)
+  if (override) {
+    await profileField.selectOption(override)
+    await expect(profileField).toHaveValue(override)
+  }
+  await page.getByRole('tab', { name: 'Front' }).click()
+  await expect(page.locator('#section-qr')).toHaveCount(0)
+})
+
+test('Speaker Badge back supports custom URLs, readable text toggling, no-profile fallback and invalid feedback', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+  await selectFormat(page, 'speaker_badge')
+  await page.getByRole('tab', { name: 'Back' }).click()
+  await openSection(page, 'section-qr')
+  await expect(page.locator('#qr-destination-type')).toHaveValue('none')
+  await expect.poll(() => page.evaluate(() => (window as ValidationWindow).__devdaysValidation?.findings ?? null)).not.toBeNull()
+  expect(await page.evaluate(() => (window as ValidationWindow).__devdaysValidation!.findings.some(({ code }) => code === 'invalid-qr-destination'))).toBe(false)
+
+  await page.locator('#qr-destination-type').selectOption('custom-url')
+  const url = page.locator('#qr-destination-url')
+  await url.fill('https://events.example/synthetic-speaker')
+  await expect.poll(() => page.locator('canvas').evaluate((element) => {
+    const canvas = element as HTMLCanvasElement
+    const data = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data
+    return data.reduce((hash, pixel) => (hash * 31 + pixel) >>> 0, 0)
+  })).not.toBe(0)
+  const readableText = page.getByLabel('Readable destination text')
+  await expect(readableText).toHaveAttribute('aria-pressed', 'true')
+  await readableText.click()
+  await expect(readableText).toHaveAttribute('aria-pressed', 'false')
+
+  await url.fill('javascript:alert(1)')
+  await expect(page.getByText('Use an HTTP or HTTPS URL.', { exact: true })).toBeVisible()
+  await expect.poll(() => page.evaluate(() => (window as ValidationWindow).__devdaysValidation?.findings ?? null)).toContainEqual(expect.objectContaining({ code: 'invalid-qr-destination' }))
+  await page.locator('canvas').screenshot({ path: test.info().outputPath('speaker-badge-back-invalid.png') })
 })

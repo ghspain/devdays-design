@@ -236,8 +236,8 @@ function App() {
   const isSocialPromo = state.format === 'social_promo'
   const isMinimalCover = isLumaCover
   const isSpeakerPerBannerFormat = isSpeakerBanner || isSpeakerSquare || isSpeakerBadge
-  const qrTemplate = assetCatalog.flatMap((asset) => asset.templates)
-    .find((template) => template.legacyFormat === state.format && template.qr)
+  const qrTemplate = activeSide === 'back' ? assetCatalog.flatMap((asset) => asset.templates)
+    .find((template) => template.legacyFormat === state.format && template.qr) : undefined
   const qrReadableText = qrTemplate?.qr
     ? state.qrReadableText ?? qrTemplate.qr.defaultReadableText
     : false
@@ -282,7 +282,12 @@ function App() {
     return profile?.destinations.length ? [profile] : []
   }), [state.speakers])
   const qrDestination = qrTemplate?.qr
-    ? state.qrDestination ?? defaultQRDestination(qrTemplate.qr.defaultDestinationKind, qrProfiles, catalogSponsors)
+    ? state.qrDestination ?? defaultQRDestination(
+      qrTemplate.qr.defaultDestinationKind,
+      qrProfiles,
+      catalogSponsors,
+      isSpeakerBadge && qrTemplate.qr.allowNone,
+    )
     : undefined
   const speakerCards = useMemo(() => {
     if (!isSpeakerPerBannerFormat || !namedSpeakers.length) return []
@@ -394,7 +399,10 @@ function App() {
     const draw = async () => {
       if (cancelled) return
       const renderInfo = createRenderInfo()
-      const previewState = speakerCards.length ? { ...state, speakers: speakerCards[0] } : state
+      const previewState = {
+        ...(speakerCards.length ? { ...state, speakers: speakerCards[0] } : state),
+        ...(qrDestination ? { qrDestination, qrReadableText } : {}),
+      }
       let targetCanvas: HTMLCanvasElement | null = null
       if (showMultiSpeakerPreviewGrid) {
         // The visible canvas is unmounted while the per-speaker grid is shown.
@@ -456,7 +464,7 @@ function App() {
       cancelled = true
       window.cancelAnimationFrame(frame)
     }
-  }, [state, format, previewBackgroundFailed, showMultiSpeakerPreviewGrid, fontsReady, speakerCards, qrTemplate, qrDestination])
+  }, [state, format, previewBackgroundFailed, showMultiSpeakerPreviewGrid, fontsReady, speakerCards, qrTemplate, qrDestination, qrReadableText])
 
   useEffect(() => {
     let cancelled = false
@@ -641,7 +649,10 @@ function App() {
       const historyItems: BannerHistoryItem[] = []
 
       for (let i = 0; i < exportStates.length; i += 1) {
-        const exportState = exportStates[i]
+        const exportState = {
+          ...exportStates[i],
+          ...(qrDestination ? { qrDestination, qrReadableText } : {}),
+        }
         const offscreen = document.createElement('canvas')
         await renderBanner(offscreen, exportState, format, backgroundFailed, exportState.export.scale)
         const dataUrl = offscreen.toDataURL(mime, 0.95)

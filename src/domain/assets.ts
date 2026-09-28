@@ -106,8 +106,14 @@ export const assetCatalog: readonly AssetDefinition[] = [
         name: 'Speaker Badge',
         description: 'Recognition-first networking badge front',
         channels: ['Event badge'],
-        sides: ['front'],
+        sides: ['front', 'back'],
         rendererId: 'speaker-badge',
+        qr: {
+          defaultDestinationKind: 'person-profile',
+          allowNone: true,
+          allowReadableText: true,
+          defaultReadableText: true,
+        },
         // PNG-oriented canvas metadata only; physical size is defined by #142.
         exportProfiles: [{ id: 'speaker-badge-front-image', width: 800, height: 1200, types: imageTypes, scales: imageScales }],
       },

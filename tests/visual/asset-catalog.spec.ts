@@ -32,7 +32,10 @@ test('asset templates expose stable identity, sides, and independent export prof
 
   for (const template of templates) {
     expect(template.id).toBeTruthy()
-    expect(template.sides).toEqual(['front'])
+    expect(template.sides).toEqual(template.id === 'speaker-badge-front' ? ['front', 'back'] : ['front'])
+    if (template.id === 'speaker-badge-front') {
+      expect(template.qr).toMatchObject({ defaultDestinationKind: 'person-profile', allowNone: true, allowReadableText: true })
+    }
     const rendererId = template.id === 'speaker-badge-front' ? 'speaker-badge' : 'legacy-social'
     expect(template.rendererId).toBe(rendererId)
     expect(resolveRenderer(template.legacyFormat!, { 'legacy-social': testRenderer, 'speaker-badge': testRenderer })).toBe(testRenderer)
