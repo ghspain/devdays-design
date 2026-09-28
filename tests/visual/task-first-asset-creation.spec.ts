@@ -7,6 +7,7 @@ test('asset browser starts from production intent and returns to the shared edit
   }
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 
   const titleInput = page.getByLabel('Event title')
   await openSection(page, 'section-event')
@@ -23,7 +24,10 @@ test('asset browser starts from production intent and returns to the shared edit
   expect(browserText).not.toMatch(/event-promotion|speaker-promotion|social-promo|speaker-badge-front/)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 
-  await page.getByRole('button', { name: /Social Promo/ }).click()
+  const socialPromo = page.getByRole('button', { name: /Social Promo/ })
+  await socialPromo.focus()
+  await expect(socialPromo).toBeFocused()
+  await page.keyboard.press('Enter')
   await expect(page.locator('.format-card.selected')).toContainText('Social Promo')
   await expect(titleInput).toHaveValue('GHSpain Community Day')
 
