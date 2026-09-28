@@ -11,6 +11,22 @@ export interface CatalogPerson {
   avatarUrl: string
 }
 
+export type PublicProfileKind = 'github' | 'linkedin' | 'x' | 'website'
+
+export interface PublicProfileDestination {
+  kind: PublicProfileKind
+  url: string
+}
+
+export interface CatalogPublicProfile {
+  personId: string
+  name: string
+  displayRole: string
+  avatarUrl: string
+  lastVerified: string
+  destinations: PublicProfileDestination[]
+}
+
 export interface CatalogSpeaker extends CatalogPerson {
   speakerId: string
   eventId: string
@@ -86,6 +102,63 @@ export const catalogPeople: CatalogPerson[] = parseCsv(peopleCsv).map((person) =
   role: person.role,
   avatarUrl: person.avatar_url,
 }))
+
+function normalizeProfileUrl(kind: PublicProfileKind, value: string): string | undefined {
+  const raw = value.trim()
+  if (!raw) return undefined
+
+  if (kind === 'github' && !/^(https?:\/\/)?(www\.)?github\.com\//i.test(raw)) {
+    const username = raw.replace(/^@/, '')
+      return /^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i.test(username) ? `https://github.com/${username.toLowerCase()}` : undefined
+  }
+
+  try {
+    const url = new URL(/^[a-z][a-z\d+.-]*:/i.test(raw) ? raw : `https://${raw}`)
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return undefined
+    if (url.username || url.password) return undefined
+
+    if (kind === 'github') {
+      if (!['github.com', 'www.github.com'].includes(url.hostname.toLowerCase())) return undefined
+      const [username, ...rest] = url.pathname.split('/').filter(Boolean)
+      if (!username || rest.length || !/^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i.test(username)) return undefined
+      return `https://github.com/${username.toLowerCase()}`
+    }
+    if (kind === 'linkedin') {
+      if (!['linkedin.com', 'www.linkedin.com'].includes(url.hostname.toLowerCase())) return undefined
+      const path = url.pathname.replace(/\/+$/, '')
+      if (!/^\/(in|company)\/[^/]+$/i.test(path)) return undefined
+      return `https://www.linkedin.com${path}`
+    }
+    if (kind === 'x') {
+      if (!['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'].includes(url.hostname.toLowerCase())) return undefined
+      const [username, ...rest] = url.pathname.split('/').filter(Boolean)
+      if (!username || rest.length || !/^[a-z\d_]{1,15}$/i.test(username)) return undefined
+      return `https://x.com/${username.toLowerCase()}`
+    }
+    return url.href
+  } catch {
+    return undefined
+  }
+}
+
+const publicProfiles = new Map<string, CatalogPublicProfile>(parseCsv(peopleCsv).map((person) => {
+  const destinations = (['github', 'linkedin', 'x', 'website'] as const).flatMap((kind) => {
+    const url = normalizeProfileUrl(kind, person[kind] ?? '')
+    return url ? [{ kind, url }] : []
+  })
+  return [person.person_id, {
+    personId: person.person_id,
+    name: person.name,
+    displayRole: person.professional_title || person.role,
+    avatarUrl: person.avatar_url,
+    lastVerified: person.last_verified,
+    destinations,
+  }]
+}))
+
+export function getCatalogPublicProfile(personId: string): CatalogPublicProfile | undefined {
+  return publicProfiles.get(personId)
+}
 
 export const catalogSponsors: CatalogSponsor[] = parseCsv(sponsorsCsv).map((sponsor) => ({
   id: sponsor.sponsor_id,
