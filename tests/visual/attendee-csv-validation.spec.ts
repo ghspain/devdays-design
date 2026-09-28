@@ -16,7 +16,7 @@ test('row validation reports errors and template warnings, filters rows, and kee
       'name,role,github_username,email,private_note',
       'Ada Example,Speaker,ada,ada@example.test,do not display',
       ',Volunteer,invalid handle,hidden@example.test,also private',
-      `${'A'.repeat(100)},Organizer,https://github.com/octocat?tab=repositories,guest@example.test,synthetic note`,
+      `${'A'.repeat(100)},Organizer,https://attendee:private@github.com/octocat,guest@example.test,synthetic note`,
       'Morgan Sample,Attendee,octocat,morgan@example.test,another private value',
     ].join('\n')),
   })

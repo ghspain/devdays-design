@@ -27,7 +27,7 @@ function isValidGitHubProfile(value: string) {
   try {
     const url = new URL(candidate)
     const username = url.pathname.split('/').filter(Boolean)
-    return url.protocol === 'https:' && ['github.com', 'www.github.com'].includes(url.hostname) &&
+    return url.protocol === 'https:' && ['github.com', 'www.github.com'].includes(url.hostname) && !url.username && !url.password &&
       username.length === 1 && /^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i.test(username[0]) && !url.search && !url.hash
   } catch {
     return false
