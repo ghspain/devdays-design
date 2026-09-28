@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openSection, selectFormat } from './helpers'
 
 function contrastRatio(foreground: string, background: string) {
   const luminance = (color: string) => {
@@ -83,4 +84,19 @@ test('shell theme is accessible, independent from the artwork, and remembered', 
     Number.parseFloat(getComputedStyle(element).transitionDuration),
   )
   expect(reducedMotionDuration).toBeLessThanOrEqual(0.00001)
+})
+
+test('Primer speaker form labels retain readable contrast in dark mode', async ({ page }) => {
+  await page.goto('/')
+  await page.locator('.topbar-theme-toggle').click()
+  await selectFormat(page, 'speaker_badge')
+  await openSection(page, 'section-speakers')
+
+  const roleLabel = page.locator('.speaker-card label').filter({ hasText: /^Role$/ })
+  const colors = await roleLabel.evaluate((label) => ({
+    foreground: getComputedStyle(label).color,
+    background: getComputedStyle(label.closest('.speaker-card')!).backgroundColor,
+  }))
+
+  expect(contrastRatio(colors.foreground, colors.background)).toBeGreaterThanOrEqual(4.5)
 })

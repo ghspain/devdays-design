@@ -34,7 +34,29 @@ test('catalogue rows use Primer checkboxes and the add flow keeps working', asyn
   await expect(addBtn).toHaveClass(/prc-Button/)
   await addBtn.click()
   await expect(page.locator('.section-count')).toHaveText('3 / 12')
+  await expect(page.locator('.speaker-selection-summary')).toContainText('Selected speakers (3)')
+  await expect(page.locator('.speaker-selection-summary')).toContainText('Sergio Valverde')
+  await expect(page.locator('.speaker-selection-summary + .speaker-card')).toBeVisible()
   await expect(page.locator('.speaker-card')).toHaveCount(3)
+})
+
+test('catalogue search filters names and sessions and reports empty results', async ({ page }) => {
+  await page.locator('.catalog-picker select').selectOption('2026-04-17-copilot-dev-days-madrid')
+  const search = page.getByLabel('Search speakers or sessions')
+  await search.fill('Sergio Valverde')
+  await expect(page.locator('.catalog-option')).toHaveCount(1)
+  await expect(page.locator('.catalog-result-count')).toHaveText('1 speaker found')
+
+  await search.fill('')
+  const sessionAndDate = await page.locator('.catalog-option small').first().textContent()
+  const sessionTitle = sessionAndDate?.split(' · ')[0]
+  if (!sessionTitle || sessionTitle === 'Session title pending') throw new Error('Expected a session title in the selected event fixture')
+  await search.fill(sessionTitle)
+  await expect(page.locator('.catalog-option').first()).toContainText(sessionTitle)
+
+  await search.fill('nonexistent speaker query')
+  await expect(page.locator('.catalog-option')).toHaveCount(0)
+  await expect(page.locator('.catalog-empty')).toHaveText('No speakers match this search and event.')
 })
 
 test('speaker card name and role are Primer TextInputs with visible labels', async ({ page }) => {

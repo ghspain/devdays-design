@@ -1,15 +1,16 @@
 import { expect, test } from '@playwright/test'
 import { openSection, selectFormat } from './helpers'
 
-test('#79 only the format section is expanded on first load', async ({ page }) => {
+test('Event and Format context are expanded on first load', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
 
   await expect(page.locator('details#section-format')).toHaveAttribute('open')
+  await expect(page.locator('details#section-event')).toHaveAttribute('open')
   const renderedIds = await page.locator('details.side-section').evaluateAll((details) =>
     details.map((element) => element.id),
   )
-  for (const id of renderedIds.filter((i) => i !== 'section-format')) {
+  for (const id of renderedIds.filter((i) => !['section-format', 'section-event'].includes(i))) {
     await expect(page.locator(`details#${id}`)).not.toHaveAttribute('open')
   }
   expect(renderedIds).toContain('section-format')

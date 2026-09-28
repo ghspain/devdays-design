@@ -73,7 +73,7 @@ test('template-approved badge name moves within bounds and exports from the same
   await expect(page.getByRole('spinbutton', { name: 'Speaker name X offset' })).toHaveValue('39')
 
   const download = page.waitForEvent('download')
-  await page.getByRole('button', { name: /Download Front PNG/ }).click()
+  await page.getByRole('button', { name: /Download front PNG/ }).click()
   expect((await download).suggestedFilename()).toMatch(/front.*\.png$/i)
 
   await expect(page.locator('.draft-status')).toContainText('Saved', { timeout: 5000 })

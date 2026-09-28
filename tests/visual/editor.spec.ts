@@ -464,7 +464,7 @@ test('event pack downloads every format in one ZIP', async ({ page }, testInfo) 
   test.skip(testInfo.project.name === 'mobile-chromium', 'The mobile project validates the responsive control layout.')
 
   const downloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Event pack (.zip)' }).click()
+  await page.getByRole('button', { name: 'Download event pack (.zip)' }).click()
   const download = await downloadPromise
   expect(download.suggestedFilename()).toBe('devdays-madrid-event-pack.zip')
 
@@ -496,8 +496,8 @@ test('download button distinguishes PNG from ZIP export', async ({ page }) => {
   await expect(page.locator('button.download-main')).toBeVisible()
   await expect(page.locator('button.download-main')).toHaveAccessibleName(/^Download PNG/)
 
-  // The event pack button should say "Event pack (.zip)"
-  await expect(page.getByRole('button', { name: 'Event pack (.zip)' })).toBeVisible()
+  // The event pack button should name the download action and ZIP format.
+  await expect(page.getByRole('button', { name: 'Download event pack (.zip)' })).toBeVisible()
 
   // #78: the canvas toolbar no longer has any download control.
   await showPreviewForViewport(page)

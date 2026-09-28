@@ -100,7 +100,7 @@ test.describe('Mobile action bar', () => {
 
     // Check that the footer actions are visible
     await expect(page.getByRole('button', { name: 'Reset' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Event pack (.zip)' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Download event pack (.zip)' })).toBeVisible()
     await expect(page.locator('.download-main')).toBeVisible()
 
     // Check that we can scroll through the sidebar

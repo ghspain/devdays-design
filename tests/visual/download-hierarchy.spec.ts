@@ -22,7 +22,8 @@ test('the Event pack (.zip) is a secondary action in the same footer', async ({ 
   await page.goto('/')
   const pack = page.locator('button.pack-download')
   await expect(pack).toBeVisible()
-  await expect(pack).toHaveAccessibleName(/Event pack \(\.zip\)/)
+  await expect(pack).toHaveAccessibleName(/Download event pack \(\.zip\)/)
+  await expect(page.locator('.pack-download-block')).toContainText('Event formats create one image each. Speaker formats create one per speaker.')
   await expect(pack).not.toHaveAttribute('data-variant', 'primary')
 
   // It sits inside the same footer as the primary CTA.

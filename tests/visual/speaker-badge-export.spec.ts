@@ -8,16 +8,16 @@ test('Speaker Badge downloads the active face and both sides with deterministic 
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible({ timeout: 10_000 })
   await selectFormat(page, 'speaker_badge')
   await expect(page.getByRole('tab', { name: 'Front' })).toHaveAttribute('aria-selected', 'true')
-  await expect(page.getByRole('button', { name: /Download Front PNG · 800×1200/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Download both Speaker Badge sides as 2 PNG files' })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Download front PNG · 800×1200/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Download Speaker Badge front and back as 2 PNG files' })).toBeVisible()
 
   const downloads: Download[] = []
   page.on('download', (download) => downloads.push(download))
-  await page.getByRole('button', { name: /Download Front PNG/ }).click()
+  await page.getByRole('button', { name: /Download front PNG/ }).click()
   await expect.poll(() => downloads.length).toBe(1)
   expect(downloads[0].suggestedFilename()).toMatch(/^speaker-badge-.*-front\.png$/)
 
-  await page.getByRole('button', { name: 'Download both Speaker Badge sides as 2 PNG files' }).click()
+  await page.getByRole('button', { name: 'Download Speaker Badge front and back as 2 PNG files' }).click()
   await expect.poll(() => downloads.length).toBe(3)
   const names = downloads.map((download) => download.suggestedFilename())
   expect(names.slice(1)).toEqual([
@@ -49,7 +49,7 @@ test('a back QR error stays associated with Back and blocks a both-side download
 
   let downloads = 0
   page.on('download', () => { downloads += 1 })
-  await page.getByRole('button', { name: 'Download both Speaker Badge sides as 2 PNG files' }).click()
+  await page.getByRole('button', { name: 'Download Speaker Badge front and back as 2 PNG files' }).click()
   await expect(page.getByRole('status', { name: 'Both-side export checks' })).toContainText('Back')
   await expect(page.getByRole('status', { name: 'Both-side export checks' })).toContainText('HTTP or HTTPS URL')
   await expect.poll(() => downloads).toBe(0)
