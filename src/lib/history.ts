@@ -1,6 +1,7 @@
 import { BANNER_HISTORY_STORAGE_KEY, DEFAULT_EVENT_THEME_ID, defaultColors, fixedEventTitle } from '../constants'
 import type { BannerHistoryItem, BannerState, EventDetails } from '../types'
 import { uid } from './format'
+import { isQRDestination } from '../domain/qrDestination'
 
 function normalizeEvent(event?: Partial<EventDetails>): EventDetails {
   return {
@@ -32,6 +33,8 @@ export function normalizeState(
     speakersPerCard: input?.speakersPerCard === 2 ? 2 : 1,
     speakerBannerPairLayout: input?.speakerBannerPairLayout === 'stacked' ? 'stacked' : 'side_by_side',
     partners: Array.isArray(input?.partners) ? input.partners : [],
+    ...(isQRDestination(input?.qrDestination) ? { qrDestination: input.qrDestination } : {}),
+    ...(typeof input?.qrReadableText === 'boolean' ? { qrReadableText: input.qrReadableText } : {}),
     export: {
       type: input?.export?.type ?? 'png',
       scale: input?.export?.scale ?? 2,

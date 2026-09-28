@@ -1,4 +1,5 @@
 import type { BannerFormat, ExportScale, ExportType } from '../types'
+import type { QRDestination } from './qrDestination'
 
 export type AssetSide = 'front' | 'back'
 
@@ -22,6 +23,13 @@ export interface AssetTemplateDefinition {
   readonly rendererId: string
   /** Adapter for persisted BannerState.format values used by existing renderers. */
   readonly legacyFormat?: BannerFormat
+  /** Optional QR controls supported by this template; existing social templates opt out. */
+  readonly qr?: {
+    readonly defaultDestinationKind: QRDestination['kind']
+    readonly allowNone: boolean
+    readonly allowReadableText: boolean
+    readonly defaultReadableText: boolean
+  }
 }
 
 export interface AssetDefinition {

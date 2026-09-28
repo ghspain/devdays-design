@@ -13,6 +13,26 @@ export interface QRDestinationContext {
   getSponsor: (sponsorId: string) => { name: string; website: string } | undefined
 }
 
+/** Runtime check for QR data restored from local draft storage. */
+export function isQRDestination(value: unknown): value is QRDestination {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const candidate = value as Record<string, unknown>
+  switch (candidate.kind) {
+    case 'none':
+      return true
+    case 'person-profile':
+      return typeof candidate.personId === 'string' && ['github', 'linkedin', 'x', 'website'].includes(String(candidate.profileKind))
+    case 'event-agenda':
+    case 'event-page':
+    case 'sponsor-website':
+      return typeof (candidate.kind === 'sponsor-website' ? candidate.sponsorId : candidate.url) === 'string'
+    case 'custom-url':
+      return typeof candidate.url === 'string' && (candidate.label === undefined || typeof candidate.label === 'string')
+    default:
+      return false
+  }
+}
+
 export type QRDestinationResolution =
   | { status: 'none' }
   | { status: 'resolved'; content: string; label?: string }

@@ -25,6 +25,8 @@ import {
   REPOSITORY_URL,
 } from './constants'
 import { assetCatalog } from './domain/assets'
+import { QRDestinationControls } from './components/QRDestinationControls'
+import { defaultQRDestination, getQRDestinationControlId, qrDestinationErrorMessage } from './lib/qrDestinationControls'
 import type {
   BannerHistoryItem,
   BannerState,
@@ -40,6 +42,7 @@ import { renderBanner } from './lib/renderBanner'
 import { createRenderInfo, validateState, type ValidationFinding } from './lib/validate'
 import { checkRenderedCanvas } from './lib/pixelChecks'
 import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets, getCatalogPublicProfile } from './lib/catalog'
+import { resolveCatalogQRDestination } from './lib/qrDestinationResolver'
 import { buildEventPack, type EventPackProgress } from './lib/exportPack'
 import { readDraft, writeDraft, clearDraft } from './lib/draft'
 
@@ -127,6 +130,7 @@ function App() {
           'missing-sponsor': { elementId: 'section-partners' },
               'missing-organizer': { elementId: 'section-organizer', fieldId: 'organizer-select' },
               'missing-organizer-url': { elementId: 'section-organizer', fieldId: 'registration-url' },
+          'invalid-qr-destination': { elementId: 'section-qr' },
         }
 
         /** Map truncated field names (from renderBanner.ts) to their editor field IDs. */
@@ -168,6 +172,9 @@ function App() {
           }
           if (!target) {
             target = FINDING_TARGET_MAP[finding.code]
+          }
+          if (finding.code === 'invalid-qr-destination' && finding.targetId) {
+            target = { elementId: 'section-qr', fieldId: finding.targetId }
           }
           if (!target) return
 
@@ -216,6 +223,11 @@ function App() {
   const isSocialPromo = state.format === 'social_promo'
   const isMinimalCover = isLumaCover
   const isSpeakerPerBannerFormat = isSpeakerBanner || isSpeakerSquare
+  const qrTemplate = assetCatalog.flatMap((asset) => asset.templates)
+    .find((template) => template.legacyFormat === state.format && template.qr)
+  const qrReadableText = qrTemplate?.qr
+    ? state.qrReadableText ?? qrTemplate.qr.defaultReadableText
+    : false
 
   // #79: collapsible sidebar sections. Open/closed state lives in React (not
   // the DOM) so it persists across format changes; only the format section is
@@ -241,8 +253,9 @@ function App() {
     if (isSpeakerBanner || isSocialPromo) ids.push('section-organizer')
     if (isLumaCover || isSocialPromo || isSpeakerBanner || isSpeakerSquare) ids.push('section-partners')
     if (isSocialPromo || isSpeakerBanner) ids.push('section-registration')
+    if (qrTemplate) ids.push('section-qr')
     return ids
-  }, [isMinimalCover, isSocialPromo, isSpeakerBanner, isLumaCover, isSpeakerSquare])
+  }, [isMinimalCover, isSocialPromo, isSpeakerBanner, isLumaCover, isSpeakerSquare, qrTemplate])
   const allSectionsOpen = renderedSectionIds.every((id) => openSections[id])
   const isTallBanner = format.width === 1080 && format.height === 1350
   const previewBaseScale = isTallBanner ? 0.78 : 1
@@ -250,6 +263,14 @@ function App() {
     () => state.speakers.filter((speaker) => speaker.name.trim().length > 0).slice(0, MAX_SPEAKERS),
     [state.speakers],
   )
+  const qrProfiles = useMemo(() => state.speakers.flatMap((speaker) => {
+    if (!speaker.personId) return []
+    const profile = getCatalogPublicProfile(speaker.personId)
+    return profile?.destinations.length ? [profile] : []
+  }), [state.speakers])
+  const qrDestination = qrTemplate?.qr
+    ? state.qrDestination ?? defaultQRDestination(qrTemplate.qr.defaultDestinationKind, qrProfiles, catalogSponsors)
+    : undefined
   const speakerCards = useMemo(() => {
     if (!isSpeakerPerBannerFormat || !namedSpeakers.length) return []
     const perCard = state.speakersPerCard
@@ -388,6 +409,19 @@ function App() {
         ...validateState(state, format.id, renderInfo),
         ...checkRenderedCanvas(targetCanvas, renderInfo),
       ]
+      if (qrTemplate?.qr && qrDestination) {
+        const resolution = resolveCatalogQRDestination(qrDestination)
+        const message = qrDestinationErrorMessage(qrDestination, resolution, qrTemplate.qr.allowNone)
+        if (message) {
+          findings.push({
+            code: 'invalid-qr-destination',
+            severity: 'error',
+            field: 'QR destination',
+            message,
+            targetId: getQRDestinationControlId(qrDestination),
+          })
+        }
+      }
       // Test hook: lets Playwright specs inject findings (e.g. an 'error'
       // severity, which real themes never produce) to verify badge styling.
       const injected = (window as unknown as { __devdaysInjectedFindings?: typeof findings }).__devdaysInjectedFindings
@@ -409,7 +443,7 @@ function App() {
       cancelled = true
       window.cancelAnimationFrame(frame)
     }
-  }, [state, format, previewBackgroundFailed, showMultiSpeakerPreviewGrid, fontsReady, speakerCards])
+  }, [state, format, previewBackgroundFailed, showMultiSpeakerPreviewGrid, fontsReady, speakerCards, qrTemplate, qrDestination])
 
   useEffect(() => {
     let cancelled = false
@@ -1374,6 +1408,30 @@ function App() {
           </details>
           )}
 
+          {qrTemplate?.qr && qrDestination && (
+          <details
+            className="side-section"
+            open={openSections['section-qr']}
+            onToggle={handleSectionToggle('section-qr')}
+            id="section-qr"
+          >
+            <summary>
+              <span>QR destination</span>
+              <ChevronDownIcon size={16} className="chevron" />
+            </summary>
+            <QRDestinationControls
+              template={qrTemplate}
+              value={qrDestination}
+              readableText={qrReadableText}
+              profiles={qrProfiles}
+              sponsors={catalogSponsors}
+              resolution={resolveCatalogQRDestination(qrDestination)}
+              onChange={(qrDestination) => setState((previous) => ({ ...previous, qrDestination }))}
+              onReadableTextChange={(qrReadableText) => setState((previous) => ({ ...previous, qrReadableText }))}
+            />
+          </details>
+          )}
+
           {(isSocialPromo || isSpeakerBanner) && (
           <details
             className="side-section"
@@ -1473,6 +1531,9 @@ function App() {
                                     }
                                     if (!target) {
                                       target = FINDING_TARGET_MAP[finding.code]
+                                    }
+                                    if (finding.code === 'invalid-qr-destination' && finding.targetId) {
+                                      target = { elementId: 'section-qr', fieldId: finding.targetId }
                                     }
                                     const hasAction = !!target
                                     const findingId = `finding-${finding.code}-${Math.random().toString(36).slice(2, 8)}`
