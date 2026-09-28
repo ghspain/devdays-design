@@ -136,6 +136,30 @@ test('the attendee import dialog fits a 320px viewport', async ({ page }) => {
   expect(dialogWidth).toBeLessThanOrEqual(viewportWidth)
 })
 
+test('the populated attendee import dialog stays above mobile editor tabs', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'Mobile dialog stacking regression')
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Import attendee CSV' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Import attendee CSV' })
+  await dialog.getByLabel('Choose a CSV file').setInputFiles({
+    name: 'synthetic.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('name,organization\nJordan Example,GHSpain\n'),
+  })
+  const title = dialog.getByRole('heading', { name: 'Import attendee CSV' })
+  await expect(title).toBeVisible()
+  const screenshotPath = 'test-results/mobile-attendee-import-dialog.png'
+  await page.screenshot({ path: screenshotPath, animations: 'disabled' })
+  await testInfo.attach('mobile-attendee-import-dialog', { path: screenshotPath, contentType: 'image/png' })
+  const titleIsTopmost = await title.evaluate((element) => {
+    const bounds = element.getBoundingClientRect()
+    const topmost = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2)
+    return !topmost?.closest('.mobile-view-tabs')
+  })
+  expect(titleIsTopmost).toBe(true)
+})
+
 declare global {
   interface Window {
     __attendeeCsvPersisted: boolean
