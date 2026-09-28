@@ -39,7 +39,7 @@ import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
 import { createRenderInfo, validateState, type ValidationFinding } from './lib/validate'
 import { checkRenderedCanvas } from './lib/pixelChecks'
-import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets } from './lib/catalog'
+import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets, getCatalogPublicProfile } from './lib/catalog'
 import { buildEventPack, type EventPackProgress } from './lib/exportPack'
 import { readDraft, writeDraft, clearDraft } from './lib/draft'
 
@@ -488,8 +488,9 @@ function App() {
         .map((item) => ({
           id: uid(),
           catalogId: item.speakerId,
+          personId: item.id,
           name: item.name,
-          role: item.role,
+          role: getCatalogPublicProfile(item.id)?.displayRole || item.role,
           photoDataUrl: item.avatarUrl || undefined,
           talkTitle: item.sessionTitle || undefined,
           talkTime: item.sessionTime || undefined,
@@ -1064,6 +1065,7 @@ function App() {
               )}
               {state.speakers.map((speaker, index) => {
                 const initials = speaker.name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word.charAt(0).toUpperCase()).join('') || '—'
+                const publicProfile = speaker.personId ? getCatalogPublicProfile(speaker.personId) : undefined
                 return (
                 <div key={speaker.id} className="speaker-card">
                   <div className="speaker-card-head">
@@ -1120,6 +1122,13 @@ function App() {
                       />
                     </FormControl>
                   </div>
+                  {!!publicProfile?.destinations.length && (
+                    <nav className="speaker-profile-links" aria-label={`${speaker.name} public profiles`}>
+                      {publicProfile.destinations.map(({ kind, url }) => (
+                        <a key={kind} href={url} target="_blank" rel="noreferrer">{kind === 'x' ? 'X' : kind === 'github' ? 'GitHub' : kind === 'linkedin' ? 'LinkedIn' : 'Website'}</a>
+                      ))}
+                    </nav>
+                  )}
                   {!speaker.photoDataUrl && (
                     <small className="speaker-card-hint">No photo yet: the banner will render the speaker initials.</small>
                   )}

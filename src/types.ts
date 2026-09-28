@@ -41,6 +41,8 @@ export interface Speaker {
   id: string
   /** Participation id from the Planning catalogue, used to dedupe additions. */
   catalogId?: string
+  /** Stable Planning person identity for resolving reusable public profile data. */
+  personId?: string
   name: string
   role?: string
   photoDataUrl?: string

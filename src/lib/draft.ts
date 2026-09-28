@@ -37,7 +37,7 @@ function isSupportedState(value: unknown): value is BannerState {
     (value.event.registrationStyle !== undefined && value.event.registrationStyle !== 'cta_url' && value.event.registrationStyle !== 'url_only'))) return false
   if (value.speakers !== undefined && (!Array.isArray(value.speakers) || value.speakers.some((speaker) =>
     !isRecord(speaker) || typeof speaker.id !== 'string' || typeof speaker.name !== 'string' ||
-    ['role', 'photoDataUrl', 'talkTitle', 'talkTime', 'catalogId']
+    ['role', 'photoDataUrl', 'talkTitle', 'talkTime', 'catalogId', 'personId']
       .some((field) => speaker[field] !== undefined && typeof speaker[field] !== 'string')))) return false
   if (value.partners !== undefined && (!Array.isArray(value.partners) || value.partners.some((partner) =>
     !isRecord(partner) || typeof partner.id !== 'string' || typeof partner.imageDataUrl !== 'string' ||
