@@ -70,6 +70,7 @@ export interface AssetSideState {
   partners?: PartnerLogo[]
   qrDestination?: QRDestination | null
   qrReadableText?: boolean | null
+  elementOffsets?: Record<string, { x: number; y: number }>
 }
 
 export interface EventDetails {
@@ -91,6 +92,8 @@ export interface BannerState {
   /** Defaults to front for drafts created before multi-side assets existed. */
   activeSide?: AssetSide
   sideStates?: Partial<Record<AssetSide, AssetSideState>>
+  /** Current side's template-declared position adjustments. */
+  elementOffsets?: Record<string, { x: number; y: number }>
   format: BannerFormat
   /** Which EventTheme supplied the current colors/labels. */
   theme: EventThemeId

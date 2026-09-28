@@ -30,6 +30,7 @@ import {
 } from './constants'
 import { assetCatalog } from './domain/assets'
 import { saveActiveSide, stateForSide, switchAssetSide } from './domain/assetSides'
+import { constrainSpeakerNameOffset } from './domain/templateManipulation'
 import type { AssetSide } from './domain/assets'
 import { QRDestinationControls } from './components/QRDestinationControls'
 import { defaultQRDestination, getQRDestinationControlId, qrDestinationErrorMessage } from './lib/qrDestinationControls'
@@ -255,6 +256,31 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
     const template = assetCatalog.flatMap((asset) => asset.templates).find((item) => item.legacyFormat === next.format)
     return template && template.sides.length > 1 ? saveActiveSide(next) : next
   })
+  const movableElementIds = assetCatalog.flatMap((asset) => asset.templates)
+    .find((template) => template.legacyFormat === state.format)?.movableElementIds ?? []
+  const setTemplateElementPosition = (elementId: string, position: { x: number; y: number }) => {
+    if (!movableElementIds.includes(elementId)) return
+    setState((previous) => ({
+      ...previous,
+      elementOffsets: {
+        ...previous.elementOffsets,
+        [elementId]: constrainSpeakerNameOffset(position),
+      },
+    }))
+  }
+  const moveTemplateElement = (elementId: string, delta: { x: number; y: number }) => {
+    if (!movableElementIds.includes(elementId)) return
+    setState((previous) => {
+      const current = previous.elementOffsets?.[elementId] ?? { x: 0, y: 0 }
+      return {
+        ...previous,
+        elementOffsets: {
+          ...previous.elementOffsets,
+          [elementId]: constrainSpeakerNameOffset({ x: current.x + delta.x, y: current.y + delta.y }),
+        },
+      }
+    })
+  }
   const [draftStatus, setDraftStatus] = useState<'saving' | 'saved' | 'error' | null>(null)
   const [draftMessage, setDraftMessage] = useState('')
   const [draftReady, setDraftReady] = useState(false)
@@ -1035,6 +1061,37 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
           </div>
 
           <div className="sidebar-content">
+          {isSpeakerBadge && activeSide === 'front' && selectedArtboardField?.toLowerCase() === 'speaker name' && movableElementIds.includes('speaker-name') && (
+            <section className="element-position-controls" aria-label="Selected element position">
+              <h2>Speaker name position</h2>
+              <p>Drag the selected name on desktop or adjust its position here. Arrow keys move 1 px; Shift + arrow moves 10 px.</p>
+              <div className="element-position-inputs">
+                {(['x', 'y'] as const).map((axis) => {
+                  const position = state.elementOffsets?.['speaker-name'] ?? { x: 0, y: 0 }
+                  const limit = axis === 'x' ? 40 : 24
+                  return (
+                    <label key={axis}>
+                      <span>{axis.toUpperCase()} offset</span>
+                      <input
+                        aria-label={`Speaker name ${axis.toUpperCase()} offset`}
+                        type="number"
+                        min={-limit}
+                        max={limit}
+                        step={1}
+                        value={position[axis]}
+                        onChange={(event) => {
+                          const next = Number(event.target.value)
+                          if (!Number.isFinite(next)) return
+                          setTemplateElementPosition('speaker-name', { ...position, [axis]: next })
+                        }}
+                      />
+                    </label>
+                  )
+                })}
+                <Button size="small" onClick={() => setTemplateElementPosition('speaker-name', { x: 0, y: 0 })}>Reset</Button>
+              </div>
+            </section>
+          )}
           {showEditorGuide && (
             <section className="editor-guide" role="region" aria-labelledby="editor-guide-title">
               <div className="editor-guide-header">
@@ -1896,6 +1953,8 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
                   height={format.height}
                   selectedField={selectedArtboardField}
                   onSelect={selectArtboardField}
+                  movableElementIds={activeSide === 'front' ? movableElementIds : []}
+                  onMove={moveTemplateElement}
                 />
               </div>
             )}

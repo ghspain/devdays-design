@@ -7,6 +7,7 @@ import { loadImage } from '../image'
 import { resolveCatalogQRDestination } from '../qrDestinationResolver'
 import { renderQRCode } from './qrCode'
 import type { RenderInfo } from '../validate'
+import { constrainSpeakerNameOffset } from '../../domain/templateManipulation'
 
 const generations = new WeakMap<HTMLCanvasElement, number>()
 
@@ -32,6 +33,7 @@ export async function renderSpeakerBadge(
   const publicHandle = getCatalogPublicHandle(profile)
   const handle = speaker?.badgeHandle ?? publicHandle
   const showHandle = speaker?.badgeShowHandle ?? Boolean(handle)
+  const nameOffset = constrainSpeakerNameOffset(state.elementOffsets?.['speaker-name'] ?? { x: 0, y: 0 })
   const width = format.width
   const height = format.height
   const inset = Math.round(width * 0.08)
@@ -55,9 +57,9 @@ export async function renderSpeakerBadge(
   const contentWidth = width - inset * 2
   const primary = theme.id === 'online_github' ? '#1f2328' : '#f0f6fc'
   const muted = theme.id === 'online_github' ? '#59636e' : '#8b949e'
-  const track = (field: string, color: string, x: number, y: number, w: number, h: number) => {
+  const track = (field: string, color: string, x: number, y: number, w: number, h: number, elementId?: string) => {
     if (renderInfo && !renderInfo.textRegions.some((region) => region.field === field)) {
-      renderInfo.textRegions.push({ field, color, x: x * scale, y: y * scale, w: w * scale, h: h * scale })
+      renderInfo.textRegions.push({ field, color, x: x * scale, y: y * scale, w: w * scale, h: h * scale, ...(elementId ? { elementId } : {}) })
     }
   }
   const wrapped = (field: string, text: string, x: number, y: number, maxWidth: number, maxLines: number, size: number, color: string, lineHeight: number) => {
@@ -186,8 +188,10 @@ export async function renderSpeakerBadge(
 
   const name = speaker?.name.trim() || 'Speaker name'
   const nameSize = 57
-  const nameY = 800
-  const nameLines = wrapped('Speaker name', name, left, nameY, contentWidth, 2, nameSize, primary, 66)
+  const nameY = 800 + nameOffset.y
+  const nameLines = wrapped('Speaker name', name, left + nameOffset.x, nameY, contentWidth, 2, nameSize, primary, 66)
+  const nameRegion = renderInfo?.textRegions.find((region) => region.field === 'Speaker name')
+  if (nameRegion) nameRegion.elementId = 'speaker-name'
   const role = speaker?.role?.trim()
   let nextY = nameY + nameLines * 66 + 12
   if (role) {
