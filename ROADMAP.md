@@ -372,6 +372,11 @@ An organizer can safely import a real attendee file and understand exactly which
 
 Goal: generalize the speaker badge template family to attendee and event-team roles.
 
+### Completed implementation phases
+
+- [x] Phase 1: Attendee records render through the same badge template family as speakers. (#134)
+- [x] Phase 2: Badge roles change labels and visual treatment without duplicating layouts. (#135)
+
 ### Initial badge roles
 
 - attendee,

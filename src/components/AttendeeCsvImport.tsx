@@ -9,6 +9,7 @@ import {
   type AttendeeCsvDataset,
 } from '../lib/attendeeCsv'
 import { attendeeBadgeFields, type AttendeeCsvColumnMapping } from '../domain/attendee'
+import { BADGE_ROLE_PRESENTATIONS, type BadgeRole } from '../domain/badgeRoles'
 import { validateAttendeeRows } from '../lib/attendeeValidation'
 import { selectRepresentativeAttendees } from '../lib/attendeePreviews'
 import AttendeeBadgePreview from './AttendeeBadgePreview'
@@ -28,6 +29,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const [mapping, setMapping] = useState<AttendeeCsvColumnMapping>({})
   const [rowFilter, setRowFilter] = useState<'all' | 'warning' | 'error'>('all')
   const [selectedRows, setSelectedRows] = useState<Set<number> | null>(null)
+  const [badgeRoles, setBadgeRoles] = useState<Record<number, BadgeRole>>({})
   const [error, setError] = useState('')
   const launcherRef = useRef<HTMLButtonElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -38,6 +40,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
     setDataset(null)
     setMapping({})
     setSelectedRows(null)
+    setBadgeRoles({})
     setRowFilter('all')
     setError('')
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -51,6 +54,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
     setDataset(null)
     setMapping({})
     setSelectedRows(null)
+    setBadgeRoles({})
     setRowFilter('all')
     setError('')
 
@@ -74,8 +78,11 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const validatedRows = useMemo(() => {
     if (!normalizedRows) return null
     const context = document.createElement('canvas').getContext('2d')
-    return context ? validateAttendeeRows(normalizedRows, context) : null
-  }, [normalizedRows])
+    return context ? validateAttendeeRows(normalizedRows, context).map((row) => ({
+      ...row,
+      attendee: { ...row.attendee, badgeRole: badgeRoles[row.sourceRowNumber] ?? 'attendee' },
+    })) : null
+  }, [normalizedRows, badgeRoles])
   const visibleRows = validatedRows?.filter((row) => rowFilter === 'all' || row.status === rowFilter) ?? []
   const counts = validatedRows?.reduce((result, row) => {
     result[row.status] += 1
@@ -169,6 +176,18 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
                         <li key={row.sourceRowNumber}>
                           <div className="attendee-validation-row-heading">
                             <strong>Row {row.sourceRowNumber}: {row.status}</strong>
+                            <FormControl id={`attendee-badge-role-${row.sourceRowNumber}`}>
+                              <FormControl.Label>Badge role</FormControl.Label>
+                              <select
+                                aria-label={`Badge role for row ${row.sourceRowNumber}`}
+                                value={badgeRoles[row.sourceRowNumber] ?? 'attendee'}
+                                onChange={(event) => setBadgeRoles((current) => ({ ...current, [row.sourceRowNumber]: event.target.value as BadgeRole }))}
+                              >
+                                {Object.entries(BADGE_ROLE_PRESENTATIONS).map(([role, presentation]) => (
+                                  <option key={role} value={role}>{presentation.label}</option>
+                                ))}
+                              </select>
+                            </FormControl>
                             <label>
                               <input
                                 type="checkbox"

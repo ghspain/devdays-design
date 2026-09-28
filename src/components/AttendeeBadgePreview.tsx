@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { formatOptions } from '../constants'
 import type { AttendeeBadgeInput } from '../domain/attendee'
 import { attendeeBadgeSubject } from '../domain/badgeSubject'
+import { BADGE_ROLE_PRESENTATIONS } from '../domain/badgeRoles'
 import { buildDefaultState } from '../lib/history'
 import { renderBanner } from '../lib/renderBanner'
 import type { BannerState, EventThemeId } from '../types'
@@ -17,6 +18,7 @@ interface AttendeeBadgePreviewProps {
 
 export default function AttendeeBadgePreview({ sourceRowNumber, attendee, reasons, theme, colors, event }: AttendeeBadgePreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const roleLabel = BADGE_ROLE_PRESENTATIONS[attendee.badgeRole ?? 'attendee'].label.toLowerCase().replace(/^./, (letter) => letter.toUpperCase())
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -35,7 +37,7 @@ export default function AttendeeBadgePreview({ sourceRowNumber, attendee, reason
   return (
     <article className="attendee-badge-preview" aria-label={`Row ${sourceRowNumber}: ${attendee.name}`}>
       <h4>{attendee.name}</h4>
-      <canvas ref={canvasRef} role="img" aria-label={`Attendee Badge front preview for ${attendee.name}`} />
+      <canvas ref={canvasRef} role="img" aria-label={`${roleLabel} Badge front preview for ${attendee.name}`} />
       <p>Row {sourceRowNumber}</p>
       <ul aria-label="Preview reasons">
         {reasons.map((reason) => <li key={reason}>{reason}</li>)}
