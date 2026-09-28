@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { Button, Dialog, FormControl } from '@primer/react'
+import { assetCatalog } from '../domain/assets'
+import type { QRDestination } from '../domain/qrDestination'
 import {
   getDuplicateAttendeeMappings,
   getUnmappedRequiredAttendeeFields,
@@ -10,12 +12,17 @@ import {
 } from '../lib/attendeeCsv'
 import { attendeeBadgeFields, type AttendeeCsvColumnMapping } from '../domain/attendee'
 import { BADGE_ROLE_PRESENTATIONS, type BadgeRole } from '../domain/badgeRoles'
+import { catalogPeople, catalogSponsors, getCatalogPublicProfile } from '../lib/catalog'
+import { resolveBadgeRoleQR } from '../lib/badgeRoleQr'
+import { resolveCatalogQRDestination } from '../lib/qrDestinationResolver'
 import { validateAttendeeRows } from '../lib/attendeeValidation'
 import { selectRepresentativeAttendees } from '../lib/attendeePreviews'
+import { QRDestinationControls } from './QRDestinationControls'
 import AttendeeBadgePreview from './AttendeeBadgePreview'
 import type { BannerState, EventThemeId } from '../types'
 
 const INVALID_CSV_MESSAGE = 'This file could not be read as CSV. Check the file format and try another file.'
+const qrTemplate = assetCatalog.flatMap(({ templates }) => templates).find(({ qr }) => qr)
 
 interface AttendeeCsvImportProps {
   theme: EventThemeId
@@ -30,6 +37,11 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const [rowFilter, setRowFilter] = useState<'all' | 'warning' | 'error'>('all')
   const [selectedRows, setSelectedRows] = useState<Set<number> | null>(null)
   const [badgeRoles, setBadgeRoles] = useState<Record<number, BadgeRole>>({})
+  const [qrOverrides, setQrOverrides] = useState<Record<number, string>>({})
+  const [qrRuleMode, setQrRuleMode] = useState<'role-default' | 'selected-rows'>('role-default')
+  const [batchQrDestination, setBatchQrDestination] = useState<QRDestination>({ kind: 'none' })
+  const [batchQrReadableText, setBatchQrReadableText] = useState(true)
+  const [editingQrRow, setEditingQrRow] = useState<number | null>(null)
   const [error, setError] = useState('')
   const launcherRef = useRef<HTMLButtonElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -41,6 +53,11 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
     setMapping({})
     setSelectedRows(null)
     setBadgeRoles({})
+    setQrOverrides({})
+    setQrRuleMode('role-default')
+    setBatchQrDestination({ kind: 'none' })
+    setEditingQrRow(null)
+    setBatchQrReadableText(true)
     setRowFilter('all')
     setError('')
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -55,6 +72,11 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
     setMapping({})
     setSelectedRows(null)
     setBadgeRoles({})
+    setQrOverrides({})
+    setQrRuleMode('role-default')
+    setBatchQrDestination({ kind: 'none' })
+    setEditingQrRow(null)
+    setBatchQrReadableText(true)
     setRowFilter('all')
     setError('')
 
@@ -72,17 +94,41 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
 
   const missingRequired = getUnmappedRequiredAttendeeFields(mapping)
   const duplicateTargets = getDuplicateAttendeeMappings(mapping)
+  const qrProfiles = useMemo(() => catalogPeople.flatMap(({ id }) => {
+    const profile = getCatalogPublicProfile(id)
+    return profile?.destinations.length ? [profile] : []
+  }), [])
   const normalizedRows = useMemo(() => dataset && missingRequired.length === 0 && duplicateTargets.length === 0
     ? mapAttendeeCsvRows(dataset, mapping)
     : null, [dataset, mapping, missingRequired.length, duplicateTargets.length])
   const validatedRows = useMemo(() => {
     if (!normalizedRows) return null
     const context = document.createElement('canvas').getContext('2d')
-    return context ? validateAttendeeRows(normalizedRows, context).map((row) => ({
-      ...row,
-      attendee: { ...row.attendee, badgeRole: badgeRoles[row.sourceRowNumber] ?? 'attendee' },
-    })) : null
-  }, [normalizedRows, badgeRoles])
+    return context ? validateAttendeeRows(normalizedRows, context).map((row) => {
+      const badgeRole = badgeRoles[row.sourceRowNumber] ?? 'attendee'
+      const usesBatchRule = row.status !== 'error' && (selectedRows?.has(row.sourceRowNumber) ?? true)
+      const rowOverride = row.attendee.qrDestination ?? (qrOverrides[row.sourceRowNumber]?.trim()
+        ? { kind: 'custom-url' as const, url: qrOverrides[row.sourceRowNumber].trim() }
+        : undefined)
+      const qr = resolveBadgeRoleQR(
+        badgeRole,
+        row.attendee,
+        { profiles: qrProfiles, sponsors: catalogSponsors, eventPageUrl: event.registrationUrl, getPublicProfile: getCatalogPublicProfile, getSponsor: (id) => catalogSponsors.find(({ id: sponsorId }) => sponsorId === id) },
+        usesBatchRule && qrRuleMode === 'selected-rows' ? batchQrDestination : undefined,
+        rowOverride,
+      )
+      return {
+        ...row,
+        attendee: {
+          ...row.attendee,
+          badgeRole,
+          qrDestination: qr.destination,
+          qrWarning: qr.warning,
+          qrReadableText: usesBatchRule && qrRuleMode === 'selected-rows' ? batchQrReadableText : true,
+        },
+      }
+    }) : null
+  }, [normalizedRows, badgeRoles, qrOverrides, qrProfiles, event.registrationUrl, selectedRows, qrRuleMode, batchQrDestination, batchQrReadableText])
   const visibleRows = validatedRows?.filter((row) => rowFilter === 'all' || row.status === rowFilter) ?? []
   const counts = validatedRows?.reduce((result, row) => {
     result[row.status] += 1
@@ -163,6 +209,26 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
                   <section aria-label="Attendee row validation">
                     <h3>Review imported rows</h3>
                     <p role="status">Total {validatedRows.length}; valid {counts.valid}; warnings {counts.warning}; errors {counts.error}; selected for generation {includedCount}.</p>
+                    <FormControl id="attendee-qr-rule">
+                      <FormControl.Label>QR rule for selected rows</FormControl.Label>
+                      <select aria-label="QR rule for selected rows" value={qrRuleMode} onChange={(event) => setQrRuleMode(event.target.value as typeof qrRuleMode)}>
+                        <option value="role-default">Use each badge role’s recommended default</option>
+                        <option value="selected-rows">Use one destination for selected rows</option>
+                      </select>
+                      <FormControl.Caption>Per-row URL overrides take precedence over both rules.</FormControl.Caption>
+                    </FormControl>
+                    {qrRuleMode === 'selected-rows' && qrTemplate && (
+                      <QRDestinationControls
+                        template={qrTemplate}
+                        value={batchQrDestination}
+                        readableText={batchQrReadableText}
+                        profiles={qrProfiles}
+                        sponsors={catalogSponsors}
+                        resolution={resolveCatalogQRDestination(batchQrDestination)}
+                        onChange={setBatchQrDestination}
+                        onReadableTextChange={setBatchQrReadableText}
+                      />
+                    )}
                     <FormControl id="attendee-row-filter">
                       <FormControl.Label>Filter rows</FormControl.Label>
                       <select aria-label="Filter attendee rows" value={rowFilter} onChange={(event) => setRowFilter(event.target.value as typeof rowFilter)}>
@@ -188,6 +254,25 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
                                 ))}
                               </select>
                             </FormControl>
+                            <Button
+                              size="small"
+                              onClick={() => setEditingQrRow((current) => current === row.sourceRowNumber ? null : row.sourceRowNumber)}
+                            >
+                              {editingQrRow === row.sourceRowNumber ? 'Close QR override' : `Override QR for row ${row.sourceRowNumber}`}
+                            </Button>
+                            {editingQrRow === row.sourceRowNumber && (
+                              <FormControl id={`attendee-qr-override-${row.sourceRowNumber}`}>
+                                <FormControl.Label>Custom QR URL</FormControl.Label>
+                                <input
+                                  type="url"
+                                  aria-label={`Custom QR URL for row ${row.sourceRowNumber}`}
+                                  value={qrOverrides[row.sourceRowNumber] ?? ''}
+                                  onChange={(event) => setQrOverrides((current) => ({ ...current, [row.sourceRowNumber]: event.target.value }))}
+                                />
+                                <FormControl.Caption>Leave blank to inherit the selected batch rule or badge-role default.</FormControl.Caption>
+                              </FormControl>
+                            )}
+                            {row.attendee.qrWarning && <p role="status">QR warning: {row.attendee.qrWarning}</p>}
                             <label>
                               <input
                                 type="checkbox"

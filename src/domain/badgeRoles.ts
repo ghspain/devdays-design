@@ -5,6 +5,7 @@ export interface BadgeRolePresentation {
   labelStyle: 'text' | 'chip'
   accent?: string
   ink?: string
+  qrDefault: 'person-profile' | 'event-page' | 'sponsor-website'
   visibleFields: {
     organization: boolean
     title: boolean
@@ -18,6 +19,7 @@ export const BADGE_ROLE_PRESENTATIONS: Record<BadgeRole, BadgeRolePresentation> 
   speaker: {
     label: 'SPEAKER',
     labelStyle: 'text',
+    qrDefault: 'person-profile',
     visibleFields: { organization: false, title: true, networkingHandle: true },
   },
   attendee: {
@@ -25,6 +27,7 @@ export const BADGE_ROLE_PRESENTATIONS: Record<BadgeRole, BadgeRolePresentation> 
     labelStyle: 'chip',
     accent: '#9EECFF',
     ink: darkInk,
+    qrDefault: 'event-page',
     visibleFields: { organization: true, title: true, networkingHandle: true },
   },
   organizer: {
@@ -32,6 +35,7 @@ export const BADGE_ROLE_PRESENTATIONS: Record<BadgeRole, BadgeRolePresentation> 
     labelStyle: 'chip',
     accent: '#5EEC83',
     ink: darkInk,
+    qrDefault: 'event-page',
     visibleFields: { organization: true, title: true, networkingHandle: true },
   },
   staff: {
@@ -39,6 +43,7 @@ export const BADGE_ROLE_PRESENTATIONS: Record<BadgeRole, BadgeRolePresentation> 
     labelStyle: 'chip',
     accent: '#3194FF',
     ink: darkInk,
+    qrDefault: 'event-page',
     visibleFields: { organization: true, title: false, networkingHandle: false },
   },
   volunteer: {
@@ -46,6 +51,7 @@ export const BADGE_ROLE_PRESENTATIONS: Record<BadgeRole, BadgeRolePresentation> 
     labelStyle: 'chip',
     accent: '#D3FA36',
     ink: darkInk,
+    qrDefault: 'event-page',
     visibleFields: { organization: false, title: false, networkingHandle: false },
   },
   sponsor: {
@@ -53,6 +59,7 @@ export const BADGE_ROLE_PRESENTATIONS: Record<BadgeRole, BadgeRolePresentation> 
     labelStyle: 'chip',
     accent: '#B870FF',
     ink: darkInk,
+    qrDefault: 'sponsor-website',
     visibleFields: { organization: true, title: false, networkingHandle: true },
   },
 }
