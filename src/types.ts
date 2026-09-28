@@ -1,3 +1,4 @@
+import type { AssetSide } from './domain/assets'
 import type { QRDestination } from './domain/qrDestination'
 
 export type BannerFormat =
@@ -58,6 +59,14 @@ export interface PartnerLogo {
   name?: string
 }
 
+/** Content that may differ between the faces of a multi-side asset. */
+export interface AssetSideState {
+  speakers?: Speaker[]
+  partners?: PartnerLogo[]
+  qrDestination?: QRDestination | null
+  qrReadableText?: boolean | null
+}
+
 export interface EventDetails {
   title: string
   edition: string
@@ -74,6 +83,9 @@ export interface EventDetails {
 }
 
 export interface BannerState {
+  /** Defaults to front for drafts created before multi-side assets existed. */
+  activeSide?: AssetSide
+  sideStates?: Partial<Record<AssetSide, AssetSideState>>
   format: BannerFormat
   /** Which EventTheme supplied the current colors/labels. */
   theme: EventThemeId

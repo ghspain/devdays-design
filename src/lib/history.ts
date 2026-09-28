@@ -2,6 +2,7 @@ import { BANNER_HISTORY_STORAGE_KEY, DEFAULT_EVENT_THEME_ID, defaultColors, fixe
 import type { BannerHistoryItem, BannerState, EventDetails } from '../types'
 import { uid } from './format'
 import { isQRDestination } from '../domain/qrDestination'
+import { stateForSide } from '../domain/assetSides'
 
 function normalizeEvent(event?: Partial<EventDetails>): EventDetails {
   return {
@@ -20,11 +21,32 @@ function normalizeEvent(event?: Partial<EventDetails>): EventDetails {
   }
 }
 
+function normalizeSideStates(value: unknown): BannerState['sideStates'] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+  const source = value as Record<string, unknown>
+  const result: NonNullable<BannerState['sideStates']> = {}
+  for (const side of ['front', 'back'] as const) {
+    const sideState = source[side]
+    if (!sideState || typeof sideState !== 'object' || Array.isArray(sideState)) continue
+    const candidate = sideState as Record<string, unknown>
+    result[side] = {
+      ...(Array.isArray(candidate.speakers) ? { speakers: candidate.speakers as BannerState['speakers'] } : {}),
+      ...(Array.isArray(candidate.partners) ? { partners: candidate.partners as BannerState['partners'] } : {}),
+      ...(candidate.qrDestination === null ? { qrDestination: null } : isQRDestination(candidate.qrDestination) ? { qrDestination: candidate.qrDestination } : {}),
+      ...(candidate.qrReadableText === null ? { qrReadableText: null } : typeof candidate.qrReadableText === 'boolean' ? { qrReadableText: candidate.qrReadableText } : {}),
+    }
+  }
+  return Object.keys(result).length ? result : undefined
+}
+
 /** Fills any missing fields so restored and freshly built states always share one shape. */
 export function normalizeState(
   input?: (Omit<Partial<BannerState>, 'event'> & { event?: Partial<EventDetails> }) | null,
 ): BannerState {
-  return {
+  const sideStates = normalizeSideStates(input?.sideStates)
+  const normalized: BannerState = {
+    ...(input?.activeSide === 'back' ? { activeSide: 'back' as const } : { activeSide: 'front' as const }),
+    ...(sideStates ? { sideStates } : {}),
     format: input?.format ?? 'luma_cover',
     theme: input?.theme ?? DEFAULT_EVENT_THEME_ID,
     colors: input?.colors ?? defaultColors,
@@ -40,6 +62,7 @@ export function normalizeState(
       scale: input?.export?.scale ?? 2,
     },
   }
+  return stateForSide(normalized)
 }
 
 export function buildDefaultState(): BannerState {

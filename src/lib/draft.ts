@@ -4,7 +4,7 @@ import { EVENT_THEMES, formatOptions } from '../constants'
 
 const DRAFT_DB_NAME = 'devdays-banner-draft'
 const DRAFT_STORE_NAME = 'drafts'
-const DRAFT_SCHEMA_VERSION = 2
+const DRAFT_SCHEMA_VERSION = 3
 const DRAFT_DATABASE_VERSION = 1
 const DRAFT_KEY = 'current'
 
@@ -24,6 +24,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isSupportedState(value: unknown): value is BannerState {
   if (!isRecord(value)) return false
+  if (value.activeSide !== undefined && value.activeSide !== 'front' && value.activeSide !== 'back') return false
+  if (value.sideStates !== undefined) {
+    if (!isRecord(value.sideStates)) return false
+    for (const [side, sideState] of Object.entries(value.sideStates)) {
+      if ((side !== 'front' && side !== 'back') || !isRecord(sideState)) return false
+      if (sideState.speakers !== undefined && (!Array.isArray(sideState.speakers) || sideState.speakers.some((speaker) =>
+        !isRecord(speaker) || typeof speaker.id !== 'string' || typeof speaker.name !== 'string' ||
+        ['role', 'photoDataUrl', 'talkTitle', 'talkTime', 'catalogId', 'personId']
+          .some((field) => speaker[field] !== undefined && typeof speaker[field] !== 'string')))) return false
+      if (sideState.partners !== undefined && (!Array.isArray(sideState.partners) || sideState.partners.some((partner) =>
+        !isRecord(partner) || typeof partner.id !== 'string' || typeof partner.imageDataUrl !== 'string' ||
+        (partner.name !== undefined && typeof partner.name !== 'string')))) return false
+      if (sideState.qrDestination !== undefined && sideState.qrDestination !== null && !isQRDestination(sideState.qrDestination)) return false
+      if (sideState.qrReadableText !== undefined && sideState.qrReadableText !== null && typeof sideState.qrReadableText !== 'boolean') return false
+    }
+  }
   if (value.format !== undefined && !formatOptions.some(({ id }) => id === value.format)) return false
   if (value.theme !== undefined && (typeof value.theme !== 'string' || !Object.hasOwn(EVENT_THEMES, value.theme))) return false
   if (value.speakersPerCard !== undefined && value.speakersPerCard !== 1 && value.speakersPerCard !== 2) return false

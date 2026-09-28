@@ -55,7 +55,7 @@ test('pre-migration draft restores editor state and autosaves the versioned norm
 
   const stored = await readDraftRecord(page)
   expect(stored).toMatchObject({
-    version: 2,
+    version: 3,
     state: {
       format: 'speaker_banner', theme: 'community_meetup', speakersPerCard: 2,
       speakerBannerPairLayout: 'stacked', partners: legacyState.partners, export: legacyState.export,
