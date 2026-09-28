@@ -36,6 +36,18 @@ export interface BadgeSheetPlacement {
   readonly heightMm: number
 }
 
+export type DuplexFlipMode = 'long-edge' | 'short-edge'
+
+export const DUPLEX_FLIP_MODES: readonly DuplexFlipMode[] = ['long-edge', 'short-edge']
+
+export interface DuplexBadgeSheetPlan {
+  readonly front: BadgeSheetPlan
+  readonly backPlacements: readonly BadgeSheetPlacement[]
+  readonly flipMode: DuplexFlipMode
+  /** Axis mirrored on the back page: horizontal mirrors columns, vertical mirrors rows. */
+  readonly flipAxis: 'horizontal' | 'vertical'
+}
+
 export interface BadgeSheetPlan {
   readonly profile: BadgeSheetProfile
   readonly badge: Pick<PrintGeometry, 'widthMm' | 'heightMm' | 'dpi'>
@@ -91,6 +103,44 @@ export function planBadgeSheet(
   }
 }
 
+/**
+ * 🧭 DECISION — duplex page-axis mapping
+ * Question: which grid axis should each printer flip mode mirror?
+ * Options: always mirror columns / always mirror rows / derive from page orientation.
+ * Investigation: a long-edge turn rotates around the page's long edge; portrait pages therefore mirror columns,
+ * while landscape pages mirror rows. Short-edge is the inverse. Profiles carry physical width and height.
+ * Decision: derive the mirrored axis from the selected profile orientation, preserving physical front/back positions.
+ * To revert: replace this mapping with a fixed axis if a calibrated printer workflow proves a different convention.
+ */
+export function duplexFlipAxis(profile: Pick<BadgeSheetProfile, 'widthMm' | 'heightMm'>, flipMode: DuplexFlipMode): 'horizontal' | 'vertical' {
+  const portrait = profile.heightMm >= profile.widthMm
+  if (flipMode === 'long-edge') return portrait ? 'horizontal' : 'vertical'
+  return portrait ? 'vertical' : 'horizontal'
+}
+
+export function planDuplexBadgeSheet(
+  count: number,
+  geometry: Pick<PrintGeometry, 'widthMm' | 'heightMm' | 'dpi'>,
+  profile = BADGE_SHEET_PROFILES[0],
+  flipMode: DuplexFlipMode = 'long-edge',
+): DuplexBadgeSheetPlan {
+  const front = planBadgeSheet(count, geometry, profile)
+  const backPlacements = front.placements.map((placement) => {
+    const slot = placement.index % front.perPage
+    const column = slot % front.columns
+    const row = Math.floor(slot / front.columns)
+    const axis = duplexFlipAxis(profile, flipMode)
+    const mirroredColumn = axis === 'horizontal' ? front.columns - 1 - column : column
+    const mirroredRow = axis === 'vertical' ? front.rows - 1 - row : row
+    return {
+      ...placement,
+      leftMm: profile.marginMm + mirroredColumn * (geometry.widthMm + profile.gapMm),
+      topMm: profile.marginMm + mirroredRow * (geometry.heightMm + profile.gapMm),
+    }
+  })
+  return { front, backPlacements, flipMode, flipAxis: duplexFlipAxis(profile, flipMode) }
+}
+
 /** Eight outward-facing segments per trim box; marks never cross into the badge content. */
 export function cropMarkLines(
   placement: BadgeSheetPlacement,
@@ -137,33 +187,68 @@ export interface BadgeSheetPdfResult {
   readonly blob: Blob
   readonly fileName: string
   readonly plan: BadgeSheetPlan
+  readonly duplexPlan?: DuplexBadgeSheetPlan
+  readonly flipMode?: DuplexFlipMode
+  readonly hasBacks: boolean
   readonly assetCount: number
 }
 
-/** Single-sided front proof only. Duplex imposition belongs to #144. */
+function assetSide(asset: BadgeSheetAsset, side: AssetSide): boolean {
+  return asset.side ? asset.side === side : asset.id.endsWith(`-${side}`)
+}
+
+function pairBackAssets(fronts: readonly BadgeSheetAsset[], backs: readonly BadgeSheetAsset[]): Array<BadgeSheetAsset | undefined> {
+  const used = new Set<BadgeSheetAsset>()
+  return fronts.map((front) => {
+    const match = backs.find((back) => !used.has(back) && (
+      (front.sourceRowNumber !== undefined && back.sourceRowNumber === front.sourceRowNumber) ||
+      back.id === front.id.replace(/-front$/, '-back')
+    ))
+    if (match) used.add(match)
+    return match
+  })
+}
+
+/** Front-only proofs remain unchanged; when backs are present, pages alternate front/matching back sheets. */
 export async function buildBadgeSheetPdf(
   assets: readonly BadgeSheetAsset[],
   geometry: Pick<PrintGeometry, 'widthMm' | 'heightMm' | 'dpi'>,
   profileId: BadgeSheetProfile['id'] = 'a4',
+  flipMode: DuplexFlipMode = 'long-edge',
 ): Promise<BadgeSheetPdfResult> {
-  const fronts = assets.filter((asset) => asset.side ? asset.side === 'front' : asset.id.endsWith('-front'))
+  const fronts = assets.filter((asset) => assetSide(asset, 'front'))
   if (!fronts.length) throw new Error('No front badge PNGs are available for the PDF proof.')
+  const backs = assets.filter((asset) => assetSide(asset, 'back'))
+  const pairedBacks = pairBackAssets(fronts, backs)
+  const hasBacks = pairedBacks.some(Boolean)
   const profile = getBadgeSheetProfile(profileId)
-  const plan = planBadgeSheet(fronts.length, geometry, profile)
-  await Promise.all(fronts.map((asset) => assertPngResolution(asset, geometry)))
+  const duplexPlan = hasBacks ? planDuplexBadgeSheet(fronts.length, geometry, profile, flipMode) : undefined
+  const plan = duplexPlan?.front ?? planBadgeSheet(fronts.length, geometry, profile)
+  await Promise.all([...fronts, ...pairedBacks.filter((asset): asset is BadgeSheetAsset => Boolean(asset))].map((asset) => assertPngResolution(asset, geometry)))
   const { jsPDF } = await import('jspdf')
   const pdf = new jsPDF({ unit: 'mm', format: [profile.widthMm, profile.heightMm], orientation: 'portrait', compress: true })
-  pdf.setProperties({ title: `DevDays ${profile.label} badge PDF proof`, subject: 'Front-only badge sheet proof; Calibration pending #145' })
-  const dataUrls = await Promise.all(fronts.map((asset) => blobToDataUrl(asset.blob)))
-  for (let pageIndex = 0; pageIndex < plan.pageCount; pageIndex += 1) {
-    if (pageIndex > 0) pdf.addPage([profile.widthMm, profile.heightMm], 'portrait')
-    plan.placements.filter((placement) => placement.pageIndex === pageIndex).forEach((placement) => {
-      pdf.addImage(dataUrls[placement.index], 'PNG', placement.leftMm, placement.topMm, placement.widthMm, placement.heightMm, undefined, 'FAST')
+  pdf.setProperties({ title: `DevDays ${profile.label} badge PDF proof`, subject: hasBacks ? `Duplex ${flipMode} badge sheet proof; Calibration pending #145` : 'Front-only badge sheet proof; Calibration pending #145' })
+  const frontDataUrls = await Promise.all(fronts.map((asset) => blobToDataUrl(asset.blob)))
+  const backDataUrls = await Promise.all(pairedBacks.map((asset) => asset ? blobToDataUrl(asset.blob) : Promise.resolve(undefined)))
+  const drawPage = (pageIndex: number, placements: readonly BadgeSheetPlacement[], dataUrls: readonly (string | undefined)[]) => {
+    placements.filter((placement) => placement.pageIndex === pageIndex).forEach((placement) => {
+      const dataUrl = dataUrls[placement.index]
+      if (!dataUrl) return
+      pdf.addImage(dataUrl, 'PNG', placement.leftMm, placement.topMm, placement.widthMm, placement.heightMm, undefined, 'FAST')
       pdf.setDrawColor(80, 80, 80)
       pdf.setLineWidth(0.15)
       cropMarkLines(placement, profile).forEach(([x1, y1, x2, y2]) => pdf.line(x1, y1, x2, y2))
     })
   }
+  for (let pageIndex = 0; pageIndex < plan.pageCount; pageIndex += 1) {
+    if (pageIndex > 0) pdf.addPage([profile.widthMm, profile.heightMm], 'portrait')
+    drawPage(pageIndex, plan.placements, frontDataUrls)
+    if (hasBacks) {
+      pdf.addPage([profile.widthMm, profile.heightMm], 'portrait')
+      drawPage(pageIndex, duplexPlan?.backPlacements ?? [], backDataUrls)
+    }
+  }
   const bytes = pdf.output('arraybuffer')
-  return { blob: new Blob([bytes], { type: 'application/pdf' }), fileName: `devdays-badge-${profile.id}-proof.pdf`, plan, assetCount: fronts.length }
+  const suffix = hasBacks ? `duplex-${flipMode}` : 'proof'
+  return { blob: new Blob([bytes], { type: 'application/pdf' }), fileName: `devdays-badge-${profile.id}-${suffix}.pdf`, plan, duplexPlan, flipMode: hasBacks ? flipMode : undefined, hasBacks, assetCount: fronts.length }
 }
