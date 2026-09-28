@@ -88,6 +88,7 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
   const [error, setError] = useState('')
   const [selectedSpeakerIds, setSelectedSpeakerIds] = useState<string[]>([])
   const [catalogEventFilter, setCatalogEventFilter] = useState('')
+  const [catalogSearch, setCatalogSearch] = useState('')
   const [selectedSponsorId, setSelectedSponsorId] = useState('')
   const [selectedOrganizerId, setSelectedOrganizerId] = useState('')
   const [history, setHistory] = useState<BannerHistoryItem[]>(() => readBannerHistory())
@@ -313,17 +314,10 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
 
   // #79: collapsible sidebar sections. Open/closed state lives in React (not
   // the DOM) so it persists across format changes; only the format section is
-  // open by default because it is relevant to every format.
-  // 🧭 DECISION — question: which section should stay open by default, and
-  // should the default reset when the format changes?
-  //   options: (a) format section open, state persists; (b) collapse everything;
-  //   (c) reset to defaults on each format change.
-  //   investigation: the format section is the only section rendered for every
-  //   format, and it is the first thing users touch when changing output.
-  //   decision: (a) — format section open on load, user toggles persist across
-  //   format changes. Most conservative and easily reversible: revert this
-  //   commit to restore always-open sections.
-  const [openSections, setSectionOpen] = useState<Record<string, boolean>>({ 'section-format': true })
+  // 🧭 DECISION — Event and Format open on first load to show both the event
+  // context and output choice; user toggles persist across format changes.
+  // Revert by removing section-event from these initial defaults.
+  const [openSections, setSectionOpen] = useState<Record<string, boolean>>({ 'section-event': true, 'section-format': true })
   const handleSectionToggle = (id: string) => (event: ReactToggleEvent<HTMLDetailsElement>) => {
     const open = (event.target as HTMLDetailsElement).open
     setSectionOpen((prev) => (prev[id] === open ? prev : { ...prev, [id]: open }))
@@ -364,8 +358,8 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
     return count + (getSpeakerCardsForState(sideState, true).length || 1)
   }, 0)
   const downloadLabel = isSpeakerBadge
-    ? `${activeSide === 'front' ? 'Front' : 'Back'} PNG · ${format.width}×${format.height}${downloadFileCount > 1 ? ` · ${downloadFileCount} files` : ''}`
-    : `PNG · ${format.width}×${format.height}${downloadFileCount > 1 ? ` · ${downloadFileCount} files` : ''}`
+    ? `Download ${activeSide === 'front' ? 'front' : 'back'} PNG · ${format.width}×${format.height}${downloadFileCount > 1 ? ` · ${downloadFileCount} files` : ''}`
+    : `Download PNG · ${format.width}×${format.height}${downloadFileCount > 1 ? ` · ${downloadFileCount} files` : ''}`
   const catalogEventOptions = useMemo(() => {
     const labels = new Map<string, string>()
     for (const item of catalogSpeakers) {
@@ -376,10 +370,13 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
     }
     return [...labels.entries()].map(([id, label]) => ({ id, label }))
   }, [])
-  const visibleCatalogSpeakers = useMemo(
-    () => catalogSpeakers.filter((item) => !catalogEventFilter || item.eventId === catalogEventFilter),
-    [catalogEventFilter],
-  )
+  const visibleCatalogSpeakers = useMemo(() => {
+    const query = catalogSearch.trim().toLocaleLowerCase()
+    return catalogSpeakers.filter((item) => {
+      if (catalogEventFilter && item.eventId !== catalogEventFilter) return false
+      return !query || `${item.name} ${item.sessionTitle || ''}`.toLocaleLowerCase().includes(query)
+    })
+  }, [catalogEventFilter, catalogSearch])
   const selectedBackgroundImage = useMemo(() => getBackgroundImage(state.format), [state.format])
   const previewBackgroundFailed = selectedBackgroundImage ? backgroundFailed : false
 
@@ -1104,11 +1101,11 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
                 </button>
               </div>
               <ol>
-                <li><strong>Format</strong> chooses the image shape and channel.</li>
+                <li>Choose a format for where the image will appear.</li>
                 <li><strong>Event preset</strong> fills event details; <strong>Design theme</strong> sets the visual identity.</li>
                 <li>Edit the event, speaker, and partner details for this image.</li>
                 <li>Review validation messages and follow their field links to fix issues.</li>
-                <li><strong>Download PNG</strong> saves this format; <strong>Event pack (.zip)</strong> includes every format.</li>
+                <li><strong>Download PNG</strong> saves this asset. <strong>Event pack (.zip)</strong> gathers images across formats.</li>
               </ol>
             </section>
           )}
@@ -1307,6 +1304,18 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
                     {catalogEventOptions.map((event) => <Select.Option key={event.id} value={event.id}>{event.label}</Select.Option>)}
                   </Select>
                 </FormControl>
+                <FormControl id="catalog-speaker-search">
+                  <FormControl.Label>Search speakers or sessions</FormControl.Label>
+                  <TextInput
+                    type="search"
+                    value={catalogSearch}
+                    onChange={(event) => setCatalogSearch(event.target.value)}
+                    placeholder="Name or talk title"
+                  />
+                </FormControl>
+                <p className="catalog-result-count" aria-live="polite">
+                  {visibleCatalogSpeakers.length} {visibleCatalogSpeakers.length === 1 ? 'speaker' : 'speakers'} found
+                </p>
                 <div className="catalog-options">
                   {visibleCatalogSpeakers.map((speaker) => (
                     <label key={speaker.speakerId} className="catalog-option">
@@ -1318,6 +1327,12 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
                     </label>
                   ))}
                 </div>
+                {!visibleCatalogSpeakers.length && (
+                  <p className="catalog-empty" role="status">No speakers match this search and event.</p>
+                )}
+                <p className="catalog-selection-count" aria-live="polite">
+                  {selectedSpeakerIds.length} selected from Planning
+                </p>
                 <Button
                   type="button"
                   disabled={!selectedSpeakerIds.length || state.speakers.length >= MAX_SPEAKERS}
@@ -1326,6 +1341,13 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
                   {state.speakers.length >= MAX_SPEAKERS ? `Speaker limit reached (${MAX_SPEAKERS})` : `Add selected speakers (${selectedSpeakerIds.length})`}
                 </Button>
               </fieldset>
+              {state.speakers.length > 0 && (
+                <p className="speaker-selection-summary" aria-live="polite">
+                  <strong>Selected speakers ({state.speakers.length}):</strong>{' '}
+                  {state.speakers.slice(0, 3).map((speaker) => speaker.name.trim() || 'Unnamed speaker').join(', ')}
+                  {state.speakers.length > 3 ? ` +${state.speakers.length - 3} more` : ''}
+                </p>
+              )}
               {!state.speakers.length && (
                 <div className="empty-speakers" role="status">
                   <p className="section-description">
@@ -1718,7 +1740,15 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
             {isSpeakerBadge && <strong className="side-validation-heading">{activeSide === 'front' ? 'Front' : 'Back'} checks</strong>}
             {validationFindings.length === 0 ? (
               <div role="status">
-                <Banner variant="success" layout="compact" flush title="All checks passed" />
+                <Banner
+                  variant="success"
+                  layout="compact"
+                  flush
+                  title={isSpeakerBadge ? `${activeSide === 'front' ? 'Front' : 'Back'} design checks passed` : 'All checks passed'}
+                />
+                {isSpeakerBadge && (
+                  <p className="validation-readiness-note">Physical printer calibration is still required before production.</p>
+                )}
               </div>
             ) : (
                         validationFindings.map((finding) => {
@@ -1830,8 +1860,8 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
                             }}
                             aria-label={
                               exportFindingsLabel
-                                ? `Download PNG. Findings: ${exportFindingsLabel}`
-                                : `Download ${downloadLabel}`
+                                ? `${downloadLabel}. Findings: ${exportFindingsLabel}`
+                                : downloadLabel
                             }
                           >
                             {downloadLabel}
@@ -1843,9 +1873,9 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
                               disabled={isExportingBanner}
                               leadingVisual={DownloadIcon}
                               onClick={() => { void exportBanner(true) }}
-                              aria-label={`Download both Speaker Badge sides as ${bothBadgeSideFileCount} PNG files`}
+                              aria-label={`Download Speaker Badge front and back as ${bothBadgeSideFileCount} PNG files`}
                             >
-                              Both sides · {bothBadgeSideFileCount} PNGs
+                              Download front + back · {bothBadgeSideFileCount} PNGs
                             </Button>
                           )}
                           </div>
@@ -1868,10 +1898,11 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
                   onClick={() => {
                     void exportEventPack()
                   }}
-                  aria-label={exportFindingsLabel ? `Event pack (.zip). Findings: ${exportFindingsLabel}` : undefined}
+                  aria-label={exportFindingsLabel ? `Download event pack (.zip). Findings: ${exportFindingsLabel}` : undefined}
                 >
-                  Event pack (.zip)
+                  Download event pack (.zip)
                 </Button>
+                <small>Event formats create one image each. Speaker formats create one per speaker.</small>
                 {packProgress && (
                   <small aria-live="polite">
                     {packProgress.label}

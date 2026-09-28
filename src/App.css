@@ -587,6 +587,12 @@
   color: var(--app-text-primary);
 }
 
+.validation-readiness-note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
 .badge-export-validation {
   display: grid;
   gap: 0.25rem;
@@ -1198,6 +1204,21 @@ input[type='file'] {
   gap: 0.35rem;
   max-height: 260px;
   overflow: auto;
+}
+
+.catalog-result-count,
+.catalog-selection-count,
+.catalog-empty,
+.speaker-selection-summary {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin: 0.45rem 0;
+}
+
+.speaker-selection-summary {
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
 }
 
 .catalog-option {

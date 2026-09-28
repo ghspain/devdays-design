@@ -62,6 +62,8 @@ test('badge format displays configurable physical metadata without a printer gua
   await expect(selected).toContainText(/not print-ready/i)
   await expect(selected).toHaveAttribute('aria-label', /80 by 120 millimetres at 254 DPI/)
   await expect(selected).toHaveAttribute('aria-label', /configurable example, not print-ready/i)
+  await expect(page.locator('.validation-panel')).toContainText('design checks passed')
+  await expect(page.locator('.validation-panel')).toContainText('Physical printer calibration is still required before production.')
   await expect(page.getByLabel('Banner preview')).toHaveAttribute('width', '800')
   await expect(page.getByLabel('Banner preview')).toHaveAttribute('height', '1200')
 })

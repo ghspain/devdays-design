@@ -1,6 +1,8 @@
 import { StrictMode, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ThemeProvider } from '@primer/react'
+import { BaseStyles, ThemeProvider } from '@primer/react'
+import '@primer/primitives/dist/css/functional/themes/light.css'
+import '@primer/primitives/dist/css/functional/themes/dark.css'
 import './index.css'
 import App from './App.tsx'
 import SpeakerPairProposal from './SpeakerPairProposal.tsx'
@@ -30,9 +32,11 @@ function Application() {
 
   return (
     <ThemeProvider colorMode={shellMode === 'dark' ? 'night' : 'day'} dayScheme="light" nightScheme="dark">
-      {isProposal
-        ? <SpeakerPairProposal />
-        : <App shellMode={shellMode} onToggleShellMode={toggleShellMode} />}
+      <BaseStyles>
+        {isProposal
+          ? <SpeakerPairProposal />
+          : <App shellMode={shellMode} onToggleShellMode={toggleShellMode} />}
+      </BaseStyles>
     </ThemeProvider>
   )
 }

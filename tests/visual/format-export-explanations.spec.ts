@@ -58,13 +58,14 @@ test.describe('Format and export outputs are explained', () => {
   test('event pack button distinguishes ZIP from PNG download', async ({ page }) => {
     await page.goto('/')
 
-    // The ZIP button should contain "Event pack" and ".zip"
+    // The ZIP button should name its action and file type.
     const packBtn = page.locator('button.pack-download')
     await expect(packBtn).toBeVisible()
 
     const packText = await packBtn.textContent()
-    expect(packText).toContain('Event pack')
+    expect(packText).toMatch(/event pack/i)
     expect(packText).toContain('.zip')
+    await expect(packBtn).toHaveAccessibleName('Download event pack (.zip)')
 
     // The PNG button must not be confused with the ZIP button
     const downloadBtn = page.locator('button.download-main')

@@ -16,7 +16,7 @@ export default function AssetNavigation({ format, open, onFormatSelect, onToggle
       <details className="side-section" id="section-format" open={open} onToggle={onToggle}>
         <summary>
           <span>Assets &amp; templates</span>
-          <span className="asset-navigation-hint">Choose an output</span>
+          <span className="asset-navigation-hint">Choose an asset to create</span>
         </summary>
         <nav className="asset-navigation-list format-groups" aria-label="Asset templates">
           {assetCatalog.map((asset) => (

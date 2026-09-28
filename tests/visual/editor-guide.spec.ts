@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
 test('the quick guide explains formats, presets, themes, validation, and exports', async ({ page }) => {
   const guide = page.getByRole('region', { name: 'A quick guide' })
   await expect(guide).toBeVisible()
-  await expect(guide).toContainText('Format chooses the image shape and channel')
+  await expect(guide).toContainText('Choose a format for where the image will appear')
   await expect(guide).toContainText('Event preset fills event details')
   await expect(guide).toContainText('Design theme sets the visual identity')
   await expect(guide).toContainText('Review validation messages')
