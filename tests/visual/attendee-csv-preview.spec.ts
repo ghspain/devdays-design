@@ -60,7 +60,7 @@ test('organizers see bounded representative badge previews that follow included 
   await expect(previewSection.locator('canvas').first()).toHaveAttribute('width', '800')
   await expect(previewSection.locator('canvas').first()).toHaveAttribute('height', '1200')
   const initialAccent = await previewSection.locator('canvas').first().evaluate((element) =>
-    Array.from((element as HTMLCanvasElement).getContext('2d')!.getImageData(100, 100, 1, 1).data),
+    Array.from((element as HTMLCanvasElement).getContext('2d')!.getImageData(400, 38, 1, 1).data),
   )
   expect(initialAccent).not.toEqual([9, 105, 218, 255])
   await previewSection.scrollIntoViewIfNeeded()
@@ -81,7 +81,7 @@ test('organizers see bounded representative badge previews that follow included 
   await page.getByRole('button', { name: 'Import attendee CSV' }).click()
   const onlineCanvas = page.getByRole('dialog', { name: 'Import attendee CSV' }).locator('.attendee-badge-preview canvas').first()
   await expect.poll(() => onlineCanvas.evaluate((element) => {
-    const pixel = (element as HTMLCanvasElement).getContext('2d')?.getImageData(100, 100, 1, 1).data
+    const pixel = (element as HTMLCanvasElement).getContext('2d')?.getImageData(400, 38, 1, 1).data
     return pixel ? Array.from(pixel) : []
   })).toEqual([9, 105, 218, 255])
 })
