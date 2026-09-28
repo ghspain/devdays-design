@@ -129,12 +129,21 @@ export interface AttendeeBatchResult {
   fileName: string
   fileCount: number
   failures: BatchRenderFailure[]
+  files: Array<{ id: string; filename: string; blob: Blob }>
+  cancelled: boolean
+}
+
+export interface AttendeeBatchOptions {
+  signal?: AbortSignal
+  retryIds?: readonly string[]
+  previousFiles?: readonly AttendeeBatchResult['files'][number][]
 }
 
 export async function buildAttendeeBadgePack(
   state: BannerState,
   rows: readonly ValidatedAttendeeRow[],
   onProgress?: (progress: AttendeeBatchProgress) => void,
+  options?: AttendeeBatchOptions,
 ): Promise<AttendeeBatchResult> {
   const { default: JSZip } = await import('jszip')
   const zip = new JSZip()
@@ -171,21 +180,31 @@ export async function buildAttendeeBadgePack(
     })
   })
 
-  const result = await runRenderQueue(jobs, (progress) => onProgress?.({
+  const retryIds = options?.retryIds ? new Set(options.retryIds) : null
+  const jobsToRun = retryIds ? jobs.filter((job) => retryIds.has(job.id)) : jobs
+  const result = await runRenderQueue(jobsToRun, (progress) => onProgress?.({
     completed: progress.completed,
     total: progress.total,
     stage: progress.stage,
     percentage: progress.percentage,
     current: progress.current?.filename,
-  }))
-  onProgress?.({ completed: result.completed.length, total: jobs.length, stage: 'packaging', percentage: 100 })
-  result.completed.forEach(({ job, blob }) => zip.file(job.filename, blob))
+  }), { signal: options?.signal })
+  const filesById = new Map((options?.previousFiles ?? []).map((file) => [file.id, file]))
+  result.completed.forEach(({ job, blob }) => filesById.set(job.id, { id: job.id, filename: job.filename, blob }))
+  const files = jobs.flatMap((job) => {
+    const file = filesById.get(job.id)
+    return file ? [file] : []
+  })
+  onProgress?.({ completed: files.length, total: jobs.length, stage: 'packaging', percentage: 100 })
+  files.forEach((file) => zip.file(file.filename, file.blob))
   const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' })
-  onProgress?.({ completed: jobs.length, total: jobs.length, stage: 'complete', percentage: 100 })
+  onProgress?.({ completed: files.length, total: jobs.length, stage: result.cancelled ? 'cancelled' : 'complete', percentage: result.cancelled ? Math.round((files.length / jobs.length) * 100) : 100 })
   return {
     blob,
     fileName: `devdays-${citySlug}-${titleSlug}-badges.zip`,
-    fileCount: result.completed.length,
+    fileCount: files.length,
     failures: result.failures,
+    files,
+    cancelled: result.cancelled,
   }
 }
