@@ -25,6 +25,7 @@ export function getBackgroundImage(format: BannerFormat) {
   if (format === 'speaker_banner') return speakerBackgroundImage
   if (format === 'social_promo') return speakerBackgroundImage
   if (format === 'luma_cover') return lumaBackgroundImage
+  if (format === 'speaker_badge') return null
   return null
 }
 

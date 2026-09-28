@@ -117,4 +117,5 @@ export const filenamePrefixByFormat: Record<BannerFormat, string> = {
   social_promo: 'social',
   speaker_banner: 'speaker',
   speaker_square: 'speaker',
+  speaker_badge: 'speaker-badge',
 }

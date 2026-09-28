@@ -12,9 +12,10 @@ type Renderer = (
   renderInfo?: RenderInfo,
 ) => Promise<void>
 
-test('registered dispatch preserves legacy pixels and render metadata for every format and theme', async ({ page }, testInfo) => {
+test('registered dispatch preserves legacy pixels and render metadata for every existing format and theme', async ({ page }, testInfo) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+  const legacyFormats = formatOptions.filter(({ id }) => id !== 'speaker_badge')
   const results = await page.evaluate(async ({ formats, themes }) => {
     await document.fonts.ready
     const importModule = (path: string) => import(new URL(path, window.location.href).href) as Promise<Record<string, unknown>>
@@ -53,7 +54,7 @@ test('registered dispatch preserves legacy pixels and render metadata for every 
       }
     }
     return comparisons
-  }, { formats: formatOptions, themes: Object.values(EVENT_THEMES) })
+  }, { formats: legacyFormats, themes: Object.values(EVENT_THEMES) })
 
   await testInfo.attach('renderer-equivalence-12-combinations.json', {
     body: JSON.stringify(results, null, 2),

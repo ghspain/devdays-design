@@ -476,6 +476,7 @@ test('event pack downloads every format in one ZIP', async ({ page }, testInfo) 
     'speaker-banner/speaker-banner-01-speaker-name.png',
     'social-promo/social-promo-madrid.png',
     'luma-cover/luma-cover-madrid.png',
+    'speaker-badge/speaker-badge-01-speaker-name.png',
   ])
 })
 

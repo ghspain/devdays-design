@@ -7,10 +7,11 @@ const packFolderByFormat: Record<BannerFormat, string> = {
   social_promo: 'social-promo',
   speaker_banner: 'speaker-banner',
   speaker_square: 'speaker-profile',
+  speaker_badge: 'speaker-badge',
 }
 
 const isSpeakerFormat = (format: BannerFormat) =>
-  format === 'speaker_banner' || format === 'speaker_square'
+  format === 'speaker_banner' || format === 'speaker_square' || format === 'speaker_badge'
 
 export const slugify = (value: string, fallback: string) =>
   value

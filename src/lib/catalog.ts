@@ -3,6 +3,7 @@ import sponsorsCsv from '../../data/sponsors.csv?raw'
 import participationsCsv from '../../data/participations.csv?raw'
 import organizersCsv from '../../data/organizers.csv?raw'
 import presets from '../../data/presets.json'
+import { publicProfileHandle } from '../domain/publicHandle'
 
 export interface CatalogPerson {
   id: string
@@ -158,6 +159,11 @@ const publicProfiles = new Map<string, CatalogPublicProfile>(parseCsv(peopleCsv)
 
 export function getCatalogPublicProfile(personId: string): CatalogPublicProfile | undefined {
   return publicProfiles.get(personId)
+}
+
+/** Badge-friendly handle from a canonical public profile; never infers private identity data. */
+export function getCatalogPublicHandle(profile: CatalogPublicProfile | undefined): string | undefined {
+  return profile ? publicProfileHandle(profile.destinations) : undefined
 }
 
 export const catalogSponsors: CatalogSponsor[] = parseCsv(sponsorsCsv).map((sponsor) => ({
