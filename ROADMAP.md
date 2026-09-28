@@ -287,8 +287,10 @@ Assets / templates | Artboard | Contextual properties
 
 ### Work
 
-- Task-first entry: "What do you want to create?"
-- Asset/template browser instead of requiring users to understand internal format IDs.
+- [x] Phase 1: The Event Studio shell has an explicit light and dark design-token mapping. (#123)
+- [x] Phase 2: Organizers start from the asset they want to create, not an internal format ID. (#125)
+- [ ] Phase 3: Editing centers on an artboard with contextual properties. (#126)
+- [ ] Phase 4: Supported template elements can be adjusted directly without breaking layout rules. (#127)
 - Central artboard as the main editing surface.
 - Click/select an element to reveal its properties.
 - Constrained drag/reposition/resize only for template elements that permit it.

@@ -16,6 +16,7 @@ import {
 } from '@primer/octicons-react'
 import './App.css'
 import AttendeeCsvImport from './components/AttendeeCsvImport'
+import AssetStartScreen from './components/AssetStartScreen'
 import {
   EVENT_THEMES,
   filenamePrefixByFormat,
@@ -87,6 +88,7 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
   const [selectedSponsorId, setSelectedSponsorId] = useState('')
   const [selectedOrganizerId, setSelectedOrganizerId] = useState('')
   const [history, setHistory] = useState<BannerHistoryItem[]>(() => readBannerHistory())
+  const [showAssetChooser, setShowAssetChooser] = useState(false)
   const [speakerPreviews, setSpeakerPreviews] = useState<Array<{ id: string; name: string; previewDataUrl: string }>>([])
   const [fontsReady, setFontsReady] = useState(() => typeof document === 'undefined' || !document.fonts)
   const [isExportingPack, setIsExportingPack] = useState(false)
@@ -358,7 +360,10 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
       readDraft()
         .then((result) => {
           if (cancelled) return
-          if (result.status === 'restored') setState(normalizeState(result.state))
+          if (result.status === 'restored') {
+            setState(normalizeState(result.state))
+            setShowAssetChooser(false)
+          }
           if (result.status === 'unsupported' || result.status === 'invalid') {
             setDraftBlocked(true)
             setDraftStatus('error')
@@ -919,6 +924,17 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
       </header>
 
       <main className="editor-body">
+        {showAssetChooser ? (
+          <AssetStartScreen
+            onBack={() => setShowAssetChooser(false)}
+            onSelectAsset={(format) => {
+              setState((previous) => ({ ...previous, format }))
+              setShowAssetChooser(false)
+              setMobileView('fields')
+            }}
+          />
+        ) : (
+        <>
         <div
           className="mobile-view-tabs"
           role={isMobileViewport ? 'tablist' : undefined}
@@ -967,6 +983,9 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
               onClick={() => setSidebarCollapsed((value) => !value)}
             />
             <span className="sidebar-title">Design</span>
+            <Button className="asset-picker-toggle" size="small" onClick={() => setShowAssetChooser(true)}>
+              Choose asset
+            </Button>
             <button
               type="button"
               className="sections-toggle"
@@ -2019,6 +2038,8 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
               }}
             />
           </div>
+        )}
+        </>
         )}
       </main>
     </div>

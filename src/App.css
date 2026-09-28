@@ -203,6 +203,10 @@
   position: relative;
 }
 
+.asset-picker-toggle {
+  flex: none;
+}
+
 .mobile-view-tabs {
   display: none;
 }
@@ -261,6 +265,7 @@
 .sidebar.collapsed .sidebar-content,
 .sidebar.collapsed .sidebar-footer,
 .sidebar.collapsed .sections-toggle,
+.sidebar.collapsed .asset-picker-toggle,
 .sidebar.collapsed .validation-panel {
   display: none;
 }
@@ -1520,6 +1525,7 @@ input[type='file']::file-selector-button:hover {
   .format-grid-pair {
     grid-template-columns: 1fr;
   }
+
 }
 
 /* Mobile editor layout: controls and preview become a single vertical flow.
