@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test'
 import { formatOptions } from '../../src/constants'
 import { assetCatalog, type AssetDefinition } from '../../src/domain/assets'
+import { resolveRenderer, type AssetRenderer } from '../../src/lib/renderers/registry'
+
+const testRenderer: AssetRenderer = async () => {}
 
 const pairedBadgeContract: AssetDefinition = {
   id: 'speaker-networking-badge',
@@ -11,6 +14,7 @@ const pairedBadgeContract: AssetDefinition = {
     description: 'Front and back speaker badge',
     channels: [],
     sides: ['front', 'back'],
+    rendererId: 'badge',
     exportProfiles: [{ id: 'badge-image', width: 900, height: 1200, types: ['png'], scales: [1] }],
   }],
 }
@@ -29,6 +33,8 @@ test('asset templates expose stable identity, sides, and independent export prof
   for (const template of templates) {
     expect(template.id).toBeTruthy()
     expect(template.sides).toEqual(['front'])
+    expect(template.rendererId).toBe('legacy-social')
+    expect(resolveRenderer(template.legacyFormat!, { 'legacy-social': testRenderer })).toBe(testRenderer)
     expect(template.exportProfiles).toHaveLength(1)
     expect(template.exportProfiles[0]).toMatchObject({
       width: expect.any(Number),

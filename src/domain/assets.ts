@@ -18,6 +18,8 @@ export interface AssetTemplateDefinition {
   readonly channels: readonly string[]
   readonly sides: readonly AssetSide[]
   readonly exportProfiles: readonly ExportProfile[]
+  /** Renderer implementation selected by the rendering registry. */
+  readonly rendererId: string
   /** Adapter for persisted BannerState.format values used by existing renderers. */
   readonly legacyFormat?: BannerFormat
 }
@@ -45,6 +47,7 @@ export const assetCatalog: readonly AssetDefinition[] = [
         description: 'Square cover image for Luma event pages',
         channels: ['Luma'],
         sides: ['front'],
+        rendererId: 'legacy-social',
         exportProfiles: [{ id: 'luma-square', width: 1000, height: 1000, types: imageTypes, scales: imageScales }],
       },
       {
@@ -54,6 +57,7 @@ export const assetCatalog: readonly AssetDefinition[] = [
         description: 'Event promotion banner for social feeds',
         channels: ['Instagram', 'LinkedIn', 'X', 'Facebook', 'BlueSky', 'Threads'],
         sides: ['front'],
+        rendererId: 'legacy-social',
         exportProfiles: [{ id: 'social-portrait', width: 1080, height: 1350, types: imageTypes, scales: imageScales }],
       },
     ],
@@ -69,6 +73,7 @@ export const assetCatalog: readonly AssetDefinition[] = [
         description: 'Square profile banner for social media posts',
         channels: ['Instagram', 'LinkedIn', 'X', 'BlueSky'],
         sides: ['front'],
+        rendererId: 'legacy-social',
         exportProfiles: [{ id: 'speaker-square', width: 1080, height: 1080, types: imageTypes, scales: imageScales }],
       },
       {
@@ -78,6 +83,7 @@ export const assetCatalog: readonly AssetDefinition[] = [
         description: 'Tall speaker banner with talk details',
         channels: ['Instagram', 'LinkedIn', 'X', 'Facebook', 'BlueSky', 'Threads'],
         sides: ['front'],
+        rendererId: 'legacy-social',
         exportProfiles: [{ id: 'speaker-portrait', width: 1080, height: 1350, types: imageTypes, scales: imageScales }],
       },
     ],

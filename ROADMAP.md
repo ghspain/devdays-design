@@ -103,13 +103,10 @@ Goal: create extension points before adding the new physical-asset families.
 
 ### Work
 
-- Introduce an asset/template registry rather than continuing to grow `BannerFormat` indefinitely.
-- Separate reusable event/project data from asset-specific state.
-- Introduce a side model for front-only and front/back assets.
-- Introduce export profiles independent from asset identity.
-- Split renderer responsibilities so social, badge and print concerns do not accumulate in one `renderBanner.ts` branch tree.
-- Add versioned migration/normalization for existing draft/history state.
-- Preserve pixel/output behavior for the four current formats during the refactor.
+- [x] Current formats resolve through reusable asset and template contracts. (#105)
+- [ ] Existing social assets render through isolated renderer boundaries. (#106)
+- [ ] Existing drafts and history migrate through a versioned state boundary. (#107)
+- [ ] A test asset can be registered without changing unrelated social switches. (#108)
 
 ### Suggested target boundaries
 
