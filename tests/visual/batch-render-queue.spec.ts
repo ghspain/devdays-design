@@ -82,6 +82,27 @@ test('badge generation can be cancelled mid-run while retaining completed work',
   await expect(dialog.getByRole('list', { name: 'Badge batch failures' })).toContainText('Cancelled before rendering.')
 })
 
+test('replacing the CSV during a slow batch drops the stale result without downloading it', async ({ page }) => {
+  const dialog = await importCsv(page)
+  await page.evaluate(() => {
+    HTMLCanvasElement.prototype.toBlob = (callback) => {
+      window.setTimeout(() => callback(new Blob(['png'])), 100)
+    }
+  })
+  const downloads: string[] = []
+  page.on('download', (download) => downloads.push(download.suggestedFilename()))
+  await dialog.getByRole('button', { name: 'Generate selected badges (.zip)' }).click()
+  await dialog.getByLabel('Choose a CSV file').setInputFiles({
+    name: 'replacement.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('name,role\nReplacement Person,Attendee'),
+  })
+  await expect(dialog.getByRole('status')).toContainText('selected for generation 1')
+  await page.waitForTimeout(250)
+  expect(downloads).toEqual([])
+  await expect(dialog).not.toContainText('Generated ')
+})
+
 test('badge generation reports failed attendee rows and sides without row details', async ({ page }) => {
   const dialog = await importCsv(page)
   await page.evaluate(() => {

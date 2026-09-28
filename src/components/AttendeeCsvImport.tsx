@@ -180,6 +180,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
       const pack = await buildAttendeeBadgePack(state, rows, setBatchProgress, retry && batchResult
         ? { signal: controller.signal, retryIds: batchResult.failures.map((failure) => failure.id), previousFiles: batchResult.files }
         : { signal: controller.signal })
+      if (batchControllerRef.current !== controller) return
       const url = URL.createObjectURL(pack.blob)
       const link = document.createElement('a')
       link.href = url
@@ -188,10 +189,10 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
       window.setTimeout(() => URL.revokeObjectURL(url), 1000)
       setBatchResult(pack)
     } catch {
-      setBatchError('Could not generate the selected badges. Try again.')
+      if (batchControllerRef.current === controller) setBatchError('Could not generate the selected badges. Try again.')
     } finally {
       setIsGenerating(false)
-      batchControllerRef.current = null
+      if (batchControllerRef.current === controller) batchControllerRef.current = null
     }
   }
 
