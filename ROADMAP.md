@@ -413,14 +413,14 @@ Goal: generate hundreds or thousands of assets without freezing the editor or re
 
 ### Work
 
-- dedicated render queue,
-- chunked processing,
-- progress reporting,
-- cancel/retry behavior,
-- deterministic filenames,
-- bounded memory use,
-- investigate Web Workers / OffscreenCanvas where browser support and measured performance justify them,
-- preserve validation reporting across the batch.
+- [x] Phase 8.1 / #138: dedicated queue with deterministic jobs, chunked main-thread yielding, front/back progress, and per-job failures,
+- [ ] cancel/retry behavior (#139),
+- [ ] measured responsiveness and memory targets (#140),
+- [x] progress reporting,
+- [x] deterministic filenames,
+- [x] bounded intermediate render memory,
+- [ ] investigate Web Workers / OffscreenCanvas where browser support and measured performance justify them,
+- [x] preserve validation reporting across the batch.
 
 ### Exit criterion
 
