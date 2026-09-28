@@ -17,6 +17,8 @@ import {
 import './App.css'
 import AttendeeCsvImport from './components/AttendeeCsvImport'
 import AssetStartScreen from './components/AssetStartScreen'
+import AssetNavigation from './components/AssetNavigation'
+import ArtboardSelectionOverlay from './components/ArtboardSelectionOverlay'
 import {
   EVENT_THEMES,
   filenamePrefixByFormat,
@@ -43,7 +45,7 @@ import { uid } from './lib/format'
 import { buildDefaultState, normalizeState, readBannerHistory, writeBannerHistory } from './lib/history'
 import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
-import { createRenderInfo, validateState, type ValidationFinding } from './lib/validate'
+import { createRenderInfo, validateState, type TextRegion, type ValidationFinding } from './lib/validate'
 import { checkRenderedCanvas } from './lib/pixelChecks'
 import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets, getCatalogPublicHandle, getCatalogPublicProfile } from './lib/catalog'
 import { resolveCatalogQRDestination } from './lib/qrDestinationResolver'
@@ -95,6 +97,8 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
   const [isExportingBanner, setIsExportingBanner] = useState(false)
   const [packProgress, setPackProgress] = useState<EventPackProgress | null>(null)
   const [validationFindings, setValidationFindings] = useState<ValidationFinding[]>([])
+  const [canvasTextRegions, setCanvasTextRegions] = useState<TextRegion[]>([])
+  const [selectedArtboardField, setSelectedArtboardField] = useState<string | undefined>()
   const [badgeExportFindings, setBadgeExportFindings] = useState<Array<{ side: AssetSide; findings: ValidationFinding[] }> | null>(null)
   // Fields the live preview render had to truncate (e.g. ["event title"]).
   const [truncatedFields, setTruncatedFields] = useState<string[]>([])
@@ -178,6 +182,32 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
       return !!key && truncatedFields.includes(key)
     }
 
+        const focusEditorTarget = (target: { elementId: string; fieldId?: string }) => {
+          if (isMobileViewport) setMobileView('fields')
+          // Scroll to the section
+          const sectionEl = document.getElementById(target.elementId)
+          if (sectionEl) {
+            sectionEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            if (sectionEl.tagName === 'DETAILS' && !(sectionEl as HTMLDetailsElement).open) {
+              setSectionOpen((prev) => ({ ...prev, [target.elementId]: true }))
+            }
+          }
+          if (target.fieldId) {
+            window.setTimeout(() => {
+              // Primer FormControl may give its label the same id as the input;
+              // prefer the actual focusable control over that earlier label node.
+              const fieldEl = document.querySelector<HTMLElement>(
+                `input[id="${target.fieldId}"], textarea[id="${target.fieldId}"], select[id="${target.fieldId}"], button[id="${target.fieldId}"]`,
+              ) ?? document.getElementById(target.fieldId!)
+              if (!fieldEl) return
+              fieldEl.focus()
+              fieldEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              fieldEl.classList.add('validation-highlight')
+              window.setTimeout(() => fieldEl.classList.remove('validation-highlight'), 2000)
+            }, 300)
+          }
+        }
+
         const navigateToField = (finding: ValidationFinding) => {
           // For text-truncated, use the specific field name to find the target
           let target: { elementId: string; fieldId?: string } | undefined
@@ -195,30 +225,26 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
           }
           if (!target) return
 
-      // Scroll to the section
-      const sectionEl = document.getElementById(target.elementId)
-      if (sectionEl) {
-        sectionEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        // Open the section if it's collapsed (through React state so the
-        // controlled <details> stays in sync).
-        if (sectionEl.tagName === 'DETAILS' && !(sectionEl as HTMLDetailsElement).open) {
-          setSectionOpen((prev) => ({ ...prev, [target.elementId]: true }))
-        }
-      }
+      focusEditorTarget(target)
+    }
 
-      // Focus the specific field if available
-      if (target.fieldId) {
-        const fieldEl = document.getElementById(target.fieldId)
-        if (fieldEl) {
-          setTimeout(() => {
-            fieldEl.focus()
-            fieldEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            // Briefly highlight the field
-            fieldEl.classList.add('validation-highlight')
-            setTimeout(() => fieldEl.classList.remove('validation-highlight'), 2000)
-          }, 300)
-        }
-      }
+    const selectArtboardField = (field: string) => {
+      setSelectedArtboardField(field)
+      const normalized = field.toLowerCase()
+      const firstSpeakerId = state.speakers[0]?.id
+      const target = {
+        'event title': { elementId: 'section-event', fieldId: 'event-title' },
+        'event identity': { elementId: 'section-event', fieldId: 'event-title' },
+        'event details': { elementId: 'section-event' },
+        'speaker name': { elementId: 'section-speakers', fieldId: firstSpeakerId ? `speaker-name-${firstSpeakerId}` : undefined },
+        city: { elementId: 'section-event', fieldId: 'event-city' },
+        edition: { elementId: 'section-event', fieldId: 'event-edition' },
+        'date & time': { elementId: 'section-event', fieldId: 'event-datetime' },
+        'registration label': { elementId: 'section-registration', fieldId: 'registration-text' },
+        'registration url': { elementId: 'section-registration', fieldId: 'registration-url' },
+        'qr destination text': { elementId: 'section-qr', fieldId: 'qr-destination-type' },
+      }[normalized]
+      if (target) focusEditorTarget(target)
     }
 
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -466,6 +492,7 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
       const effectiveFindings = injected ?? findings
       if (cancelled) return
       setValidationFindings(effectiveFindings)
+      setCanvasTextRegions(showMultiSpeakerPreviewGrid ? [] : renderInfo.textRegions)
       setTruncatedFields(renderInfo.truncatedFields)
       // Exposed for Playwright visual-validation specs (reflects injected findings too).
       ;(window as unknown as { __devdaysValidation?: { findings: ValidationFinding[]; pixelChecks: typeof checkRenderedCanvas } }).__devdaysValidation = { findings: effectiveFindings, pixelChecks: checkRenderedCanvas }
@@ -965,10 +992,19 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
             Preview
           </button>
         </div>
+        <AssetNavigation
+          format={state.format}
+          open={openSections['section-format']}
+          onFormatSelect={(nextFormat) => {
+            if (state.format !== nextFormat) showToast('Format changed — the fields shown adapt to this format.')
+            setState((previous) => ({ ...previous, format: nextFormat }))
+          }}
+          onToggle={handleSectionToggle('section-format')}
+        />
         <aside
           id="mobile-fields-panel"
           className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
-          aria-label="Editor controls"
+          aria-label="Properties"
           role={isMobileViewport ? 'tabpanel' : undefined}
           aria-labelledby={isMobileViewport ? 'mobile-fields-tab' : undefined}
           tabIndex={isMobileViewport ? -1 : undefined}
@@ -982,7 +1018,7 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
               aria-expanded={!sidebarCollapsed}
               onClick={() => setSidebarCollapsed((value) => !value)}
             />
-            <span className="sidebar-title">Design</span>
+            <span className="sidebar-title">Properties</span>
             <Button className="asset-picker-toggle" size="small" onClick={() => setShowAssetChooser(true)}>
               Choose asset
             </Button>
@@ -1345,68 +1381,6 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
             </div>
           </details>
           )}
-
-          <details
-            className="side-section"
-            open={openSections['section-format']}
-            onToggle={handleSectionToggle('section-format')}
-            id="section-format"
-          >
-            <summary>
-              <span>Format</span>
-              <ChevronDownIcon size={16} className="chevron" />
-            </summary>
-            <div className="section-block format-bar">
-              <span className="picker-label" id="format-label">Choose a banner size</span>
-              <div className="format-groups" role="group" aria-labelledby="format-label">
-              {assetCatalog.map((asset) => (
-                <div className="format-group" key={asset.id}>
-                  <h3>{asset.name}</h3>
-                  <div className="format-grid-pair">
-                    {asset.templates.map((template) => {
-                      const option = formatOptions.find((item) => item.id === template.legacyFormat)
-                      if (!option) return null
-                      return (
-                        <button
-                          aria-pressed={state.format === option.id}
-                          aria-label={`${option.name}, ${option.width} by ${option.height}, ${option.description ?? ''}, ${option.channels?.join(', ') ?? ''}`}
-                          className={`card-option format-card${state.format === option.id ? ' selected' : ''}`}
-                          key={option.id}
-                          onClick={() => {
-                            // #82: brief toast when the format changes and fields get
-                            // hidden/shown. Does not change state persistence.
-                            if (state.format !== option.id) {
-                              showToast('Format changed — the fields shown adapt to this format.')
-                            }
-                            setState((previous) => ({ ...previous, format: option.id }))
-                          }}
-                          type="button"
-                        >
-                          <span className="format-ratio-wrap" aria-hidden="true">
-                            <span
-                              className="format-ratio"
-                              style={{
-                                aspectRatio: `${option.width} / ${option.height}`,
-                                backgroundColor: state.colors.background,
-                                borderColor: state.colors.secondary,
-                              }}
-                            >
-                              <span style={{ backgroundColor: state.colors.accent }} />
-                            </span>
-                          </span>
-                          <strong>{option.name}</strong>
-                          <small>{option.width} × {option.height}</small>
-                          <small>{option.description}</small>
-                          <small>Channels: {option.channels?.join(', ')}</small>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-            </div>
-          </details>
 
           {(isSpeakerBanner || isSocialPromo) && (
           <details
@@ -1915,6 +1889,13 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
                   aria-label={speakerCards[0]?.length === 2
                     ? `Banner preview for ${speakerCards[0].map((speaker) => speaker.name).join(' and ')}`
                     : 'Banner preview'}
+                />
+                <ArtboardSelectionOverlay
+                  regions={canvasTextRegions}
+                  width={format.width}
+                  height={format.height}
+                  selectedField={selectedArtboardField}
+                  onSelect={selectArtboardField}
                 />
               </div>
             )}

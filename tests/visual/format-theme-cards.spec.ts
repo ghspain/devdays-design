@@ -7,20 +7,16 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
 })
 
-test('format cards expose their purpose, dimensions, channels, and matching preview proportions', async ({ page }) => {
+test('asset navigation exposes purpose, dimensions, channels, and matching proportions', async ({ page }) => {
   for (const option of formatOptions) {
     const card = formatCard(page, option.id)
-    await expect(card).toContainText(option.description ?? '')
+    await expect(card).toHaveAccessibleName(new RegExp(option.description ?? ''))
     await expect(card).toContainText(`${option.width} × ${option.height}`)
     for (const channel of option.channels ?? []) {
-      await expect(card).toContainText(channel)
+      await expect(card).toHaveAccessibleName(new RegExp(channel))
     }
 
-    const ratio = await card.locator('.format-ratio').evaluate((element) => {
-      const { width, height } = element.getBoundingClientRect()
-      return width / height
-    })
-    expect(ratio).toBeCloseTo(option.width / option.height, 1)
+    await expect(card.locator('.asset-navigation-ratio')).toHaveAttribute('style', `aspect-ratio: ${option.width} / ${option.height};`)
   }
 })
 
