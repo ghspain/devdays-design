@@ -26,10 +26,21 @@ export const slugify = (value: string, fallback: string) =>
 
 const canvasToBlob = (canvas: HTMLCanvasElement) =>
   new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob)
-      else reject(new Error('Could not create PNG file.'))
-    }, 'image/png')
+    const releaseCanvas = () => {
+      // Drop the backing store before the next queued job allocates another canvas.
+      canvas.width = 0
+      canvas.height = 0
+    }
+    try {
+      canvas.toBlob((blob) => {
+        releaseCanvas()
+        if (blob) resolve(blob)
+        else reject(new Error('Could not create PNG file.'))
+      }, 'image/png')
+    } catch (error) {
+      releaseCanvas()
+      reject(error instanceof Error ? error : new Error(String(error)))
+    }
   })
 
 const speakerStates = (state: BannerState, speakers: Speaker[]) =>
