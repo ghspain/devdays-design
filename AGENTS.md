@@ -2,6 +2,10 @@
 
 React + Vite banner generator for DevDays events (Canvas rendering, presets, speaker packs).
 
+## Language
+
+Write repository-owned content in English, regardless of the language used in chat. This includes product UI copy, source comments, tests, documentation, commit messages, and GitHub issue/PR titles, descriptions, and comments. Keep conversational replies in the user's language unless they ask otherwise.
+
 ## Workflow
 
 Substantial work (features, fixes, refactors) must go through the **phased-delivery** skill:
