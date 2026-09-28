@@ -87,6 +87,7 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
   const [selectedSponsorId, setSelectedSponsorId] = useState('')
   const [selectedOrganizerId, setSelectedOrganizerId] = useState('')
   const [history, setHistory] = useState<BannerHistoryItem[]>(() => readBannerHistory())
+  const [showAssetChooser, setShowAssetChooser] = useState(false)
   const [speakerPreviews, setSpeakerPreviews] = useState<Array<{ id: string; name: string; previewDataUrl: string }>>([])
   const [fontsReady, setFontsReady] = useState(() => typeof document === 'undefined' || !document.fonts)
   const [isExportingPack, setIsExportingPack] = useState(false)
@@ -358,7 +359,10 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
       readDraft()
         .then((result) => {
           if (cancelled) return
-          if (result.status === 'restored') setState(normalizeState(result.state))
+          if (result.status === 'restored') {
+            setState(normalizeState(result.state))
+            setShowAssetChooser(false)
+          }
           if (result.status === 'unsupported' || result.status === 'invalid') {
             setDraftBlocked(true)
             setDraftStatus('error')
@@ -919,6 +923,55 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
       </header>
 
       <main className="editor-body">
+        {showAssetChooser ? (
+          <section className="asset-start-screen" aria-labelledby="asset-start-title">
+            <div className="asset-start-intro">
+              <p className="asset-start-eyebrow">GHSpain Event Studio</p>
+              <h2 id="asset-start-title">What are you creating?</h2>
+              <p>Start with the asset you need. Your event details stay available as you move between formats.</p>
+              <Button variant="invisible" onClick={() => setShowAssetChooser(false)}>
+                Back to editor
+              </Button>
+            </div>
+            <div className="asset-start-groups">
+              {assetCatalog.map((asset) => (
+                <section className="asset-start-group" aria-labelledby={`asset-group-${asset.id}`} key={asset.id}>
+                  <h3 id={`asset-group-${asset.id}`}>{asset.name}</h3>
+                  <div className="asset-start-grid">
+                    {asset.templates.map((template) => {
+                      const option = formatOptions.find((item) => item.id === template.legacyFormat)
+                      if (!option) return null
+                      return (
+                        <button
+                          className="asset-start-card"
+                          key={template.id}
+                          type="button"
+                          onClick={() => {
+                            setState((previous) => ({ ...previous, format: option.id }))
+                            setShowAssetChooser(false)
+                            setMobileView('fields')
+                          }}
+                        >
+                          <span className="asset-start-card-preview" aria-hidden="true">
+                            <span style={{ aspectRatio: `${option.width} / ${option.height}` }} />
+                          </span>
+                          <span className="asset-start-card-copy">
+                            <strong>{option.name}</strong>
+                            <span>{option.description}</span>
+                            <small>{option.width} × {option.height} · {option.channels?.join(', ')}</small>
+                            {template.sides.length > 1 && <small className="asset-start-sides">Front and back sides</small>}
+                          </span>
+                          <span className="asset-start-card-action" aria-hidden="true">Create</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </section>
+        ) : (
+        <>
         <div
           className="mobile-view-tabs"
           role={isMobileViewport ? 'tablist' : undefined}
@@ -967,6 +1020,9 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
               onClick={() => setSidebarCollapsed((value) => !value)}
             />
             <span className="sidebar-title">Design</span>
+            <Button className="asset-picker-toggle" size="small" onClick={() => setShowAssetChooser(true)}>
+              Choose asset
+            </Button>
             <button
               type="button"
               className="sections-toggle"
@@ -2019,6 +2075,8 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
               }}
             />
           </div>
+        )}
+        </>
         )}
       </main>
     </div>
