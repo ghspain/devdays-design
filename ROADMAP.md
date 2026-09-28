@@ -104,8 +104,8 @@ Goal: create extension points before adding the new physical-asset families.
 ### Work
 
 - [x] Current formats resolve through reusable asset and template contracts. (#105)
-- [ ] Existing social assets render through isolated renderer boundaries. (#106)
-- [ ] Existing drafts and history migrate through a versioned state boundary. (#107)
+- [x] Existing social assets render through isolated renderer boundaries. (#106)
+- [x] Existing drafts and history migrate through a versioned state boundary. (#107)
 - [ ] A test asset can be registered without changing unrelated social switches. (#108)
 
 ### Suggested target boundaries
@@ -159,7 +159,7 @@ The local `data/people.csv` currently contains only the subset needed by the ban
 
 ### Work
 
-- [ ] Event Studio defines a safe public person projection from Planning. (#110)
+- [x] Event Studio defines a safe public person projection from Planning. (#110)
 - Keep `person_id` stable across Planning and the local projection.
 - Add an import/sync generation path that can refresh the static local catalogue without adding runtime credentials.
 - Continue supporting local/fallback avatar uploads where remote assets cannot be exported safely.

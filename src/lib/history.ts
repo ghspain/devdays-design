@@ -84,13 +84,18 @@ export function readBannerHistory(): BannerHistoryItem[] {
     const raw = localStorage.getItem(BANNER_HISTORY_STORAGE_KEY)
     if (!raw) return []
     const parsed: unknown = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    return parsed.filter(isBannerHistoryItem)
+    const entries = Array.isArray(parsed)
+      ? parsed // v0: the original unversioned localStorage array.
+      : parsed && typeof parsed === 'object' && (parsed as { version?: unknown }).version === 1
+        ? (parsed as { entries?: unknown }).entries
+        : null
+    if (!Array.isArray(entries)) return []
+    return entries.filter(isBannerHistoryItem)
   } catch {
     return []
   }
 }
 
 export function writeBannerHistory(items: BannerHistoryItem[]) {
-  localStorage.setItem(BANNER_HISTORY_STORAGE_KEY, JSON.stringify(items))
+  localStorage.setItem(BANNER_HISTORY_STORAGE_KEY, JSON.stringify({ version: 1, entries: items }))
 }

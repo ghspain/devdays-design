@@ -201,6 +201,9 @@ function App() {
 
   const [state, setState] = useState<BannerState>(() => buildDefaultState())
   const [draftStatus, setDraftStatus] = useState<'saving' | 'saved' | 'error' | null>(null)
+  const [draftMessage, setDraftMessage] = useState('')
+  const [draftReady, setDraftReady] = useState(false)
+  const [draftBlocked, setDraftBlocked] = useState(false)
   const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const format = useMemo(
@@ -302,18 +305,31 @@ function App() {
     return () => media.removeEventListener('change', updateViewport)
   }, [])
 
-    // Load the latest draft on mount. If a draft exists, restore it; otherwise
-    // keep the default state so the user sees the pre-filled template.
+    // Restore through the persisted-state version boundary before enabling autosave.
     useEffect(() => {
       let cancelled = false
       readDraft()
-        .then((draft) => {
-          if (!cancelled && draft) {
-            setState(normalizeState(draft))
+        .then((result) => {
+          if (cancelled) return
+          if (result.status === 'restored') setState(normalizeState(result.state))
+          if (result.status === 'unsupported' || result.status === 'invalid') {
+            setDraftBlocked(true)
+            setDraftStatus('error')
+            setDraftMessage('Saved draft is not supported. Update the app or use Reset to clear it before saving again.')
+          } else if (result.status === 'error') {
+            setDraftBlocked(true)
+            setDraftStatus('error')
+            setDraftMessage('Could not read the saved draft. Check browser storage, then reload or use Reset.')
           }
+          setDraftReady(true)
         })
         .catch(() => {
-          if (!cancelled) setDraftStatus('error')
+          if (!cancelled) {
+            setDraftBlocked(true)
+            setDraftStatus('error')
+            setDraftMessage('Could not read the saved draft. Check browser storage, then reload or use Reset.')
+            setDraftReady(true)
+          }
         })
 
       return () => {
@@ -323,6 +339,7 @@ function App() {
 
     // Debounced auto-save draft on state changes.
     useEffect(() => {
+      if (!draftReady || draftBlocked) return
       if (draftSaveRef.current) clearTimeout(draftSaveRef.current)
       setDraftStatus('saving')
 
@@ -335,7 +352,7 @@ function App() {
       return () => {
         if (draftSaveRef.current) clearTimeout(draftSaveRef.current)
       }
-    }, [state])
+    }, [state, draftReady, draftBlocked])
 
   useEffect(() => {
     let cancelled = false
@@ -544,10 +561,17 @@ function App() {
 
   const [resetConfirm, setResetConfirm] = useState(false)
 
-    const resetAll = () => {
+    const resetAll = async () => {
+      const cleared = await clearDraft()
+      if (!cleared) {
+        setDraftStatus('error')
+        setDraftMessage('Could not clear the saved draft. Check browser storage and try again.')
+        return
+      }
+      setDraftBlocked(false)
+      setDraftMessage('')
       setState(buildDefaultState())
       setZoom(1)
-      clearDraft().catch(() => undefined)
     }
 
   const zoomIn = () => setZoom((value) => Math.min(2, Math.round((value + 0.1) * 10) / 10))
@@ -1565,7 +1589,7 @@ function App() {
                 <span className="draft-status" aria-live="polite">
                   {draftStatus === 'saving' && '⏳ Saving…'}
                   {draftStatus === 'saved' && '✓ Saved'}
-                  {draftStatus === 'error' && '✗ Could not save draft'}
+                  {draftStatus === 'error' && `✗ ${draftMessage || 'Could not save draft'}`}
                 </span>
               )}
             </div>
@@ -1576,7 +1600,7 @@ function App() {
                   <Button variant="invisible" onClick={() => setResetConfirm(false)}>
                     Cancel
                   </Button>
-                  <Button variant="danger" onClick={resetAll}>
+                  <Button variant="danger" onClick={() => { void resetAll() }}>
                     Clear draft
                   </Button>
                 </div>
