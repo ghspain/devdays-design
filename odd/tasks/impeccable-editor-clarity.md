@@ -15,19 +15,19 @@
 - [x] **C3: Show event context at first load** — Event and Format open by default while user accordion state persists across format changes; user chose this option. **Evidence**: `tests/visual/sidebar-sections.spec.ts`.
 - [x] **C4: Make Planning speakers scannable** — local search across name/session, results/empty state, pending count, and compact selected summary ahead of cards. **Evidence**: `tests/visual/primer-speakers.spec.ts`.
 - [x] **C5: Clarify badge export scope** — single primary PNG CTA, explicit both-side and Event Pack secondary controls and count copy. **Evidence**: `tests/visual/download-hierarchy.spec.ts`, `tests/visual/speaker-badge-export.spec.ts`, `tests/visual/format-export-explanations.spec.ts`.
-- [ ] **C6: Finish remote delivery** — PR #183 exists and closes #182, and the user has explicitly authorized remote operations on this repository using the active GitHub CLI session. The previously observed `visual-smoke` check was pending; an independent reviewer had been interrupted before reporting. Recheck the current PR and complete review before any merge.
+- [ ] **C6: Finish remote delivery** — PR #183 exists and closes #182, and the user has explicitly authorized remote operations on this repository using the active GitHub CLI session. CI `visual-smoke` now passes and the independent reviewer found no blocking issues on head `075bc7e`. GitHub rejected the APPROVE submission because the active CLI account owns the PR. Formal approval from a different eligible account is still required; do not merge until approved.
 
 ## Verification
 
 - `npm run lint` — passed.
 - `npm run build` — passed; existing >500 kB bundle warning remains.
 - `$env:E2E_PORT='4188'; npm run test:visual` — 434 passed, 8 skipped.
-- Focused desktop/mobile suite after the final UI/test edit — 42 passed.
+- Focused desktop/mobile suite: 42 passed in the implementation run; reviewer rerun: 96 passed, 6 skipped.
 - `git diff --check` — passed (only CRLF normalization warnings on modified test files).
 - Native RDD assessment: gentle-ai is unavailable in this environment; assessment and preflight STATUS could not run. Treat review as due; do not infer low risk.
 - Impeccable `detect --json` — only generic Mona Sans warning; preserved because brand/design docs require Mona Sans.
-- Implementation commit: `f7b4e86` (`Fix editor contrast and clarify badge workflow`); docs-only follow-up commits are ahead of origin and authorized to push.
+- Implementation commit: `f7b4e86` (`Fix editor contrast and clarify badge workflow`); ODD docs commits were pushed to PR head `075bc7e`.
 
 ## Next step
 
-Push the local task-document commits to the authorized PR branch; recheck PR #183 and CI, perform independent review under current RDD policy, address findings, and merge only if approved and all protections pass.
+Obtain a GitHub APPROVE from another eligible reviewer account/session; after the formal review and all required protections pass, merge PR #183. Do not bypass self-review or branch protection.
