@@ -17,6 +17,8 @@ import { resolveBadgeRoleQR } from '../lib/badgeRoleQr'
 import { resolveCatalogQRDestination } from '../lib/qrDestinationResolver'
 import { validateAttendeeRows } from '../lib/attendeeValidation'
 import { selectRepresentativeAttendees } from '../lib/attendeePreviews'
+import { buildAttendeeBadgePack, type AttendeeBatchProgress } from '../lib/exportPack'
+import { buildDefaultState } from '../lib/history'
 import { QRDestinationControls } from './QRDestinationControls'
 import AttendeeBadgePreview from './AttendeeBadgePreview'
 import type { BannerState, EventThemeId } from '../types'
@@ -43,6 +45,10 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const [batchQrReadableText, setBatchQrReadableText] = useState(true)
   const [editingQrRow, setEditingQrRow] = useState<number | null>(null)
   const [error, setError] = useState('')
+  const [batchProgress, setBatchProgress] = useState<AttendeeBatchProgress | null>(null)
+  const [batchError, setBatchError] = useState('')
+  const [batchResult, setBatchResult] = useState<{ fileCount: number; failures: number } | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
   const launcherRef = useRef<HTMLButtonElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const readId = useRef(0)
@@ -60,6 +66,9 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
     setBatchQrReadableText(true)
     setRowFilter('all')
     setError('')
+    setBatchProgress(null)
+    setBatchError('')
+    setBatchResult(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -79,6 +88,9 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
     setBatchQrReadableText(true)
     setRowFilter('all')
     setError('')
+    setBatchProgress(null)
+    setBatchError('')
+    setBatchResult(null)
 
     try {
       if (!file.name.toLowerCase().endsWith('.csv')) throw new Error('Not a CSV file')
@@ -140,6 +152,34 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const representativeRows = useMemo(() => selectRepresentativeAttendees(
     validatedRows?.filter((row) => row.status !== 'error' && (selectedRows?.has(row.sourceRowNumber) ?? true)) ?? [],
   ), [validatedRows, selectedRows])
+
+  const generateBadges = async () => {
+    if (isGenerating || !validatedRows) return
+    const rows = validatedRows.filter(isIncluded)
+    if (!rows.length) return
+    setIsGenerating(true)
+    setBatchError('')
+    setBatchResult(null)
+    setBatchProgress({ completed: 0, total: rows.length * 2, stage: 'rendering', percentage: 0 })
+    try {
+      const state = buildDefaultState()
+      state.theme = theme
+      state.colors = colors
+      state.event = event
+      const pack = await buildAttendeeBadgePack(state, rows, setBatchProgress)
+      const url = URL.createObjectURL(pack.blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = pack.fileName
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      setBatchResult({ fileCount: pack.fileCount, failures: pack.failures.length })
+    } catch {
+      setBatchError('Could not generate the selected badges. Try again.')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
 
   return (
     <>
@@ -315,6 +355,26 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
                         ))}
                       </div>
                     ) : <p role="status">Include a valid or warning row to preview its badge.</p>}
+                  </section>
+                )}
+                {validatedRows && (
+                  <section aria-label="Badge batch generation">
+                    <h3>Generate selected badges</h3>
+                    <p>Only included valid or warning rows are rendered. Each row creates separate front and back PNGs.</p>
+                    <Button onClick={() => { void generateBadges() }} disabled={isGenerating || includedCount === 0} loading={isGenerating}>
+                      Generate selected badges (.zip)
+                    </Button>
+                    {batchProgress && (
+                      <p role="status" aria-label="Badge batch progress">
+                        {batchProgress.stage === 'rendering' ? 'Rendering' : batchProgress.stage === 'packaging' ? 'Creating ZIP' : 'Complete'} · {batchProgress.completed}/{batchProgress.total} · {batchProgress.percentage}%
+                      </p>
+                    )}
+                    {batchError && <p role="alert">{batchError}</p>}
+                    {batchResult && (
+                      <p role="status">
+                        Generated {batchResult.fileCount} file{batchResult.fileCount === 1 ? '' : 's'}{batchResult.failures ? `; ${batchResult.failures} job${batchResult.failures === 1 ? '' : 's'} failed.` : '.'}
+                      </p>
+                    )}
                   </section>
                 )}
                 <Button onClick={clearData}>Clear attendee data</Button>

@@ -1872,7 +1872,8 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
                 {packProgress && (
                   <small aria-live="polite">
                     {packProgress.label}
-                    {packProgress.total > 0 ? ` ${packProgress.completed}/${packProgress.total}` : ''}
+                      {packProgress.total > 0 ? ` ${packProgress.completed}/${packProgress.total}` : ''}
+                      {packProgress.percentage !== undefined ? ` · ${packProgress.percentage}%` : ''}
                   </small>
                 )}
               </div>
