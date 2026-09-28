@@ -436,7 +436,7 @@ $env:E2E_PORT = '4199'; npx playwright test tests/visual/batch-performance.spec.
 ```
 
 It drives `buildAttendeeBadgePack` with synthetic rows (25/100/250 attendees, two PNGs
-per attendee), records wall time, scheduler/input ticks, maximum interval gap, PNG + ZIP
+per attendee), records wall time, event-loop ticks, maximum scheduler gap, PNG + ZIP
 byte accounting, deterministic PNG digests/filenames, and verifies exported canvas backing
 stores are released. Cancellation remains covered by the existing batch queue UI test.
 
@@ -447,19 +447,21 @@ machine; they are evidence, not CI thresholds.
 
 | Synthetic attendees (PNG files) | Baseline wall / max gap | Post-change wall / max gap | Approx. retained bytes (ZIP + PNG blobs) |
 | ---: | ---: | ---: | ---: |
-| 25 (50) | 323.2 ms / 19.9 ms | 307.2 ms / 17.8 ms | 6,787,350 |
-| 100 (200) | 1,265.1 ms / 20.6 ms | 1,341.7 ms / 21.9 ms | 27,334,896 |
-| 250 (500) | 4,013.7 ms / 15.0 ms | 3,912.5 ms / 20.7 ms | 68,543,650 |
+| 25 (50) | 323.2 ms / 19.9 ms | 360.2 ms / 18.7 ms | 6,787,350 |
+| 100 (200) | 1,265.1 ms / 20.6 ms | 1,356.7 ms / 31.1 ms | 27,334,896 |
+| 250 (500) | 4,013.7 ms / 15.0 ms | 3,855.0 ms / 19.3 ms | 68,543,650 |
 
-`retained bytes` intentionally includes the completed PNG blobs needed by retry; it is an
-approximation and excludes browser-native canvas/ZIP allocator overhead. The post-change
-path clears each export canvas width/height immediately after `toBlob` resolves, while
-the download URL is still revoked after its existing one-second handoff window.
+`retained bytes` intentionally includes the completed PNG blobs needed by retry; the UI
+drops those file blobs for fully successful batches and never stores the ZIP blob in React
+state. The accounting is an approximation and excludes browser-native canvas/ZIP allocator
+overhead. The post-change path clears each export canvas width/height immediately after
+`toBlob` resolves, while the download URL is still revoked after its existing one-second
+handoff window.
 
 🧭 DECISION — keep the chunked main-thread renderer
 - **Question**: Should attendee batch rendering move to Web Workers/OffscreenCanvas for Phase 8.3?
 - **Options**: Keep the current queue (smallest reversible change and existing browser support) / add a Worker renderer (extra transfer protocol and fallback) / require OffscreenCanvas (strongest API dependency).
-- **Investigation**: The production fixture measured 25/100/250 attendees at 307.2/1,341.7/3,912.5 ms post-change, with 17.8/21.9/20.7 ms maximum scheduler gaps and progress ticks throughout. The 250-attendee run stayed below the provisional 10 s wall-time and 100 ms responsiveness targets; current cancellation/retry UI coverage passes. The only justified memory fix was releasing each completed canvas backing store; retry blobs remain intentionally retained and accounted for.
+- **Investigation**: The production fixture measured 25/100/250 attendees at 360.2/1,356.7/3,855.0 ms post-change, with 18.7/31.1/19.3 ms maximum scheduler gaps and progress ticks throughout. The 250-attendee run stayed below the provisional 10 s wall-time and 100 ms responsiveness targets; current cancellation/retry UI coverage passes. The only justified memory fix was releasing each completed canvas backing store; retry blobs remain intentionally retained and accounted for.
 - **Decision**: Keep main-thread chunking; it meets the representative targets without introducing an unmeasured worker transfer/fallback complexity. Revisit only with a representative run exceeding either target or a measured memory regression.
 - **To revert**: Remove the canvas release in `src/lib/exportPack.ts` and revert the Phase 8.3 fixture/docs commit; no worker code or browser fallback is required.
 

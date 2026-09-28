@@ -25,6 +25,7 @@ import type { BannerState, EventThemeId } from '../types'
 
 const INVALID_CSV_MESSAGE = 'This file could not be read as CSV. Check the file format and try another file.'
 const qrTemplate = assetCatalog.flatMap(({ templates }) => templates).find(({ qr }) => qr)
+type AttendeeBatchState = Omit<AttendeeBatchResult, 'blob'>
 
 interface AttendeeCsvImportProps {
   theme: EventThemeId
@@ -47,7 +48,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const [error, setError] = useState('')
   const [batchProgress, setBatchProgress] = useState<AttendeeBatchProgress | null>(null)
   const [batchError, setBatchError] = useState('')
-  const [batchResult, setBatchResult] = useState<AttendeeBatchResult | null>(null)
+  const [batchResult, setBatchResult] = useState<AttendeeBatchState | null>(null)
   const [batchRows, setBatchRows] = useState<ValidatedAttendeeRow[] | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const launcherRef = useRef<HTMLButtonElement>(null)
@@ -190,7 +191,15 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
       link.download = pack.fileName
       link.click()
       window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-      setBatchResult(pack)
+      // Keep PNGs only while a failed/cancelled job can be retried. The ZIP is
+      // handed to the browser above and is never retained in React state.
+      setBatchResult({
+        fileName: pack.fileName,
+        fileCount: pack.fileCount,
+        failures: pack.failures,
+        files: pack.failures.length ? pack.files : [],
+        cancelled: pack.cancelled,
+      })
     } catch {
       if (batchControllerRef.current === controller) setBatchError('Could not generate the selected badges. Try again.')
     } finally {

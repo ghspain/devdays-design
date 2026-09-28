@@ -4,7 +4,7 @@ interface BatchMeasurement {
   size: number
   elapsedMs: number
   ticks: number
-  maxInputGapMs: number
+  maxSchedulerGapMs: number
   fileCount: number
   zipBytes: number
   retainedPngBytes: number
@@ -56,11 +56,11 @@ test('synthetic attendee batches measure production rendering and release export
     const measure = async (size: number) => {
       const progress: string[] = []
       let ticks = 0
-      let maxInputGapMs = 0
+      let maxSchedulerGapMs = 0
       let lastTick = performance.now()
       const tickTimer = window.setInterval(() => {
         const now = performance.now()
-        maxInputGapMs = Math.max(maxInputGapMs, now - lastTick)
+        maxSchedulerGapMs = Math.max(maxSchedulerGapMs, now - lastTick)
         lastTick = now
         ticks += 1
       }, 0)
@@ -75,7 +75,7 @@ test('synthetic attendee batches measure production rendering and release export
         size,
         elapsedMs,
         ticks,
-        maxInputGapMs,
+        maxSchedulerGapMs,
         fileCount: result.fileCount,
         zipBytes: result.blob.size,
         retainedPngBytes: result.files.reduce((total, file) => total + file.blob.size, 0),
