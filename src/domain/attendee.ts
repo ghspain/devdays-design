@@ -1,3 +1,5 @@
+import type { BadgeRole } from './badgeRoles'
+
 export const attendeeBadgeFields = [
   { id: 'name', label: 'Name', required: true, aliases: ['name', 'full_name', 'fullname', 'attendee_name'] },
   { id: 'organization', label: 'Organization', required: false, aliases: ['company', 'company_name', 'organization', 'org'] },
@@ -14,4 +16,5 @@ export interface AttendeeBadgeInput {
   organization?: string
   role?: string
   githubHandle?: string
+  badgeRole?: BadgeRole
 }

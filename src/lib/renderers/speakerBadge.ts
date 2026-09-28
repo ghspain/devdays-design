@@ -9,6 +9,7 @@ import { renderQRCode } from './qrCode'
 import type { RenderInfo } from '../validate'
 import { constrainSpeakerNameOffset } from '../../domain/templateManipulation'
 import { speakerBadgeSubject, type BadgeSubject } from '../../domain/badgeSubject'
+import { BADGE_ROLE_PRESENTATIONS } from '../../domain/badgeRoles'
 
 const generations = new WeakMap<HTMLCanvasElement, number>()
 
@@ -148,10 +149,21 @@ export async function renderSpeakerBadge(
   ctx.font = '500 21px "Mona Sans", sans-serif'
   ctx.fillText('DEV DAYS', left, 151)
 
-  ctx.fillStyle = state.colors.accent
-  ctx.font = '800 24px "Mona Sans", sans-serif'
-  ctx.fillText(subject.roleMarker, left, 224)
-  track(subject.kind === 'speaker' ? 'Speaker role marker' : 'Attendee role marker', state.colors.accent, left, 199, contentWidth, 32)
+  const rolePresentation = BADGE_ROLE_PRESENTATIONS[subject.role]
+  if (rolePresentation.labelStyle === 'chip') {
+    ctx.font = '800 19px "Mona Sans", sans-serif'
+    const chipWidth = ctx.measureText(rolePresentation.label).width + 28
+    roundedRectPath(ctx, left, 197, chipWidth, 36, 18)
+    ctx.fillStyle = rolePresentation.accent ?? state.colors.accent
+    ctx.fill()
+    ctx.fillStyle = rolePresentation.ink ?? primary
+    ctx.fillText(rolePresentation.label, left + 14, 222)
+  } else {
+    ctx.fillStyle = state.colors.accent
+    ctx.font = '800 24px "Mona Sans", sans-serif'
+    ctx.fillText(rolePresentation.label, left, 224)
+  }
+  track(subject.kind === 'speaker' ? 'Speaker role marker' : 'Attendee role marker', rolePresentation.accent ?? state.colors.accent, left, 197, contentWidth, 36)
 
   const avatarSize = Math.round(width * 0.49)
   const avatarX = (width - avatarSize) / 2
@@ -202,16 +214,16 @@ export async function renderSpeakerBadge(
   if (nameRegion) nameRegion.elementId = 'speaker-name'
   const role = subject.title?.trim()
   let nextY = nameY + nameLines * 66 + 12
-  if (role) {
+  if (role && rolePresentation.visibleFields.title) {
     const roleLines = wrapped('Speaker title', role, left, nextY, contentWidth, SPEAKER_BADGE_TEXT_LAYOUT.role.maxLines, SPEAKER_BADGE_TEXT_LAYOUT.role.fontSize, muted, 38)
     nextY += roleLines * 38 + 12
   }
   const organization = subject.organization?.trim()
-  if (organization) {
+  if (organization && rolePresentation.visibleFields.organization) {
     const organizationLines = wrapped('Attendee organization', organization, left, Math.min(nextY, 980), contentWidth, 1, 23, muted, 30)
     nextY += organizationLines * 30 + 10
   }
-  if (subject.showNetworkingHandle && subject.networkingHandle) {
+  if (rolePresentation.visibleFields.networkingHandle && subject.showNetworkingHandle && subject.networkingHandle) {
     wrapped('Networking handle', subject.networkingHandle, left, Math.min(nextY, 1010), contentWidth, SPEAKER_BADGE_TEXT_LAYOUT.githubHandle.maxLines, SPEAKER_BADGE_TEXT_LAYOUT.githubHandle.fontSize, state.colors.accent, 32)
   }
 
