@@ -17,24 +17,39 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
 })
 
-test('sidebar order is Event, Speakers, then Format/theme, with registration advanced last', async ({ page }) => {
+test('workspace separates asset navigation, artboard, and ordered properties', async ({ page }, testInfo) => {
   // Speaker banner renders every section, including Speakers and registration.
   await selectFormat(page, 'speaker_banner')
 
-  const yOf = async (selector: string) => {
+  const boxOf = async (selector: string) => {
     const box = await page.locator(selector).boundingBox()
     expect(box, `${selector} should be visible`).not.toBeNull()
-    return box!.y
+    return box!
   }
 
-  const eventY = await yOf('#section-event')
-  const speakersY = await yOf('#section-speakers')
-  const formatY = await yOf('.format-bar')
-  const registrationY = await yOf('#section-registration')
+  const assetNav = await boxOf('.asset-navigation')
+  const properties = await boxOf('.sidebar')
+  if (testInfo.project.name === 'mobile-chromium') {
+    await expect(page.locator('.stage')).toBeHidden()
+    await expect(page.locator('.asset-navigation')).toBeVisible()
+    await expect(page.locator('.sidebar')).toBeVisible()
+    await page.getByRole('tab', { name: 'Preview' }).click()
+    await expect(page.locator('.stage')).toBeVisible()
+    await expect(page.locator('.asset-navigation')).toBeHidden()
+    await expect(page.locator('.sidebar')).toBeHidden()
+    expect(assetNav.y).toBeLessThan(properties.y)
+    return
+  }
 
+  const artboard = await boxOf('.stage')
+  expect(assetNav.x).toBeLessThan(artboard.x)
+  expect(artboard.x).toBeLessThan(properties.x)
+  const eventY = (await boxOf('#section-event')).y
+  const speakersY = (await boxOf('#section-speakers')).y
+  const registrationY = (await boxOf('#section-registration')).y
   expect(eventY).toBeLessThan(speakersY)
-  expect(speakersY).toBeLessThan(formatY)
-  expect(formatY).toBeLessThan(registrationY)
+  expect(speakersY).toBeLessThan(registrationY)
+  await expect(page.locator('.asset-navigation .format-card')).toHaveCount(5)
 })
 
 test('registration footer controls live in the advanced section, not in Event', async ({ page }) => {

@@ -351,22 +351,24 @@ test('mobile footer does not overlap editor content', async ({ page }, testInfo)
   })
 })
 
-test('desktop layout preserves sidebar/canvas split', async ({ page }, testInfo) => {
+test('desktop layout places the artboard between asset navigation and properties', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'mobile-chromium', 'Only runs on desktop project.')
 
   await page.setViewportSize({ width: 1280, height: 900 })
   await expect(page.locator('.sidebar')).toBeVisible()
   await expect(page.locator('.stage')).toBeVisible()
 
-  // On desktop, the sidebar and canvas should both be visible side by side.
+  // Desktop uses all three work areas instead of a field-first sidebar split.
+  const navigationBox = await page.locator('.asset-navigation').boundingBox()
   const sidebarBox = await page.locator('.sidebar').first().boundingBox()
   const stageBox = await page.locator('.stage').first().boundingBox()
 
+  expect(navigationBox).not.toBeNull()
   expect(sidebarBox).not.toBeNull()
   expect(stageBox).not.toBeNull()
 
-  // Sidebar should be to the left of or adjacent to the stage.
-    expect(sidebarBox!.x + sidebarBox!.width).toBeLessThanOrEqual(stageBox!.x)
+  expect(navigationBox!.x).toBeLessThan(stageBox!.x)
+  expect(stageBox!.x).toBeLessThan(sidebarBox!.x)
 
   await testInfo.attach(`desktop-layout-${testInfo.project.name}`, {
     body: await page.locator('.editor-shell').screenshot(),
@@ -481,8 +483,7 @@ test('event pack downloads every format in one ZIP', async ({ page }, testInfo) 
 })
 
 // Phase 3 (#56): Formats and downloads explain the asset being created
-test('format selector shows purpose descriptions alongside dimensions', async ({ page }) => {
-  // Open the format selector dropdown
+test('asset navigation shows purpose descriptions alongside dimensions', async ({ page }) => {
   for (const format of formatOptions) {
     const card = formatCard(page, format.id)
     await expect(card).toContainText(format.description ?? '')
