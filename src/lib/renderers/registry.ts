@@ -2,6 +2,7 @@ import { assetCatalog } from '../../domain/assets'
 import type { AssetTemplateDefinition } from '../../domain/assets'
 import type { BannerFormat, BannerState, ExportScale, FormatOption } from '../../types'
 import type { RenderInfo } from '../validate'
+import type { BadgeSubject } from '../../domain/badgeSubject'
 
 export type AssetRenderer = (
   canvas: HTMLCanvasElement,
@@ -10,6 +11,7 @@ export type AssetRenderer = (
   backgroundFailed: boolean,
   scale: ExportScale,
   renderInfo?: RenderInfo,
+  badgeSubject?: BadgeSubject,
 ) => Promise<void>
 
 export function resolveTemplateRenderer(template: AssetTemplateDefinition, renderers: Readonly<Record<string, AssetRenderer>>): AssetRenderer {

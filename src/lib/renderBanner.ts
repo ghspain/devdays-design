@@ -1,5 +1,6 @@
 import type { BannerState, ExportScale, FormatOption } from '../types'
 import type { RenderInfo } from './validate'
+import type { BadgeSubject } from '../domain/badgeSubject'
 import { renderLegacySocialAsset } from './renderers/legacySocial'
 import { renderSpeakerBadge } from './renderers/speakerBadge'
 import { resolveRenderer } from './renderers/registry'
@@ -13,6 +14,7 @@ export async function renderBanner(
   backgroundFailed: boolean,
   scale: ExportScale,
   renderInfo?: RenderInfo,
+  badgeSubject?: BadgeSubject,
 ) {
-  return resolveRenderer(format.id, renderers)(canvas, state, format, backgroundFailed, scale, renderInfo)
+  return resolveRenderer(format.id, renderers)(canvas, state, format, backgroundFailed, scale, renderInfo, badgeSubject)
 }
