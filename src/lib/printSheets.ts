@@ -197,15 +197,32 @@ function assetSide(asset: BadgeSheetAsset, side: AssetSide): boolean {
   return asset.side ? asset.side === side : asset.id.endsWith(`-${side}`)
 }
 
-function pairBackAssets(fronts: readonly BadgeSheetAsset[], backs: readonly BadgeSheetAsset[]): Array<BadgeSheetAsset | undefined> {
+export interface BadgeSheetAssetPair {
+  readonly front: BadgeSheetAsset
+  readonly back?: BadgeSheetAsset
+}
+
+/** Pair unique source rows first; ambiguous rows only use an exact stable ID fallback. */
+export function pairDuplexBadgeAssets(fronts: readonly BadgeSheetAsset[], backs: readonly BadgeSheetAsset[]): readonly BadgeSheetAssetPair[] {
+  const frontRowCounts = new Map<number, number>()
+  const backRowCounts = new Map<number, number>()
+  fronts.forEach((asset) => asset.sourceRowNumber !== undefined && frontRowCounts.set(asset.sourceRowNumber, (frontRowCounts.get(asset.sourceRowNumber) ?? 0) + 1))
+  backs.forEach((asset) => asset.sourceRowNumber !== undefined && backRowCounts.set(asset.sourceRowNumber, (backRowCounts.get(asset.sourceRowNumber) ?? 0) + 1))
   const used = new Set<BadgeSheetAsset>()
+  const backById = new Map<string, BadgeSheetAsset | null>()
+  backs.forEach((asset) => {
+    if (backById.has(asset.id)) backById.set(asset.id, null)
+    else backById.set(asset.id, asset)
+  })
   return fronts.map((front) => {
-    const match = backs.find((back) => !used.has(back) && (
-      (front.sourceRowNumber !== undefined && back.sourceRowNumber === front.sourceRowNumber) ||
-      back.id === front.id.replace(/-front$/, '-back')
-    ))
+    const row = front.sourceRowNumber
+    const rowMatch = row !== undefined && frontRowCounts.get(row) === 1 && backRowCounts.get(row) === 1
+      ? backs.find((back) => !used.has(back) && back.sourceRowNumber === row)
+      : undefined
+    const idMatch = backById.get(front.id.replace(/-front$/, '-back'))
+    const match = rowMatch ?? (idMatch && !used.has(idMatch) ? idMatch : undefined)
     if (match) used.add(match)
-    return match
+    return match ? { front, back: match } : { front }
   })
 }
 
@@ -219,7 +236,8 @@ export async function buildBadgeSheetPdf(
   const fronts = assets.filter((asset) => assetSide(asset, 'front'))
   if (!fronts.length) throw new Error('No front badge PNGs are available for the PDF proof.')
   const backs = assets.filter((asset) => assetSide(asset, 'back'))
-  const pairedBacks = pairBackAssets(fronts, backs)
+  const pairs = pairDuplexBadgeAssets(fronts, backs)
+  const pairedBacks = pairs.map((pair) => pair.back)
   const hasBacks = pairedBacks.some(Boolean)
   const profile = getBadgeSheetProfile(profileId)
   const duplexPlan = hasBacks ? planDuplexBadgeSheet(fronts.length, geometry, profile, flipMode) : undefined
