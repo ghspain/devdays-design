@@ -26,7 +26,7 @@ import {
   REPOSITORY_URL,
 } from './constants'
 import { assetCatalog } from './domain/assets'
-import { saveActiveSide, switchAssetSide } from './domain/assetSides'
+import { saveActiveSide, stateForSide, switchAssetSide } from './domain/assetSides'
 import type { AssetSide } from './domain/assets'
 import { QRDestinationControls } from './components/QRDestinationControls'
 import { defaultQRDestination, getQRDestinationControlId, qrDestinationErrorMessage } from './lib/qrDestinationControls'
@@ -59,6 +59,16 @@ function shouldShowEditorGuide() {
   }
 }
 
+function getSpeakerCardsForState(input: BannerState, enabled: boolean): Speaker[][] {
+  if (!enabled) return []
+  const named = input.speakers.filter((speaker) => speaker.name.trim().length > 0).slice(0, MAX_SPEAKERS)
+  const cards: Speaker[][] = []
+  for (let index = 0; index < named.length; index += input.speakersPerCard) {
+    cards.push(named.slice(index, index + input.speakersPerCard))
+  }
+  return cards
+}
+
 function App() {
   const [backgroundFailed, setBackgroundFailed] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -82,6 +92,7 @@ function App() {
   const [isExportingBanner, setIsExportingBanner] = useState(false)
   const [packProgress, setPackProgress] = useState<EventPackProgress | null>(null)
   const [validationFindings, setValidationFindings] = useState<ValidationFinding[]>([])
+  const [badgeExportFindings, setBadgeExportFindings] = useState<Array<{ side: AssetSide; findings: ValidationFinding[] }> | null>(null)
   // Fields the live preview render had to truncate (e.g. ["event title"]).
   const [truncatedFields, setTruncatedFields] = useState<string[]>([])
 
@@ -272,10 +283,6 @@ function App() {
   const allSectionsOpen = renderedSectionIds.every((id) => openSections[id])
   const isTallBanner = format.width === 1080 && format.height === 1350
   const previewBaseScale = isTallBanner ? 0.78 : 1
-  const namedSpeakers = useMemo(
-    () => state.speakers.filter((speaker) => speaker.name.trim().length > 0).slice(0, MAX_SPEAKERS),
-    [state.speakers],
-  )
   const qrProfiles = useMemo(() => state.speakers.flatMap((speaker) => {
     if (!speaker.personId) return []
     const profile = getCatalogPublicProfile(speaker.personId)
@@ -290,17 +297,17 @@ function App() {
     )
     : undefined
   const speakerCards = useMemo(() => {
-    if (!isSpeakerPerBannerFormat || !namedSpeakers.length) return []
-    const perCard = state.speakersPerCard
-    const cards: Speaker[][] = []
-    for (let index = 0; index < namedSpeakers.length; index += perCard) {
-      cards.push(namedSpeakers.slice(index, index + perCard))
-    }
-    return cards
-  }, [isSpeakerPerBannerFormat, namedSpeakers, state.speakersPerCard])
+    return getSpeakerCardsForState(state, isSpeakerPerBannerFormat)
+  }, [isSpeakerPerBannerFormat, state])
   const showMultiSpeakerPreviewGrid = speakerCards.length > 1
   const downloadFileCount = speakerCards.length || 1
-  const downloadLabel = `PNG · ${format.width}×${format.height}${downloadFileCount > 1 ? ` · ${downloadFileCount} files` : ''}`
+  const bothBadgeSideFileCount = ['front', 'back'].reduce((count, side) => {
+    const sideState = stateForSide(state, side as AssetSide)
+    return count + (getSpeakerCardsForState(sideState, true).length || 1)
+  }, 0)
+  const downloadLabel = isSpeakerBadge
+    ? `${activeSide === 'front' ? 'Front' : 'Back'} PNG · ${format.width}×${format.height}${downloadFileCount > 1 ? ` · ${downloadFileCount} files` : ''}`
+    : `PNG · ${format.width}×${format.height}${downloadFileCount > 1 ? ` · ${downloadFileCount} files` : ''}`
   const catalogEventOptions = useMemo(() => {
     const labels = new Map<string, string>()
     for (const item of catalogSpeakers) {
@@ -392,6 +399,10 @@ function App() {
         if (draftSaveRef.current) clearTimeout(draftSaveRef.current)
       }
     }, [state, draftReady, draftBlocked])
+
+  useEffect(() => {
+    setBadgeExportFindings(null)
+  }, [state])
 
   useEffect(() => {
     let cancelled = false
@@ -634,7 +645,7 @@ function App() {
   const zoomOut = () => setZoom((value) => Math.max(0.3, Math.round((value - 0.1) * 10) / 10))
   const fitZoom = () => setZoom(1)
 
-  const exportBanner = async () => {
+  const exportBanner = async (bothBadgeSides = false) => {
     // Re-entrancy guard: a double click (or a slow multi-card render) must not
     // fire duplicate downloads or duplicate history entries.
     if (isExportingBanner) return
@@ -642,16 +653,73 @@ function App() {
     setError('')
     try {
       const mime = 'image/png'
-      const exportStates = speakerCards.length
-        ? speakerCards.map((speakers) => ({ ...state, speakers }))
-        : [state]
+      const sides: AssetSide[] = isSpeakerBadge
+        ? bothBadgeSides ? ['front', 'back'] : [activeSide]
+        : [activeSide]
+      const exportStates = sides.flatMap((side) => {
+        const sideState = isSpeakerBadge ? stateForSide(state, side) : state
+        const cards = isSpeakerBadge ? getSpeakerCardsForState(sideState, true) : speakerCards
+        const exportCards = cards.length ? cards : [sideState.speakers]
+        return exportCards.map((speakers) => {
+        const cardState = { ...sideState, speakers }
+        const sideTemplate = assetCatalog.flatMap((asset) => asset.templates)
+          .find((template) => template.legacyFormat === cardState.format && template.qr)
+        const profiles = cardState.speakers.flatMap((speaker) => {
+          if (!speaker.personId) return []
+          const profile = getCatalogPublicProfile(speaker.personId)
+          return profile?.destinations.length ? [profile] : []
+        })
+        const destination = isSpeakerBadge && side === 'back' && sideTemplate?.qr
+          ? cardState.qrDestination ?? defaultQRDestination(
+            sideTemplate.qr.defaultDestinationKind,
+            profiles,
+            catalogSponsors,
+            sideTemplate.qr.allowNone,
+          )
+          : undefined
+        return {
+          ...cardState,
+          ...(destination ? { qrDestination: destination } : {}),
+          ...(destination && sideTemplate?.qr ? { qrReadableText: cardState.qrReadableText ?? sideTemplate.qr.defaultReadableText } : {}),
+        }
+      })
+      })
+
+      if (isSpeakerBadge) {
+        const findingsBySide: Array<{ side: AssetSide; findings: ValidationFinding[] }> = []
+        for (const exportState of exportStates) {
+          const info = createRenderInfo()
+          const checkCanvas = document.createElement('canvas')
+          await renderBanner(checkCanvas, exportState, format, backgroundFailed, 1, info)
+          const findings = [
+            ...validateState(exportState, format.id, info),
+            ...checkRenderedCanvas(checkCanvas, info),
+          ]
+          const template = assetCatalog.flatMap((asset) => asset.templates)
+            .find((item) => item.legacyFormat === exportState.format && item.qr)
+          if (exportState.activeSide === 'back' && template?.qr && exportState.qrDestination) {
+            const resolution = resolveCatalogQRDestination(exportState.qrDestination)
+            const message = qrDestinationErrorMessage(exportState.qrDestination, resolution, template.qr.allowNone)
+            if (message) findings.push({
+              code: 'invalid-qr-destination',
+              severity: 'error',
+              field: 'QR destination',
+              message,
+              targetId: getQRDestinationControlId(exportState.qrDestination),
+            })
+          }
+          findingsBySide.push({ side: exportState.activeSide ?? 'front', findings })
+        }
+        setBadgeExportFindings(findingsBySide)
+        if (findingsBySide.some(({ findings }) => findings.some(({ severity }) => severity === 'error'))) return
+      }
 
       const historyItems: BannerHistoryItem[] = []
 
       for (let i = 0; i < exportStates.length; i += 1) {
         const exportState = {
           ...exportStates[i],
-          ...(qrDestination ? { qrDestination, qrReadableText } : {}),
+          ...(!isSpeakerBadge && qrDestination ? { qrDestination, qrReadableText } : {}),
         }
         const offscreen = document.createElement('canvas')
         await renderBanner(offscreen, exportState, format, backgroundFailed, exportState.export.scale)
@@ -685,7 +753,13 @@ function App() {
 
         const link = document.createElement('a')
         link.href = dataUrl
-        link.download = `${prefix}-github-copilot-dev days-${citySlug}${speakerSuffix}.png`
+        const personSlug = (exportState.speakers.map((speaker) => speaker.name).join('-') || `speaker-${i + 1}`)
+          .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `speaker-${i + 1}`
+        const titleSlug = (exportState.event.title || exportState.event.edition || '')
+          .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+        link.download = isSpeakerBadge
+          ? `${prefix}-${citySlug}${titleSlug ? `-${titleSlug}` : ''}-${personSlug}-${exportState.activeSide ?? 'front'}.png`
+          : `${prefix}-github-copilot-dev days-${citySlug}${speakerSuffix}.png`
         link.click()
       }
 
@@ -696,7 +770,7 @@ function App() {
       })
       showToast(
         exportStates.length > 1
-          ? `Downloaded ${exportStates.length} PNG files.`
+          ? `Downloaded ${exportStates.length} PNG files${isSpeakerBadge && bothBadgeSides ? ' · Front and Back' : ''}.`
           : 'PNG downloaded.',
       )
     } catch {
@@ -1578,6 +1652,7 @@ function App() {
           </div>
 
           <div className="validation-panel" aria-label="Validation findings" role="status">
+            {isSpeakerBadge && <strong className="side-validation-heading">{activeSide === 'front' ? 'Front' : 'Back'} checks</strong>}
             {validationFindings.length === 0 ? (
               <div role="status">
                 <Banner variant="success" layout="compact" flush title="All checks passed" />
@@ -1626,6 +1701,22 @@ function App() {
                                   })
                                 )}
                               </div>
+            {isSpeakerBadge && badgeExportFindings && (
+              <div className="badge-export-validation" role="status" aria-label="Both-side export checks">
+                <strong>{badgeExportFindings.some(({ findings }) => findings.some(({ severity }) => severity === 'error'))
+                  ? 'Resolve errors before downloading both sides.'
+                  : 'Both-side export checks'}</strong>
+                {[...new Set(badgeExportFindings.map(({ side }) => side))].map((side) => {
+                  const findings = badgeExportFindings.filter((entry) => entry.side === side).flatMap((entry) => entry.findings)
+                  return (
+                    <div key={side} className="badge-export-validation-side">
+                      <Button variant="invisible" onClick={() => changeAssetSide(side)}>{side === 'front' ? 'Front' : 'Back'}</Button>
+                      <span>{findings.length ? findings.map(({ message }) => message).join(' ') : 'All checks passed.'}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
 
           <div className="sidebar-footer">
             {/* #78: single clear download hierarchy in the sidebar —
@@ -1682,6 +1773,18 @@ function App() {
                           >
                             {downloadLabel}
                           </Button>
+                          {isSpeakerBadge && (
+                            <Button
+                              className="download-both-sides"
+                              loading={isExportingBanner}
+                              disabled={isExportingBanner}
+                              leadingVisual={DownloadIcon}
+                              onClick={() => { void exportBanner(true) }}
+                              aria-label={`Download both Speaker Badge sides as ${bothBadgeSideFileCount} PNG files`}
+                            >
+                              Both sides · {bothBadgeSideFileCount} PNGs
+                            </Button>
+                          )}
                           </div>
               <div className="pack-download-block">
                 <Button

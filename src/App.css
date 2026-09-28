@@ -282,6 +282,12 @@
   justify-content: center;
 }
 
+.footer-download-stack .download-both-sides {
+  width: 100%;
+  margin-top: 0.35rem;
+  justify-content: center;
+}
+
 .footer-meta-row {
   display: flex;
   align-items: center;
@@ -335,6 +341,27 @@
 
 .validation-panel [data-component='Banner'] {
   font-size: inherit;
+}
+
+.side-validation-heading {
+  color: var(--app-text-primary);
+}
+
+.badge-export-validation {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.4rem 0;
+  border-top: 1px solid var(--vscode-border);
+}
+
+.badge-export-validation-side {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.badge-export-validation-side span {
+  padding-top: 0.35rem;
 }
 
 .validation-navigate {
