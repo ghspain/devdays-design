@@ -8,7 +8,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--app-shell-end);
+  background: var(--surface-default);
 }
 
 * {
@@ -18,6 +18,6 @@
 body {
   margin: 0;
   min-width: 320px;
-  color: var(--vscode-text);
-  background: linear-gradient(180deg, var(--app-shell-start) 0%, var(--app-shell-end) 100%);
+  color: var(--text-primary);
+  background: var(--surface-default);
 }

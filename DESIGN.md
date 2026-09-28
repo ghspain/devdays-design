@@ -109,14 +109,16 @@ Use semantic Primer/GitHub light surface roles such as:
 
 | Role | Current reference |
 | --- | --- |
-| Base surface | `#ffffff` |
-| Subtle/elevated surface | `#f6f8fa` |
-| Border | `#d1d9e0` |
-| Primary text | `#1f2328` |
-| Muted text | `#59636e` |
-| Semantic link/action | `#0969da` |
-| Danger | `#cf222e` |
-| Warning | `#9a6700` |
+| Base surface (`--surface-default`) | `#ffffff` |
+| Subtle surface (`--surface-subtle`) | `#f6f8fa` |
+| Raised surface (`--surface-raised`) | `#ffffff` |
+| Border (`--border-default`) | `#d1d9e0` |
+| Primary text (`--text-primary`) | `#1f2328` |
+| Secondary text (`--text-secondary`) | `#59636e` |
+| Semantic link/action (`--action-primary`) | `#0969da` |
+| Danger (`--status-error`) | `#cf222e` |
+| Warning (`--status-warning`) | `#9a6700` |
+| Success (`--status-success`) | `#1a7f37` |
 
 Then layer the canonical visual palette selectively:
 
@@ -129,11 +131,11 @@ The result should feel like the light counterpart of the same product, not like 
 
 ### Application shell dark mode
 
-Dark mode can stay much closer to the canonical design-system surfaces because the source system is already dark-first.
+The validated implementation maps the dark shell to base `#000000`, subtle `#0C1116`, and raised `#121613` surfaces, with `#F0F6FC` primary text, `#8B949E` secondary text, and `#3194FF` actions. Copilot green `#5EEC83` remains a brand/positive accent, while errors and warnings use separate status tokens. The canonical palette is adapted by semantic role rather than literally inverted.
 
 Use semantic roles so application controls remain predictable, then map compatible Dev Days tokens deliberately. Avoid decorative gradients behind dense forms; reserve stronger visual treatments for navigation, empty states, task selection, artboard framing and intentional highlights.
 
-A future implementation issue should define the exact light/dark token mapping and remove legacy `--vscode-*` naming where it no longer reflects the product.
+The application-shell light/dark tokens are implemented in `src/App.css`; Primer's application color mode is synchronized with the shell selection. The explicit shell preference does not change an asset's selected event theme.
 
 ## Typography
 

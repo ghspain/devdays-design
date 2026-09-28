@@ -1,15 +1,18 @@
 :root {
   color-scheme: light;
   /* Light UI palette — GitHub Copilot app / Primer light look */
-  --vscode-bg: #ffffff;
-  --vscode-bg-elev-1: #f6f8fa;
-  --vscode-bg-elev-2: #ffffff;
-  --vscode-border: #d1d9e0;
-  --vscode-text: #1f2328;
-  --vscode-text-muted: #59636e;
-  --vscode-accent: #0969da;
-  --vscode-accent-hover: #0550ae;
-  --vscode-danger: #cf222e;
+  --surface-default: #ffffff;
+  --surface-subtle: #f6f8fa;
+  --surface-raised: #ffffff;
+  --border-default: #d1d9e0;
+  --text-primary: #1f2328;
+  --text-secondary: #59636e;
+  --action-primary: #0969da;
+  --action-primary-hover: #0550ae;
+  --status-error: #cf222e;
+  --status-error-surface: #ffebe9;
+  --status-warning: #9a6700;
+  --status-success: #1a7f37;
   --app-copilot-tint: rgba(9, 105, 218, 0.08);
   --app-shell-start: #ffffff;
   --app-shell-end: #f6f8fa;
@@ -28,12 +31,12 @@
   --app-swatch-border: rgba(0, 0, 0, 0.12);
   --app-text-inverse: #ffffff;
   --app-text-bright: #f0f6fc;
-  --app-warning: #9a6700;
+  --app-warning: var(--status-warning);
   --app-warning-bright: #d29922;
   --app-warning-surface: #fff8c5;
   --app-warning-ink: #5a3e00;
-  --app-error: #cf222e;
-  --app-success: #3fb950;
+  --app-error: var(--status-error);
+  --app-success: var(--status-success);
   --app-card-glow: #2f81f7;
   --app-card-glow-deep: #1f6feb;
   --app-stage-tool-fg: #e6edf3;
@@ -44,31 +47,75 @@
   --app-elevation-1: 0 1px 3px rgba(31, 35, 40, 0.16);
   --app-elevation-2: 0 4px 12px rgba(0, 0, 0, 0.15);
   --app-elevation-3: 0 8px 24px rgba(31, 35, 40, 0.3);
-  --app-focus-ring: 0 0 0 1px var(--vscode-accent);
-  --app-focus-ring-inset: 0 0 0 1px var(--vscode-accent) inset;
+  --app-focus-ring: 0 0 0 1px var(--action-primary);
+  --app-focus-ring-inset: 0 0 0 1px var(--action-primary) inset;
 }
 
+.editor-shell[data-color-mode='dark'] {
+  color-scheme: dark;
+  --surface-default: #000000;
+  --surface-subtle: #0c1116;
+  --surface-raised: #121613;
+  --border-default: #30363d;
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --action-primary: #3194ff;
+  --action-primary-hover: #58a6ff;
+  --status-error: #ff7b72;
+  --status-error-surface: #490202;
+  --status-warning: #d29922;
+  --status-success: #5eec83;
+  --app-copilot-tint: rgba(94, 236, 131, 0.12);
+  --app-shell-start: #000000;
+  --app-shell-end: #0c1116;
+  --app-shell-glow-1: rgba(94, 236, 131, 0.05);
+  --app-shell-glow-2: rgba(184, 112, 255, 0.04);
+  --app-header-bg: rgba(0, 0, 0, 0.92);
+  --app-brand-bg: #5eec83;
+  --app-brand-color: #000000;
+  --app-panel-bg: #0c1116;
+  --app-repo-bg: #121613;
+  --app-resolution-card-bg: #0c1116;
+  --app-surface-input: #161b22;
+  --app-side-section-bg: #0c1116;
+  --app-swatch-border: rgba(255, 255, 255, 0.2);
+  --app-warning: #d29922;
+  --app-warning-bright: #f0c66d;
+  --app-warning-surface: #2b2110;
+  --app-warning-ink: #f0c66d;
+  --app-error: #ff7b72;
+  --app-success: #5eec83;
+  --app-card-glow: #3194ff;
+  --app-card-glow-deep: #1f6feb;
+  --app-text-bright: #ffffff;
+  --app-shadow-soft: rgba(0, 0, 0, 0.2);
+  --app-shadow-medium: rgba(0, 0, 0, 0.35);
+  --app-shadow-strong: rgba(0, 0, 0, 0.55);
+  --app-elevation-1: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --app-elevation-2: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --app-elevation-3: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
 /* Canvas / stage keeps the original dark theme by re-declaring the
    variables its descendants (toolbar, preview cards) rely on. */
 .stage {
-  --vscode-bg: #0d1117;
-  --vscode-bg-elev-1: #161b22;
-  --vscode-bg-elev-2: #1c2128;
-  --vscode-border: #30363d;
-  --vscode-text: #c9d1d9;
-  --vscode-text-muted: #8b949e;
+  --surface-default: #0d1117;
+  --surface-subtle: #161b22;
+  --surface-raised: #1c2128;
+  --border-default: #30363d;
+  --text-primary: #c9d1d9;
+  --text-secondary: #8b949e;
   --app-header-bg: rgba(13, 17, 23, 0.92);
   --app-surface-input: rgba(13, 17, 23, 0.96);
   --app-side-section-bg: rgba(13, 17, 23, 0.45);
   --app-shadow-strong: rgba(1, 4, 9, 0.45);
-  color: var(--vscode-text);
+  color: var(--text-primary);
 }
 
 .editor-shell {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  color: var(--vscode-text);
+  color: var(--text-primary);
   background:
     radial-gradient(1200px 640px at 10% -12%, var(--app-shell-glow-1), transparent 55%),
     radial-gradient(980px 580px at 94% 4%, var(--app-shell-glow-2), transparent 50%),
@@ -85,7 +132,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border-bottom: 1px solid var(--vscode-border);
+  border-bottom: 1px solid var(--border-default);
   background: var(--app-header-bg);
   backdrop-filter: blur(8px);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -111,6 +158,8 @@
 
 .topbar h1 {
   margin: 0;
+  white-space: nowrap;
+  font-family: Mona Sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -122,6 +171,31 @@
   gap: 0.35rem;
 }
 
+.attendee-csv-compact-label {
+  display: none;
+}
+
+.topbar-theme-toggle {
+  min-height: 44px;
+  padding: 0 0.65rem;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.topbar-theme-toggle:hover {
+  background: var(--surface-subtle);
+}
+
+.topbar-theme-toggle:focus-visible {
+  outline: 2px solid var(--action-primary);
+  outline-offset: 2px;
+}
 .editor-body {
   flex: 1;
   min-height: 0;
@@ -138,7 +212,7 @@
   width: 400px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--vscode-border);
+  border-right: 1px solid var(--border-default);
   background: var(--app-panel-bg);
 }
 
@@ -154,13 +228,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  border-bottom: 1px solid var(--vscode-border);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .sidebar-title {
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
 }
 
 /* #79: show/collapse-all toggle for the sidebar sections. */
@@ -208,7 +282,7 @@
 
 .side-section {
   flex: none;
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   background: var(--app-side-section-bg);
   box-shadow: 0 1px 0 var(--app-shadow-soft);
@@ -224,7 +298,7 @@
   justify-content: space-between;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--vscode-text);
+  color: var(--text-primary);
   user-select: none;
 }
 
@@ -233,7 +307,7 @@
 }
 
 .side-section > summary .chevron {
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   transition: transform 160ms ease;
 }
 
@@ -242,7 +316,7 @@
 }
 
 .side-section > summary:hover {
-  background: var(--vscode-bg-elev-1);
+  background: var(--surface-subtle);
 }
 
 .side-section .section-block {
@@ -252,7 +326,7 @@
 .sidebar-footer {
   flex: none;
   padding: 0.75rem 0.9rem;
-  border-top: 1px solid var(--vscode-border);
+  border-top: 1px solid var(--border-default);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -295,7 +369,7 @@
 
 .draft-status {
   font-size: 0.75rem;
-  color: var(--vscode-textCodeBlock-background);
+  color: var(--text-primary);
   opacity: 0.7;
   white-space: nowrap;
 }
@@ -305,8 +379,8 @@
   bottom: 100%;
   left: 0.9rem;
   right: 0.9rem;
-  background: var(--app-bg);
-  border: 1px solid var(--vscode-border);
+  background: var(--surface-default);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   padding: 1rem;
   z-index: 20;
@@ -316,7 +390,7 @@
 .reset-confirm-dialog p {
   margin: 0 0 0.75rem 0;
   font-size: 0.875rem;
-  color: var(--vscode-foreground);
+  color: var(--text-primary);
 }
 
 .reset-confirm-actions {
@@ -330,7 +404,7 @@
   max-height: 9.5rem;
   overflow-y: auto;
   padding: 0.55rem 0.9rem;
-  border-top: 1px solid var(--vscode-border);
+  border-top: 1px solid var(--border-default);
   background: var(--app-header-bg);
   font-size: 0.8rem;
   display: flex;
@@ -350,7 +424,7 @@
   display: grid;
   gap: 0.25rem;
   padding: 0.4rem 0;
-  border-top: 1px solid var(--vscode-border);
+  border-top: 1px solid var(--border-default);
 }
 
 .badge-export-validation-side {
@@ -419,24 +493,24 @@
 }
 
 .pack-download-block small {
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   font-size: 0.72rem;
 }
 
 .download-summary {
   font-size: 0.72rem;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   text-align: right;
   line-height: 1.3;
 }
 
 .validation-highlight {
   animation: validation-field-highlight 2s ease;
-  box-shadow: 0 0 0 3px var(--vscode-charts-red) !important;
+  box-shadow: 0 0 0 3px var(--status-error) !important;
 }
 
 @keyframes validation-field-highlight {
-  0% { background-color: var(--vscode-inputValidation-errorBackground); }
+  0% { background-color: var(--status-error-surface); }
   100% { background-color: transparent; }
 }
 
@@ -451,15 +525,15 @@
   font-size: 0.72rem;
   padding: 2px 8px;
   background: transparent;
-  border: 1px solid var(--vscode-button-border);
-  color: var(--vscode-button-foreground);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
   cursor: pointer;
   border-radius: 3px;
   transition: background-color 0.15s ease;
 }
 
 .validation-go-to-field:hover {
-  background-color: var(--vscode-button-hoverBackground);
+  background-color: var(--surface-subtle);
 }
 
 .split-download {
@@ -508,7 +582,7 @@
   display: flex;
   gap: 0.25rem;
   padding: 0.25rem;
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   background: var(--app-header-bg);
   transform: translateX(-50%);
@@ -520,7 +594,7 @@
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -528,11 +602,11 @@
 
 .asset-side-tabs button[aria-selected='true'] {
   background: var(--app-copilot-tint);
-  color: var(--vscode-accent);
+  color: var(--action-primary);
 }
 
 .asset-side-tabs button:focus-visible {
-  outline: 2px solid var(--vscode-accent);
+  outline: 2px solid var(--action-primary);
   outline-offset: 2px;
 }
 
@@ -561,7 +635,7 @@
   gap: 0.3rem;
   padding: 0.4rem;
   border-radius: 12px;
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   background: var(--app-header-bg);
   backdrop-filter: blur(8px);
   box-shadow: 0 12px 30px var(--app-shadow-strong);
@@ -570,7 +644,7 @@
 .toolbar-divider {
   height: 1px;
   margin: 0.15rem 0.3rem;
-  background: var(--vscode-border);
+  background: var(--border-default);
 }
 
 /* The stage toolbar floats over the dark canvas, so its IconButtons need
@@ -585,7 +659,7 @@
 }
 
 .topbar-history-toggle.active {
-  color: var(--vscode-accent);
+  color: var(--action-primary);
   background-color: var(--app-copilot-tint);
 }
 
@@ -597,7 +671,7 @@
   width: min(380px, 90%);
   padding: 1rem;
   overflow-y: auto;
-  border-left: 1px solid var(--vscode-border);
+  border-left: 1px solid var(--border-default);
   background: var(--app-panel-bg);
   backdrop-filter: blur(10px);
   box-shadow: -20px 0 50px var(--app-shadow-strong);
@@ -620,14 +694,14 @@
 
 .section-description {
   margin: 0.6rem 0 1.25rem;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   font-size: 1.08rem;
 }
 
 .section-block h3 {
   margin: 0.45rem 0 0.65rem;
   font-size: 1.05rem;
-  color: var(--vscode-text);
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -650,7 +724,7 @@
 .picker-label {
   display: block;
   margin-bottom: 0.5rem;
-  color: var(--vscode-text);
+  color: var(--text-primary);
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -664,7 +738,7 @@
 .format-group h3 {
   margin: 0;
   font-size: 0.95rem;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
@@ -682,10 +756,10 @@
 .card-option {
   position: relative;
   text-align: left;
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
-  background: var(--vscode-bg-elev-2);
-  color: var(--vscode-text);
+  background: var(--surface-raised);
+  color: var(--text-primary);
   font: inherit;
   padding: 0.8rem;
   display: flex;
@@ -697,16 +771,16 @@
 }
 
 .card-option:hover {
-  border-color: var(--vscode-text-muted);
-  background: var(--vscode-bg-elev-1);
+  border-color: var(--text-secondary);
+  background: var(--surface-subtle);
 }
 
 .card-option small {
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
 }
 
 .card-option.selected {
-  border-color: var(--vscode-accent);
+  border-color: var(--action-primary);
   background: var(--app-copilot-tint);
   box-shadow: var(--app-focus-ring-inset);
 }
@@ -718,7 +792,7 @@
 
 .format-card:focus-visible,
 .theme-card:focus-visible {
-  outline: 2px solid var(--vscode-accent);
+  outline: 2px solid var(--action-primary);
   outline-offset: 2px;
 }
 
@@ -730,7 +804,7 @@
   justify-content: center;
   padding: 0.2rem;
   border-radius: 5px;
-  background: var(--vscode-bg-elev-1);
+  background: var(--surface-subtle);
 }
 
 .format-ratio {
@@ -791,17 +865,17 @@
 
 .picker-description {
   margin: -0.45rem 0 0.65rem;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   line-height: 1.4;
 }
 
 .editor-guide {
   padding: 0.8rem;
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   background: var(--app-copilot-tint);
-  color: var(--vscode-text);
+  color: var(--text-primary);
 }
 
 .editor-guide-header {
@@ -818,29 +892,29 @@
 
 .editor-guide-dismiss {
   padding: 0.25rem 0.45rem;
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   border-radius: 5px;
   background: transparent;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   font: inherit;
   font-size: 0.75rem;
   cursor: pointer;
 }
 
 .editor-guide-dismiss:hover {
-  background: var(--vscode-bg-elev-1);
-  color: var(--vscode-text);
+  background: var(--surface-subtle);
+  color: var(--text-primary);
 }
 
 .editor-guide-dismiss:focus-visible {
-  outline: 2px solid var(--vscode-accent);
+  outline: 2px solid var(--action-primary);
   outline-offset: 2px;
 }
 
 .editor-guide ol {
   margin: 0.55rem 0 0;
   padding-left: 1.2rem;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   line-height: 1.45;
 }
@@ -850,7 +924,7 @@
 }
 
 .editor-guide strong {
-  color: var(--vscode-text);
+  color: var(--text-primary);
 }
 
 .form-grid {
@@ -869,7 +943,7 @@ label {
   flex-direction: column;
   gap: 0.375rem;
   font-size: 0.95rem;
-  color: var(--vscode-text);
+  color: var(--text-primary);
   min-width: 0;
 }
 
@@ -885,7 +959,7 @@ input[type='file'] {
 }
 
 .label-row small {
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   font-weight: 500;
   line-height: 1.35;
@@ -902,9 +976,9 @@ input:not([data-component]),
 select:not([data-component]),
 textarea:not([data-component]) {
   border-radius: 6px;
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   background: var(--app-surface-input);
-  color: var(--vscode-text);
+  color: var(--text-primary);
   padding: 0.58rem 0.72rem;
   transition: border-color 120ms ease, box-shadow 120ms ease;
   box-sizing: border-box;
@@ -921,7 +995,7 @@ input:not([data-component]):focus,
 select:not([data-component]):focus,
 textarea:not([data-component]):focus {
   outline: none;
-  border-color: var(--vscode-accent);
+  border-color: var(--action-primary);
   box-shadow: var(--app-focus-ring);
 }
 
@@ -930,14 +1004,14 @@ input[type='file'] {
 }
 
 .catalog-picker {
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   padding: 0.65rem;
   margin: 0 0 0.8rem;
 }
 
 .catalog-picker legend {
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   padding: 0 0.25rem;
 }
@@ -957,20 +1031,20 @@ input[type='file'] {
   border-radius: 6px;
 }
 
-.catalog-option:hover { background: var(--vscode-bg-elev-1); }
+.catalog-option:hover { background: var(--surface-subtle); }
 .catalog-option input { width: auto; margin-top: 0.2rem; }
 .catalog-option span { display: grid; gap: 0.1rem; }
-.catalog-option small { color: var(--vscode-text-muted); line-height: 1.3; }
+.catalog-option small { color: var(--text-secondary); line-height: 1.3; }
 
 .section-count {
   margin-left: 0.4rem;
   font-weight: 400;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   font-size: 0.85em;
 }
 
 .speaker-card {
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   background: var(--app-side-section-bg);
   padding: 0.65rem 0.75rem 0.75rem;
@@ -983,7 +1057,7 @@ input[type='file'] {
   justify-content: space-between;
   gap: 0.5rem;
   font-weight: 600;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   font-size: 0.85rem;
 }
 
@@ -1002,15 +1076,15 @@ input[type='file'] {
   height: 28px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
 }
 
 .speaker-card-avatar-initials {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--vscode-bg-elev-1);
-  color: var(--vscode-text-muted);
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -1018,7 +1092,7 @@ input[type='file'] {
 .speaker-card-hint {
   display: block;
   margin-top: 0.4rem;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   line-height: 1.35;
 }
 
@@ -1030,12 +1104,12 @@ input[type='file'] {
 }
 
 .speaker-profile-links a {
-  color: var(--vscode-accent);
+  color: var(--action-primary);
   text-underline-offset: 0.15em;
 }
 
 .speaker-profile-links a:focus-visible {
-  outline: 2px solid var(--vscode-accent);
+  outline: 2px solid var(--action-primary);
   outline-offset: 2px;
 }
 
@@ -1062,13 +1136,13 @@ input[type='file'] {
 }
 
 .speaker-card {
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   border-radius: 14px;
   padding: 0.85rem;
   display: grid;
   gap: 0.62rem;
   grid-template-columns: 1fr 1fr;
-  background: var(--vscode-bg-elev-2);
+  background: var(--surface-raised);
 }
 
 .speaker-card button {
@@ -1084,12 +1158,12 @@ input[type='file'] {
 }
 
 .logo-tile {
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   border-radius: 14px;
   padding: 0.5rem;
   display: grid;
   gap: 0.5rem;
-  background: var(--vscode-bg-elev-2);
+  background: var(--surface-raised);
 }
 
 .logo-tile img {
@@ -1097,26 +1171,26 @@ input[type='file'] {
   max-width: 100%;
   height: 72px;
   object-fit: contain;
-  background: var(--vscode-bg);
+  background: var(--surface-default);
   border-radius: 6px;
 }
 
 .logo-remove {
   width: 100%;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
 }
 
 .logo-remove:hover {
-  color: var(--vscode-danger);
+  color: var(--status-error);
 }
 
 input[type='file']::file-selector-button {
   margin-right: 0.65rem;
   padding: 0.42rem 0.85rem;
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  background: var(--vscode-bg-elev-2);
-  color: var(--vscode-text);
+  background: var(--surface-raised);
+  color: var(--text-primary);
   font: inherit;
   font-weight: 500;
   cursor: pointer;
@@ -1124,8 +1198,8 @@ input[type='file']::file-selector-button {
 }
 
 input[type='file']::file-selector-button:hover {
-  background: var(--vscode-bg-elev-1);
-  border-color: var(--vscode-text-muted);
+  background: var(--surface-subtle);
+  border-color: var(--text-secondary);
 }
 
 .export-panel {
@@ -1142,8 +1216,8 @@ input[type='file']::file-selector-button:hover {
 .export-type {
   padding: 0.95rem;
   border-radius: 14px;
-  border: 1px solid var(--vscode-border);
-  background: var(--vscode-bg-elev-2);
+  border: 1px solid var(--border-default);
+  background: var(--surface-raised);
   display: grid;
   gap: 0.3rem;
   text-align: left;
@@ -1155,17 +1229,17 @@ input[type='file']::file-selector-button:hover {
 }
 
 .export-type span {
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
 }
 
 .export-type em {
   font-style: normal;
-  color: var(--vscode-accent);
+  color: var(--action-primary);
   font-size: 1.1rem;
 }
 
 .export-type.selected {
-  border-color: var(--vscode-accent);
+  border-color: var(--action-primary);
   box-shadow: var(--app-focus-ring-inset);
 }
 
@@ -1173,8 +1247,8 @@ input[type='file']::file-selector-button:hover {
   width: 100%;
   padding: 1rem;
   border-radius: 14px;
-  border: 1px solid var(--vscode-border);
-  background: var(--vscode-bg-elev-2);
+  border: 1px solid var(--border-default);
+  background: var(--surface-raised);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1188,11 +1262,11 @@ input[type='file']::file-selector-button:hover {
 }
 
 .resolution-toggle > div:not([class*="prc-"]) span {
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
 }
 
 .resolution-card {
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   background: var(--app-resolution-card-bg);
   border-radius: 14px;
   padding: 1rem;
@@ -1203,7 +1277,7 @@ input[type='file']::file-selector-button:hover {
 .resolution-card p,
 .resolution-card span {
   margin: 0;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
 }
 
 .resolution-card strong {
@@ -1227,14 +1301,14 @@ input[type='file']::file-selector-button:hover {
 
 .preview p {
   margin-top: 0;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   font-size: 0.95rem;
 }
 
 .canvas-wrap {
   width: 100%;
   border-radius: 16px;
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   overflow: hidden;
   background: var(--app-canvas-bg);
   box-shadow: inset 0 1px 0 rgba(201, 209, 217, 0.08);
@@ -1261,10 +1335,10 @@ input[type='file']::file-selector-button:hover {
 }
 
 .speaker-preview-item {
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 0.5rem;
-  background: var(--vscode-bg-elev-2);
+  background: var(--surface-raised);
   display: grid;
   gap: 0.45rem;
 }
@@ -1273,8 +1347,8 @@ input[type='file']::file-selector-button:hover {
   width: 100%;
   height: auto;
   border-radius: 8px;
-  border: 1px solid var(--vscode-border);
-  background: var(--vscode-bg);
+  border: 1px solid var(--border-default);
+  background: var(--surface-default);
 }
 
 .speaker-preview-item strong {
@@ -1298,7 +1372,7 @@ input[type='file']::file-selector-button:hover {
 .history-header h3 {
   margin: 0;
   font-size: 1.05rem;
-  color: var(--vscode-text);
+  color: var(--text-primary);
 }
 
 .history-empty {
@@ -1308,7 +1382,7 @@ input[type='file']::file-selector-button:hover {
   justify-items: center;
   gap: 0.35rem;
   text-align: center;
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
 }
 
 .history-empty p {
@@ -1318,7 +1392,7 @@ input[type='file']::file-selector-button:hover {
 }
 
 .history-empty p:first-of-type {
-  color: var(--vscode-text);
+  color: var(--text-primary);
   font-size: 0.8rem;
 }
 
@@ -1341,10 +1415,10 @@ input[type='file']::file-selector-button:hover {
 }
 
 .history-item {
-  border: 1px solid var(--vscode-border);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 0.55rem;
-  background: var(--vscode-bg-elev-2);
+  background: var(--surface-raised);
   display: grid;
   grid-template-columns: 110px 1fr auto;
   gap: 0.65rem;
@@ -1356,8 +1430,8 @@ input[type='file']::file-selector-button:hover {
   height: 62px;
   object-fit: cover;
   border-radius: 8px;
-  border: 1px solid var(--vscode-border);
-  background: var(--vscode-bg);
+  border: 1px solid var(--border-default);
+  background: var(--surface-default);
 }
 
 .history-meta {
@@ -1370,7 +1444,7 @@ input[type='file']::file-selector-button:hover {
 }
 
 .history-meta span {
-  color: var(--vscode-text-muted);
+  color: var(--text-secondary);
   font-size: 0.8rem;
 }
 
@@ -1476,7 +1550,7 @@ input[type='file']::file-selector-button:hover {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 0.35rem 0.75rem;
-    border-bottom: 1px solid var(--vscode-border);
+    border-bottom: 1px solid var(--border-default);
     background: var(--app-header-bg);
     backdrop-filter: blur(8px);
   }
@@ -1486,7 +1560,7 @@ input[type='file']::file-selector-button:hover {
     border: 0;
     border-radius: 6px;
     background: transparent;
-    color: var(--vscode-text-muted);
+    color: var(--text-secondary);
     font: inherit;
     font-weight: 600;
     cursor: pointer;
@@ -1494,12 +1568,12 @@ input[type='file']::file-selector-button:hover {
 
   .mobile-view-tabs button[aria-selected='true'] {
     background: var(--app-copilot-tint);
-    color: var(--vscode-accent);
-    box-shadow: inset 0 0 0 1px var(--vscode-accent);
+    color: var(--action-primary);
+    box-shadow: inset 0 0 0 1px var(--action-primary);
   }
 
   .mobile-view-tabs button:focus-visible {
-    outline: 2px solid var(--vscode-accent);
+    outline: 2px solid var(--action-primary);
     outline-offset: 2px;
   }
 
@@ -1516,7 +1590,7 @@ input[type='file']::file-selector-button:hover {
     width: 100%;
     max-width: none;
     border-right: 0;
-    border-bottom: 1px solid var(--vscode-border);
+    border-bottom: 1px solid var(--border-default);
   }
 
   .sidebar-content {
@@ -1630,10 +1704,23 @@ input[type='file']::file-selector-button:hover {
 @media (max-width: 420px) {
   .topbar {
     padding: 0 0.65rem;
+    gap: 0.5rem;
+  }
+
+  .topbar-actions {
+    gap: 0.2rem;
   }
 
   .topbar h1 {
     font-size: 0.92rem;
+  }
+
+  .attendee-csv-wide-label {
+    display: none;
+  }
+
+  .attendee-csv-compact-label {
+    display: inline;
   }
 
   .sidebar-content {

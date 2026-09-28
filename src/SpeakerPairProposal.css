@@ -1,4 +1,10 @@
 .proposal-shell {
+  /* The isolated UX proposal still uses its legacy palette tokens. */
+  --vscode-bg: var(--surface-default);
+  --vscode-bg-elev-1: var(--surface-subtle);
+  --vscode-border: var(--border-default);
+  --vscode-text: var(--text-primary);
+  --vscode-text-muted: var(--text-secondary);
   min-height: 100vh;
   background: var(--vscode-bg-elev-1);
   color: var(--vscode-text);
