@@ -414,7 +414,7 @@ Goal: generate hundreds or thousands of assets without freezing the editor or re
 ### Work
 
 - [x] Phase 8.1 / #138: dedicated queue with deterministic jobs, chunked main-thread yielding, front/back progress, and per-job failures,
-- [ ] cancel/retry behavior (#139),
+- [x] cancel/retry behavior (#139),
 - [ ] measured responsiveness and memory targets (#140),
 - [x] progress reporting,
 - [x] deterministic filenames,
