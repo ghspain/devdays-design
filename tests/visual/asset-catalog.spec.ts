@@ -14,7 +14,7 @@ const pairedBadgeContract: AssetDefinition = {
     description: 'Front and back speaker badge',
     channels: [],
     sides: ['front', 'back'],
-    rendererId: 'badge',
+    rendererId: 'renderer-test-42',
     exportProfiles: [{ id: 'badge-image', width: 900, height: 1200, types: ['png'], scales: [1] }],
   }],
 }
@@ -59,7 +59,7 @@ test('a test-only asset resolves by template and renderer metadata without a leg
   expect(template.legacyFormat).toBeUndefined()
   expect(template.sides).toEqual(['front', 'back'])
   expect(template.exportProfiles[0]).toMatchObject({ id: 'badge-image', width: 900, height: 1200, types: ['png'], scales: [1] })
-  expect(resolveTemplateRenderer(template, { badge: testRenderer })).toBe(testRenderer)
+  expect(resolveTemplateRenderer(template, { 'renderer-test-42': testRenderer })).toBe(testRenderer)
 })
 
 test('format picker still exposes the same four production outputs by asset family', async ({ page }, testInfo) => {

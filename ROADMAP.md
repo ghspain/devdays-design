@@ -106,7 +106,7 @@ Goal: create extension points before adding the new physical-asset families.
 - [x] Current formats resolve through reusable asset and template contracts. (#105)
 - [x] Existing social assets render through isolated renderer boundaries. (#106)
 - [x] Existing drafts and history migrate through a versioned state boundary. (#107)
-- [ ] A test asset can be registered without changing unrelated social switches. (#108)
+- [x] A test asset can be registered without changing unrelated social switches. (#108)
 
 ### Suggested target boundaries
 
