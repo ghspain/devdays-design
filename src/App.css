@@ -284,7 +284,6 @@
 
 .footer-download-stack .download-both-sides {
   width: 100%;
-  margin-top: 0.35rem;
   justify-content: center;
 }
 
@@ -467,6 +466,16 @@
   display: flex;
   align-items: stretch;
   position: relative;
+}
+
+.split-download-badge {
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.split-download-badge .download-main {
+  flex: none;
+  width: 100%;
 }
 
 /* impeccable-disable-next-line codex-grid-background -- .stage is the actual preview canvas surface */

@@ -1735,7 +1735,7 @@ function App() {
                               </>
                             )}
                           </div>
-                          <div className="split-download">
+                          <div className={`split-download${isSpeakerBadge ? ' split-download-badge' : ''}`}>
                           <Button
                             className="download-main"
                             variant="primary"

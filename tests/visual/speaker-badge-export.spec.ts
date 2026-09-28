@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Download } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { openSection, selectFormat } from './helpers'
 
@@ -11,24 +11,24 @@ test('Speaker Badge downloads the active face and both sides with deterministic 
   await expect(page.getByRole('button', { name: /Download Front PNG · 800×1200/ })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Download both Speaker Badge sides as 2 PNG files' })).toBeVisible()
 
-  const downloaded: Array<{ name: string; bytes: Buffer }> = []
-  page.on('download', async (download) => {
-    const path = await download.path()
-    if (path) downloaded.push({ name: download.suggestedFilename(), bytes: await readFile(path) })
-  })
+  const downloads: Download[] = []
+  page.on('download', (download) => downloads.push(download))
   await page.getByRole('button', { name: /Download Front PNG/ }).click()
-  await expect.poll(() => downloaded.length).toBe(1)
-  expect(downloaded[0].name).toMatch(/^speaker-badge-.*-front\.png$/)
+  await expect.poll(() => downloads.length).toBe(1)
+  expect(downloads[0].suggestedFilename()).toMatch(/^speaker-badge-.*-front\.png$/)
 
   await page.getByRole('button', { name: 'Download both Speaker Badge sides as 2 PNG files' }).click()
-  await expect.poll(() => downloaded.length).toBe(3)
-  expect(downloaded.slice(1).map(({ name }) => name)).toEqual([
+  await expect.poll(() => downloads.length).toBe(3)
+  const names = downloads.map((download) => download.suggestedFilename())
+  expect(names.slice(1)).toEqual([
     expect.stringMatching(/^speaker-badge-.*-front\.png$/),
     expect.stringMatching(/^speaker-badge-.*-back\.png$/),
   ])
-  expect(downloaded[1].name).toBe(downloaded[0].name)
-  expect(downloaded[2].name).toBe(downloaded[1].name.replace(/-front\.png$/, '-back.png'))
-  const dimensions = downloaded.slice(1).map(({ bytes }) => [bytes.readUInt32BE(16), bytes.readUInt32BE(20)])
+  expect(names[1]).toBe(names[0])
+  expect(names[2]).toBe(names[1].replace(/-front\.png$/, '-back.png'))
+  const paths = await Promise.all(downloads.slice(1).map((download) => download.path()))
+  const images = await Promise.all(paths.filter((path): path is string => !!path).map((path) => readFile(path)))
+  const dimensions = images.map((bytes) => [bytes.readUInt32BE(16), bytes.readUInt32BE(20)])
   expect(dimensions).toEqual([[1600, 2400], [1600, 2400]])
   await expect(page.getByRole('status', { name: 'Both-side export checks' })).toContainText('Front')
   await expect(page.getByRole('status', { name: 'Both-side export checks' })).toContainText('Back')
