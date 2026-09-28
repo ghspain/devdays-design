@@ -1,4 +1,5 @@
 import { MAX_SPEAKERS } from '../constants'
+import { validatePrintGeometry, type PrintGeometry } from '../domain/printGeometry'
 import type { BannerFormat, BannerState } from '../types'
 
 export type ValidationSeverity = 'error' | 'warning' | 'info'
@@ -10,6 +11,7 @@ export type ValidationCode =
   | 'low-contrast'
   | 'safe-area'
   | 'invalid-qr-destination'
+  | 'invalid-print-geometry'
 
 export interface ValidationFinding {
   code: ValidationCode
@@ -58,6 +60,7 @@ export function validateState(
   state: BannerState,
   _format: BannerFormat,
   info: RenderInfo,
+  printGeometry?: PrintGeometry,
 ): ValidationFinding[] {
   const findings: ValidationFinding[] = []
 
@@ -105,6 +108,12 @@ export function validateState(
       message: `${dropped} of ${state.speakers.length} speakers exceed the ${info.speakerCap}-speaker limit of this format and will not appear.`,
       targetId: 'speakers-section',
     })
+  }
+
+  if (printGeometry) {
+    for (const message of validatePrintGeometry(printGeometry)) {
+      findings.push({ code: 'invalid-print-geometry', severity: 'error', field: 'print geometry', message, targetId: 'section-format' })
+    }
   }
 
   return findings

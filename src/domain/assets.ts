@@ -1,5 +1,6 @@
 import type { BannerFormat, ExportScale, ExportType } from '../types'
 import type { QRDestination } from './qrDestination'
+import { printRasterSize, type PrintGeometry } from './printGeometry'
 
 export type AssetSide = 'front' | 'back'
 
@@ -9,6 +10,8 @@ export interface ExportProfile {
   readonly height: number
   readonly types: readonly ExportType[]
   readonly scales: readonly ExportScale[]
+  /** Optional physical metadata; social profiles intentionally omit this. */
+  readonly printGeometry?: PrintGeometry
 }
 
 export interface AssetTemplateDefinition {
@@ -43,6 +46,23 @@ export interface AssetDefinition {
 
 const imageTypes = ['png', 'jpg'] as const satisfies readonly ExportType[]
 const imageScales = [1, 2] as const satisfies readonly ExportScale[]
+
+// 🧭 DECISION — configurable example profile, not a universal badge stock.
+// Question: what initial physical geometry should the badge family expose?
+// Options: omit it until a stock is chosen / invent a universal stock / expose a reversible example.
+// Investigation: #142 requires a documented configurable profile, while #145 is the calibration gate;
+// the current 800×1200 badge canvas maps exactly to 80×120 mm at 254 DPI (nearest-pixel rounding).
+// Decision: use 80×120 mm trim, 254 DPI, 3 mm bleed and 5 mm safe area, marked configurable and not print-ready.
+// To revert: replace this profile metadata with another validated input; social profiles are unaffected.
+const speakerBadgePrintGeometry: PrintGeometry = {
+  widthMm: 80,
+  heightMm: 120,
+  dpi: 254,
+  bleedMm: 3,
+  safeAreaMm: 5,
+  configurable: true,
+}
+const speakerBadgeRasterSize = printRasterSize(speakerBadgePrintGeometry)
 
 /** Canonical domain metadata for the four production asset templates. */
 export const assetCatalog: readonly AssetDefinition[] = [
@@ -117,8 +137,14 @@ export const assetCatalog: readonly AssetDefinition[] = [
           defaultReadableText: true,
         },
         movableElementIds: ['speaker-name'],
-        // PNG-oriented canvas metadata only; physical size is defined by #142.
-        exportProfiles: [{ id: 'speaker-badge-front-image', width: 800, height: 1200, types: imageTypes, scales: imageScales }],
+        exportProfiles: [{
+          id: 'speaker-badge-front-image',
+          width: speakerBadgeRasterSize.width,
+          height: speakerBadgeRasterSize.height,
+          types: imageTypes,
+          scales: imageScales,
+          printGeometry: speakerBadgePrintGeometry,
+        }],
       },
     ],
   },

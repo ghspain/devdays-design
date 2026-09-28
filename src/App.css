@@ -1004,6 +1004,15 @@
   line-height: 1.25;
 }
 
+.asset-navigation-print-profile {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.asset-navigation-print-note {
+  color: var(--status-warning);
+}
+
 .theme-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
