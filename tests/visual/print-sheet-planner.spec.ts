@@ -40,6 +40,8 @@ test('selected attendees expose an A3 proof summary and download a one-page PDF 
   await dialog.getByRole('button', { name: 'Generate selected badges (.zip)' }).click()
   await zipDownload
   await expect(dialog.getByText('Generated 6 files.', { exact: true })).toBeVisible()
+  await expect(dialog.getByLabel('Include row 3 in generation')).toBeDisabled()
+  await expect(summary).toContainText('A3 PDF proof · 3 generated front badges · 9 per sheet · 1 page')
 
   const pdfDownload = page.waitForEvent('download')
   await dialog.getByRole('button', { name: 'Download A3 PDF proof' }).click()
@@ -51,6 +53,7 @@ test('selected attendees expose an A3 proof summary and download a one-page PDF 
   const pdf = bytes.toString('latin1')
   expect(pdf).toMatch(/\/MediaBox \[0 0 841\.889\d* 1190\.551\d*\]/)
   expect((pdf.match(/\/Type \/Page\b/g) ?? []).length).toBe(1)
+  expect((pdf.match(/\/Subtype \/Image\b/g) ?? []).length).toBe(3)
   expect(pdf).toContain('/Width 800')
   expect(pdf).toContain('/Height 1200')
   expect(pdf).toContain('Calibration pending #145')

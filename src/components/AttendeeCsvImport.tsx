@@ -161,8 +161,11 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const isIncluded = (row: NonNullable<typeof validatedRows>[number]) => row.status !== 'error' &&
     (selectedRows?.has(row.sourceRowNumber) ?? true)
   const includedCount = validatedRows?.filter(isIncluded).length ?? 0
+  const generatedFrontCount = batchResult?.files.filter((file) => file.side === 'front' || (!file.side && file.id.endsWith('-front'))).length ?? 0
+  const sheetBadgeCount = batchResult ? generatedFrontCount : includedCount
+  const sheetBadgeLabel = batchResult ? 'generated front badge' : 'selected front badge'
   const sheetProfile = getBadgeSheetProfile(sheetProfileId)
-  const sheetPlan = planBadgeSheet(includedCount, speakerBadgePrintGeometry, sheetProfile)
+  const sheetPlan = planBadgeSheet(sheetBadgeCount, speakerBadgePrintGeometry, sheetProfile)
   const representativeRows = useMemo(() => selectRepresentativeAttendees(
     validatedRows?.filter((row) => row.status !== 'error' && (selectedRows?.has(row.sourceRowNumber) ?? true)) ?? [],
   ), [validatedRows, selectedRows])
@@ -377,7 +380,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
                                 type="checkbox"
                                 aria-label={`Include row ${row.sourceRowNumber} in generation`}
                                 checked={isIncluded(row)}
-                                disabled={row.status === 'error'}
+                                disabled={row.status === 'error' || isGenerating || Boolean(batchResult)}
                                 onChange={(event) => setSelectedRows((current) => {
                                   const next = current ?? new Set(validatedRows.filter((item) => item.status !== 'error').map((item) => item.sourceRowNumber))
                                   const updated = new Set(next)
@@ -429,7 +432,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
                         </select>
                       </FormControl>
                       <p aria-live="polite" aria-label="PDF proof layout summary">
-                        {sheetProfile.label} PDF proof · {includedCount} selected front badge{includedCount === 1 ? '' : 's'} · {sheetPlan.perPage} per sheet · {sheetPlan.pageCount} page{sheetPlan.pageCount === 1 ? '' : 's'} · {sheetProfile.marginMm} mm margins · {sheetProfile.gapMm} mm gaps · crop marks on trim · front only · calibration pending #145.
+                        {sheetProfile.label} PDF proof · {sheetBadgeCount} {sheetBadgeLabel}{sheetBadgeCount === 1 ? '' : 's'} · {sheetPlan.perPage} per sheet · {sheetPlan.pageCount} page{sheetPlan.pageCount === 1 ? '' : 's'} · {sheetProfile.marginMm} mm margins · {sheetProfile.gapMm} mm gaps · crop marks on trim · front only · calibration pending #145.
                       </p>
                       <Button onClick={() => { void exportPdfProof() }} disabled={!batchResult || isGenerating || isExportingSheet || Boolean(batchResult?.failures.length)} loading={isExportingSheet}>
                         Download {sheetProfile.label} PDF proof
