@@ -953,7 +953,7 @@ function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleS
           >
             {shellMode === 'light' ? 'Dark' : 'Light'}
           </button>
-          <AttendeeCsvImport />
+          <AttendeeCsvImport theme={state.theme} colors={state.colors} event={state.event} />
           <IconButton
             as="a"
             href={REPOSITORY_URL}

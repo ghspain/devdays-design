@@ -10,10 +10,19 @@ import {
 } from '../lib/attendeeCsv'
 import { attendeeBadgeFields, type AttendeeCsvColumnMapping } from '../domain/attendee'
 import { validateAttendeeRows } from '../lib/attendeeValidation'
+import { selectRepresentativeAttendees } from '../lib/attendeePreviews'
+import AttendeeBadgePreview from './AttendeeBadgePreview'
+import type { BannerState, EventThemeId } from '../types'
 
 const INVALID_CSV_MESSAGE = 'This file could not be read as CSV. Check the file format and try another file.'
 
-export default function AttendeeCsvImport() {
+interface AttendeeCsvImportProps {
+  theme: EventThemeId
+  colors: BannerState['colors']
+  event: BannerState['event']
+}
+
+export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvImportProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [dataset, setDataset] = useState<AttendeeCsvDataset | null>(null)
   const [mapping, setMapping] = useState<AttendeeCsvColumnMapping>({})
@@ -75,6 +84,9 @@ export default function AttendeeCsvImport() {
   const isIncluded = (row: NonNullable<typeof validatedRows>[number]) => row.status !== 'error' &&
     (selectedRows?.has(row.sourceRowNumber) ?? true)
   const includedCount = validatedRows?.filter(isIncluded).length ?? 0
+  const representativeRows = useMemo(() => selectRepresentativeAttendees(
+    validatedRows?.filter((row) => row.status !== 'error' && (selectedRows?.has(row.sourceRowNumber) ?? true)) ?? [],
+  ), [validatedRows, selectedRows])
 
   return (
     <>
@@ -180,7 +192,28 @@ export default function AttendeeCsvImport() {
                     </ul>
                   </section>
                 ) : normalizedRows ? <p role="alert">Row validation is unavailable in this browser.</p> : null}
-                <Button onClick={clearData}>Clear imported data</Button>
+                {validatedRows && (
+                  <section className="attendee-preview-section" aria-label="Representative badge previews">
+                    <h3>Representative badge previews</h3>
+                    <p>Up to five selected rows, rendered with the current Speaker Badge front template. Previewing does not create or save badge files.</p>
+                    {representativeRows.length > 0 ? (
+                      <div className="attendee-preview-grid">
+                        {representativeRows.map(({ row, reasons }) => (
+                          <AttendeeBadgePreview
+                            key={row.sourceRowNumber}
+                            sourceRowNumber={row.sourceRowNumber}
+                            attendee={row.attendee}
+                            reasons={reasons}
+                            theme={theme}
+                            colors={colors}
+                            event={event}
+                          />
+                        ))}
+                      </div>
+                    ) : <p role="status">Include a valid or warning row to preview its badge.</p>}
+                  </section>
+                )}
+                <Button onClick={clearData}>Clear attendee data</Button>
               </section>
             ) : !error ? (
               <p role="status">No attendee data imported.</p>
