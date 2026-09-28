@@ -1003,6 +1003,18 @@ input[type='file'] {
   outline-offset: 2px;
 }
 
+.speaker-badge-handle-controls {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.speaker-badge-handle-controls > label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .speaker-card .form-grid {
   margin-top: 0.55rem;
 }

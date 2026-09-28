@@ -44,7 +44,7 @@ import { fileToDataUrl, getBackgroundImage, loadImage } from './lib/image'
 import { renderBanner } from './lib/renderBanner'
 import { createRenderInfo, validateState, type ValidationFinding } from './lib/validate'
 import { checkRenderedCanvas } from './lib/pixelChecks'
-import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets, getCatalogPublicProfile } from './lib/catalog'
+import { catalogOrganizers, catalogSpeakers, catalogSponsors, eventPresets, getCatalogPublicHandle, getCatalogPublicProfile } from './lib/catalog'
 import { resolveCatalogQRDestination } from './lib/qrDestinationResolver'
 import { buildEventPack, type EventPackProgress } from './lib/exportPack'
 import { readDraft, writeDraft, clearDraft } from './lib/draft'
@@ -232,9 +232,10 @@ function App() {
   const isLumaCover = state.format === 'luma_cover'
   const isSpeakerBanner = state.format === 'speaker_banner'
   const isSpeakerSquare = state.format === 'speaker_square'
+  const isSpeakerBadge = state.format === 'speaker_badge'
   const isSocialPromo = state.format === 'social_promo'
   const isMinimalCover = isLumaCover
-  const isSpeakerPerBannerFormat = isSpeakerBanner || isSpeakerSquare
+  const isSpeakerPerBannerFormat = isSpeakerBanner || isSpeakerSquare || isSpeakerBadge
   const qrTemplate = assetCatalog.flatMap((asset) => asset.templates)
     .find((template) => template.legacyFormat === state.format && template.qr)
   const qrReadableText = qrTemplate?.qr
@@ -1128,6 +1129,7 @@ function App() {
               {state.speakers.map((speaker, index) => {
                 const initials = speaker.name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word.charAt(0).toUpperCase()).join('') || '—'
                 const publicProfile = speaker.personId ? getCatalogPublicProfile(speaker.personId) : undefined
+                const publicHandle = getCatalogPublicHandle(publicProfile)
                 return (
                 <div key={speaker.id} className="speaker-card">
                   <div className="speaker-card-head">
@@ -1190,6 +1192,28 @@ function App() {
                         <a key={kind} href={url} target="_blank" rel="noreferrer">{kind === 'x' ? 'X' : kind === 'github' ? 'GitHub' : kind === 'linkedin' ? 'LinkedIn' : 'Website'}</a>
                       ))}
                     </nav>
+                  )}
+                  {isSpeakerBadge && (
+                    <div className="speaker-badge-handle-controls">
+                      <label>
+                        <Checkbox
+                          aria-label="Show networking handle"
+                          checked={speaker.badgeShowHandle ?? Boolean(speaker.badgeHandle ?? publicHandle)}
+                          onChange={(event) => updateSpeaker(speaker.id, { badgeShowHandle: event.target.checked })}
+                        />
+                        Show handle
+                      </label>
+                      <FormControl id={`speaker-badge-handle-${speaker.id}`}>
+                        <FormControl.Label>Networking handle</FormControl.Label>
+                        <TextInput
+                          block
+                          aria-label="Networking handle"
+                          value={speaker.badgeHandle ?? publicHandle ?? ''}
+                          placeholder="No public handle available"
+                          onChange={(event) => updateSpeaker(speaker.id, { badgeHandle: event.target.value })}
+                        />
+                      </FormControl>
+                    </div>
                   )}
                   {!speaker.photoDataUrl && (
                     <small className="speaker-card-hint">No photo yet: the banner will render the speaker initials.</small>
@@ -1600,7 +1624,7 @@ function App() {
                             {isSpeakerPerBannerFormat ? (
                               <>
                                 <span>
-                                  {downloadFileCount} speaker banner(s) · {format.width}×{format.height} each
+                                  {downloadFileCount} {isSpeakerBadge ? 'speaker badge(s)' : 'speaker banner(s)'} · {format.width}×{format.height} each
                                 </span>
                               </>
                             ) : (

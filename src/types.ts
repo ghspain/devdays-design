@@ -6,6 +6,7 @@ export type BannerFormat =
   | 'speaker_banner'
   | 'social_promo'
   | 'luma_cover'
+  | 'speaker_badge'
 
 export type ExportType = 'png' | 'jpg'
 export type ExportScale = 1 | 2
@@ -51,6 +52,10 @@ export interface Speaker {
   photoDataUrl?: string
   talkTitle?: string
   talkTime?: string
+  /** Badge-only network identity override; canonical profile data stays unchanged. */
+  badgeHandle?: string
+  /** Defaults to showing a supported public handle when one is available. */
+  badgeShowHandle?: boolean
 }
 
 export interface PartnerLogo {

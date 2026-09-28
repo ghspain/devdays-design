@@ -21,20 +21,21 @@ const pairedBadgeContract: AssetDefinition = {
 
 test('asset templates expose stable identity, sides, and independent export profiles', () => {
   const templates = assetCatalog.flatMap((asset) => asset.templates)
-  const expectedTemplateIds = ['luma-cover', 'social-promo', 'speaker-profile', 'speaker-banner']
-  const expectedCatalogFormats = ['luma_cover', 'social_promo', 'speaker_square', 'speaker_banner']
-  const expectedExportOrder = ['speaker_square', 'speaker_banner', 'social_promo', 'luma_cover']
+  const expectedTemplateIds = ['luma-cover', 'social-promo', 'speaker-profile', 'speaker-banner', 'speaker-badge-front']
+  const expectedCatalogFormats = ['luma_cover', 'social_promo', 'speaker_square', 'speaker_banner', 'speaker_badge']
+  const expectedExportOrder = ['speaker_square', 'speaker_banner', 'social_promo', 'luma_cover', 'speaker_badge']
 
   expect(templates.map((template) => template.id)).toEqual(expectedTemplateIds)
   expect(templates.map((template) => template.legacyFormat)).toEqual(expectedCatalogFormats)
-  expect(assetCatalog.map((asset) => asset.id)).toEqual(['event-promotion', 'speaker-promotion'])
+  expect(assetCatalog.map((asset) => asset.id)).toEqual(['event-promotion', 'speaker-promotion', 'speaker-badge'])
   expect(formatOptions.map((option) => option.id)).toEqual(expectedExportOrder)
 
   for (const template of templates) {
     expect(template.id).toBeTruthy()
     expect(template.sides).toEqual(['front'])
-    expect(template.rendererId).toBe('legacy-social')
-    expect(resolveRenderer(template.legacyFormat!, { 'legacy-social': testRenderer })).toBe(testRenderer)
+    const rendererId = template.id === 'speaker-badge-front' ? 'speaker-badge' : 'legacy-social'
+    expect(template.rendererId).toBe(rendererId)
+    expect(resolveRenderer(template.legacyFormat!, { 'legacy-social': testRenderer, 'speaker-badge': testRenderer })).toBe(testRenderer)
     expect(template.exportProfiles).toHaveLength(1)
     expect(template.exportProfiles[0]).toMatchObject({
       width: expect.any(Number),
@@ -62,7 +63,7 @@ test('a test-only asset resolves by template and renderer metadata without a leg
   expect(resolveTemplateRenderer(template, { 'renderer-test-42': testRenderer })).toBe(testRenderer)
 })
 
-test('format picker still exposes the same four production outputs by asset family', async ({ page }, testInfo) => {
+test('format picker keeps the four existing outputs and adds a separate badge family', async ({ page }, testInfo) => {
   const runtimeErrors: string[] = []
   page.on('pageerror', (error) => runtimeErrors.push(error.message))
   page.on('console', (message) => {
@@ -73,11 +74,14 @@ test('format picker still exposes the same four production outputs by asset fami
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Event formats' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Speaker formats' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Networking badges' })).toBeVisible()
   await expect(page.locator('.format-group').nth(0).locator('.format-card')).toHaveCount(2)
   await expect(page.locator('.format-group').nth(1).locator('.format-card')).toHaveCount(2)
-  await expect(page.locator('.format-card')).toHaveCount(4)
+  await expect(page.locator('.format-group').nth(2).locator('.format-card')).toHaveCount(1)
+  await expect(page.locator('.format-card')).toHaveCount(5)
   await expect(page.locator('.format-group').nth(0).locator('.format-card').nth(0)).toHaveAttribute('aria-label', /Luma Cover/)
   await expect(page.locator('.format-group').nth(0).locator('.format-card').nth(1)).toHaveAttribute('aria-label', /Social Promo/)
+  await expect(page.locator('.format-group').nth(2).locator('.format-card')).toHaveAttribute('aria-label', /Speaker Badge/)
 
   for (const option of formatOptions) {
     await expect(page.getByRole('button', { name: new RegExp(option.name) })).toBeVisible()

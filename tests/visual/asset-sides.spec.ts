@@ -19,7 +19,7 @@ test('switching asset sides retains independent content while event data stays s
 
 test('existing production formats remain single-sided and need no side navigation', () => {
   const templates = assetCatalog.flatMap((asset) => asset.templates)
-  expect(templates.map((template) => template.sides)).toEqual([['front'], ['front'], ['front'], ['front']])
+  expect(templates.map((template) => template.sides)).toEqual([['front'], ['front'], ['front'], ['front'], ['front']])
 })
 
 test('single-side editor hides navigation and restores the selected side from draft', async ({ page }) => {

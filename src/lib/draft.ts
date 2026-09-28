@@ -22,6 +22,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value))
 }
 
+function isSupportedSpeaker(value: unknown): boolean {
+  return isRecord(value) && typeof value.id === 'string' && typeof value.name === 'string' &&
+    ['role', 'photoDataUrl', 'talkTitle', 'talkTime', 'catalogId', 'personId', 'badgeHandle']
+      .every((field) => value[field] === undefined || typeof value[field] === 'string') &&
+    (value.badgeShowHandle === undefined || typeof value.badgeShowHandle === 'boolean')
+}
+
 function isSupportedState(value: unknown): value is BannerState {
   if (!isRecord(value)) return false
   if (value.activeSide !== undefined && value.activeSide !== 'front' && value.activeSide !== 'back') return false
@@ -29,10 +36,7 @@ function isSupportedState(value: unknown): value is BannerState {
     if (!isRecord(value.sideStates)) return false
     for (const [side, sideState] of Object.entries(value.sideStates)) {
       if ((side !== 'front' && side !== 'back') || !isRecord(sideState)) return false
-      if (sideState.speakers !== undefined && (!Array.isArray(sideState.speakers) || sideState.speakers.some((speaker) =>
-        !isRecord(speaker) || typeof speaker.id !== 'string' || typeof speaker.name !== 'string' ||
-        ['role', 'photoDataUrl', 'talkTitle', 'talkTime', 'catalogId', 'personId']
-          .some((field) => speaker[field] !== undefined && typeof speaker[field] !== 'string')))) return false
+      if (sideState.speakers !== undefined && (!Array.isArray(sideState.speakers) || sideState.speakers.some((speaker) => !isSupportedSpeaker(speaker)))) return false
       if (sideState.partners !== undefined && (!Array.isArray(sideState.partners) || sideState.partners.some((partner) =>
         !isRecord(partner) || typeof partner.id !== 'string' || typeof partner.imageDataUrl !== 'string' ||
         (partner.name !== undefined && typeof partner.name !== 'string')))) return false
@@ -52,10 +56,7 @@ function isSupportedState(value: unknown): value is BannerState {
     ['includeSupportedBy', 'registrationEnabled']
       .some((field) => (value.event as Record<string, unknown>)[field] !== undefined && typeof (value.event as Record<string, unknown>)[field] !== 'boolean') ||
     (value.event.registrationStyle !== undefined && value.event.registrationStyle !== 'cta_url' && value.event.registrationStyle !== 'url_only'))) return false
-  if (value.speakers !== undefined && (!Array.isArray(value.speakers) || value.speakers.some((speaker) =>
-    !isRecord(speaker) || typeof speaker.id !== 'string' || typeof speaker.name !== 'string' ||
-    ['role', 'photoDataUrl', 'talkTitle', 'talkTime', 'catalogId', 'personId']
-      .some((field) => speaker[field] !== undefined && typeof speaker[field] !== 'string')))) return false
+  if (value.speakers !== undefined && (!Array.isArray(value.speakers) || value.speakers.some((speaker) => !isSupportedSpeaker(speaker)))) return false
   if (value.partners !== undefined && (!Array.isArray(value.partners) || value.partners.some((partner) =>
     !isRecord(partner) || typeof partner.id !== 'string' || typeof partner.imageDataUrl !== 'string' ||
     (partner.name !== undefined && typeof partner.name !== 'string')))) return false

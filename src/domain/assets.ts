@@ -21,7 +21,7 @@ export interface AssetTemplateDefinition {
   readonly exportProfiles: readonly ExportProfile[]
   /** Renderer implementation selected by the rendering registry. */
   readonly rendererId: string
-  /** Adapter for persisted BannerState.format values used by existing renderers. */
+  /** Transitional adapter for the editor/export flow's current BannerState.format identity. */
   readonly legacyFormat?: BannerFormat
   /** Optional QR controls supported by this template; existing social templates opt out. */
   readonly qr?: {
@@ -96,7 +96,24 @@ export const assetCatalog: readonly AssetDefinition[] = [
       },
     ],
   },
+  {
+    id: 'speaker-badge',
+    name: 'Networking badges',
+    templates: [
+      {
+        id: 'speaker-badge-front',
+        legacyFormat: 'speaker_badge',
+        name: 'Speaker Badge',
+        description: 'Recognition-first networking badge front',
+        channels: ['Event badge'],
+        sides: ['front'],
+        rendererId: 'speaker-badge',
+        // PNG-oriented canvas metadata only; physical size is defined by #142.
+        exportProfiles: [{ id: 'speaker-badge-front-image', width: 800, height: 1200, types: imageTypes, scales: imageScales }],
+      },
+    ],
+  },
 ]
 
 /** The old banner format list remains a compatibility view, in its original export order. */
-export const legacyFormatOrder = ['speaker_square', 'speaker_banner', 'social_promo', 'luma_cover'] as const
+export const legacyFormatOrder = ['speaker_square', 'speaker_banner', 'social_promo', 'luma_cover', 'speaker_badge'] as const
