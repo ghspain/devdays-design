@@ -65,6 +65,7 @@ test('badge generation uses only selected valid rows and reports both sides', as
   expect(download.suggestedFilename()).toBe('devdays-madrid-dev-days-badges.zip')
   await expect(dialog.getByRole('status', { name: 'Badge batch progress' })).toContainText('Complete · 4/4 · 100%')
   await expect(dialog).toContainText('Generated 4 files.')
+  await expect(dialog.getByRole('button', { name: 'Retry failed/cancelled jobs' })).toHaveCount(0)
 })
 
 test('badge generation can be cancelled mid-run while retaining completed work', async ({ page }) => {
