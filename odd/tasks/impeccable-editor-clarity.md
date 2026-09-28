@@ -30,4 +30,3 @@
 ## Next step
 
 Ask for explicit authorization to continue remote GitHub operations on `ghspain/devdays-design` PR #183 and issues #182/#146, naming the credential/session to use. Then independently review under current RDD policy, run permitted remote checks, address review findings, and merge only if authorized and all gates pass.
-
