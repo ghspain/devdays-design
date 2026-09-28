@@ -24,8 +24,9 @@
 - `$env:E2E_PORT='4188'; npm run test:visual` — 434 passed, 8 skipped.
 - Focused desktop/mobile suite after the final UI/test edit — 42 passed.
 - `git diff --check` — passed (only CRLF normalization warnings on modified test files).
+- Native RDD assessment: gentle-ai is unavailable in this environment; assessment and preflight STATUS could not run. Treat review as due; do not infer low risk.
 - Impeccable `detect --json` — only generic Mona Sans warning; preserved because brand/design docs require Mona Sans.
-- Commit: `f7b4e86` (`Fix editor contrast and clarify badge workflow`), on `codex/impeccable-dark-primer-contrast`; task-document commits `0244505`, `f681a27`, and `4e7f4a5` are local and ahead of origin. Their push is now authorized.
+- Implementation commit: `f7b4e86` (`Fix editor contrast and clarify badge workflow`); docs-only follow-up commits are ahead of origin and authorized to push.
 
 ## Next step
 
