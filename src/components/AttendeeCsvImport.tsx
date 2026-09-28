@@ -19,6 +19,7 @@ import { validateAttendeeRows, type ValidatedAttendeeRow } from '../lib/attendee
 import { selectRepresentativeAttendees } from '../lib/attendeePreviews'
 import { buildAttendeeBadgePack, type AttendeeBatchProgress, type AttendeeBatchResult } from '../lib/exportPack'
 import { BADGE_SHEET_PROFILES, buildBadgeSheetPdf, DUPLEX_FLIP_MODES, getBadgeSheetProfile, hasDuplexBadgePair, planDuplexBadgeSheet, type DuplexFlipMode } from '../lib/printSheets'
+import { buildPrintCalibrationPdf, PRINT_CALIBRATION } from '../lib/printCalibration'
 import { buildDefaultState } from '../lib/history'
 import { QRDestinationControls } from './QRDestinationControls'
 import AttendeeBadgePreview from './AttendeeBadgePreview'
@@ -56,6 +57,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const [sheetFlipMode, setSheetFlipMode] = useState<DuplexFlipMode>('long-edge')
   const [isExportingSheet, setIsExportingSheet] = useState(false)
   const [sheetError, setSheetError] = useState('')
+  const [isExportingCalibration, setIsExportingCalibration] = useState(false)
   const launcherRef = useRef<HTMLButtonElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const readId = useRef(0)
@@ -240,6 +242,22 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
     }
   }
 
+  const exportCalibrationFixture = async () => {
+    if (isExportingCalibration) return
+    setIsExportingCalibration(true)
+    try {
+      const fixture = await buildPrintCalibrationPdf()
+      const url = URL.createObjectURL(fixture.blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fixture.fileName
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } finally {
+      setIsExportingCalibration(false)
+    }
+  }
+
   const closeDialog = () => {
     resetBatch()
     setIsOpen(false)
@@ -279,6 +297,24 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
               />
               <FormControl.Caption>Only the selected file is read; its contents stay in this browser session.</FormControl.Caption>
             </FormControl>
+
+            <section aria-label="Print calibration fixture">
+              <h3>Calibrate before physical printing</h3>
+              <p>
+                Download the synthetic two-page fixture and print it at 100% / Actual size. Do not use Fit to page,
+                Shrink oversized pages, or automatic printer scaling. Measure the 100 mm ruler and the {PRINT_CALIBRATION.trimWidthMm} × {PRINT_CALIBRATION.trimHeightMm} mm trim with a ruler,
+                then compare the numbered FRONT/BACK markers after duplex printing.
+              </p>
+              <p>
+                Automated checks verify PDF geometry only. The manual physical-printer check is the production gate;
+                accept measurements within ±{PRINT_CALIBRATION.toleranceMm} mm. If outside tolerance, disable scaling,
+                check the selected long-/short-edge duplex mode, adjust the printer profile, and repeat the fixture.
+                Exports remain proof / calibration pending until this is documented; they are not print-ready.
+              </p>
+              <Button onClick={() => { void exportCalibrationFixture() }} loading={isExportingCalibration} disabled={isExportingCalibration}>
+                Download print calibration fixture (PDF)
+              </Button>
+            </section>
 
             {error && <p role="alert">{error}</p>}
             {dataset ? (
