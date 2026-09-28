@@ -140,7 +140,7 @@ export interface AttendeeBatchResult {
   fileName: string
   fileCount: number
   failures: BatchRenderFailure[]
-  files: Array<{ id: string; filename: string; blob: Blob }>
+  files: Array<{ id: string; filename: string; blob: Blob; side?: 'front' | 'back'; sourceRowNumber?: number }>
   cancelled: boolean
 }
 
@@ -201,7 +201,13 @@ export async function buildAttendeeBadgePack(
     current: progress.current?.filename,
   }), { signal: options?.signal })
   const filesById = new Map((options?.previousFiles ?? []).map((file) => [file.id, file]))
-  result.completed.forEach(({ job, blob }) => filesById.set(job.id, { id: job.id, filename: job.filename, blob }))
+  result.completed.forEach(({ job, blob }) => filesById.set(job.id, {
+    id: job.id,
+    filename: job.filename,
+    blob,
+    side: job.side,
+    sourceRowNumber: job.subject.sourceRowNumber,
+  }))
   const files = jobs.flatMap((job) => {
     const file = filesById.get(job.id)
     return file ? [file] : []

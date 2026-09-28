@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { Button, Dialog, FormControl } from '@primer/react'
-import { assetCatalog } from '../domain/assets'
+import { assetCatalog, speakerBadgePrintGeometry } from '../domain/assets'
 import type { QRDestination } from '../domain/qrDestination'
 import {
   getDuplicateAttendeeMappings,
@@ -18,6 +18,7 @@ import { resolveCatalogQRDestination } from '../lib/qrDestinationResolver'
 import { validateAttendeeRows, type ValidatedAttendeeRow } from '../lib/attendeeValidation'
 import { selectRepresentativeAttendees } from '../lib/attendeePreviews'
 import { buildAttendeeBadgePack, type AttendeeBatchProgress, type AttendeeBatchResult } from '../lib/exportPack'
+import { BADGE_SHEET_PROFILES, buildBadgeSheetPdf, getBadgeSheetProfile, planBadgeSheet } from '../lib/printSheets'
 import { buildDefaultState } from '../lib/history'
 import { QRDestinationControls } from './QRDestinationControls'
 import AttendeeBadgePreview from './AttendeeBadgePreview'
@@ -51,6 +52,9 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const [batchResult, setBatchResult] = useState<AttendeeBatchState | null>(null)
   const [batchRows, setBatchRows] = useState<ValidatedAttendeeRow[] | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [sheetProfileId, setSheetProfileId] = useState<'a4' | 'a3'>('a4')
+  const [isExportingSheet, setIsExportingSheet] = useState(false)
+  const [sheetError, setSheetError] = useState('')
   const launcherRef = useRef<HTMLButtonElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const readId = useRef(0)
@@ -63,6 +67,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
     setBatchError('')
     setBatchResult(null)
     setBatchRows(null)
+    setSheetError('')
   }
 
   const clearData = () => {
@@ -156,6 +161,11 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const isIncluded = (row: NonNullable<typeof validatedRows>[number]) => row.status !== 'error' &&
     (selectedRows?.has(row.sourceRowNumber) ?? true)
   const includedCount = validatedRows?.filter(isIncluded).length ?? 0
+  const generatedFrontCount = batchResult?.files.filter((file) => file.side === 'front' || (!file.side && file.id.endsWith('-front'))).length ?? 0
+  const sheetBadgeCount = batchResult ? generatedFrontCount : includedCount
+  const sheetBadgeLabel = batchResult ? 'generated front badge' : 'selected front badge'
+  const sheetProfile = getBadgeSheetProfile(sheetProfileId)
+  const sheetPlan = planBadgeSheet(sheetBadgeCount, speakerBadgePrintGeometry, sheetProfile)
   const representativeRows = useMemo(() => selectRepresentativeAttendees(
     validatedRows?.filter((row) => row.status !== 'error' && (selectedRows?.has(row.sourceRowNumber) ?? true)) ?? [],
   ), [validatedRows, selectedRows])
@@ -168,6 +178,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
     batchControllerRef.current = controller
     setIsGenerating(true)
     setBatchError('')
+    setSheetError('')
     if (!retry) {
       setBatchResult(null)
       setBatchRows(rows)
@@ -191,13 +202,13 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
       link.download = pack.fileName
       link.click()
       window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-      // Keep PNGs only while a failed/cancelled job can be retried. The ZIP is
-      // handed to the browser above and is never retained in React state.
+      // Keep rendered PNGs in this session so the organizer can compose the PDF
+      // proof without re-rendering or uploading attendee data.
       setBatchResult({
         fileName: pack.fileName,
         fileCount: pack.fileCount,
         failures: pack.failures,
-        files: pack.failures.length ? pack.files : [],
+        files: pack.files,
         cancelled: pack.cancelled,
       })
     } catch {
@@ -205,6 +216,25 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
     } finally {
       setIsGenerating(false)
       if (batchControllerRef.current === controller) batchControllerRef.current = null
+    }
+  }
+
+  const exportPdfProof = async () => {
+    if (!batchResult || batchResult.failures.length > 0 || isExportingSheet) return
+    setIsExportingSheet(true)
+    setSheetError('')
+    try {
+      const pdf = await buildBadgeSheetPdf(batchResult.files, speakerBadgePrintGeometry, sheetProfileId)
+      const url = URL.createObjectURL(pdf.blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = pdf.fileName
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch {
+      setSheetError('Could not create the PDF proof. Generate the badge batch again and retry.')
+    } finally {
+      setIsExportingSheet(false)
     }
   }
 
@@ -350,7 +380,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
                                 type="checkbox"
                                 aria-label={`Include row ${row.sourceRowNumber} in generation`}
                                 checked={isIncluded(row)}
-                                disabled={row.status === 'error'}
+                                disabled={row.status === 'error' || isGenerating || Boolean(batchResult)}
                                 onChange={(event) => setSelectedRows((current) => {
                                   const next = current ?? new Set(validatedRows.filter((item) => item.status !== 'error').map((item) => item.sourceRowNumber))
                                   const updated = new Set(next)
@@ -393,6 +423,22 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
                   <section aria-label="Badge batch generation">
                     <h3>Generate selected badges</h3>
                     <p>Only included valid or warning rows are rendered. Each row creates separate front and back PNGs.</p>
+                    <section aria-label="PDF proof sheet">
+                      <h4>PDF proof sheet</h4>
+                      <FormControl id="attendee-sheet-profile">
+                        <FormControl.Label>Page profile</FormControl.Label>
+                        <select aria-label="PDF proof page profile" value={sheetProfileId} onChange={(event) => setSheetProfileId(event.target.value as 'a4' | 'a3')}>
+                          {BADGE_SHEET_PROFILES.map((profile) => <option key={profile.id} value={profile.id}>{profile.label} · {profile.widthMm} × {profile.heightMm} mm</option>)}
+                        </select>
+                      </FormControl>
+                      <p aria-live="polite" aria-label="PDF proof layout summary">
+                        {sheetProfile.label} PDF proof · {sheetBadgeCount} {sheetBadgeLabel}{sheetBadgeCount === 1 ? '' : 's'} · {sheetPlan.perPage} per sheet · {sheetPlan.pageCount} page{sheetPlan.pageCount === 1 ? '' : 's'} · {sheetProfile.marginMm} mm margins · {sheetProfile.gapMm} mm gaps · crop marks on trim · front only · calibration pending #145.
+                      </p>
+                      <Button onClick={() => { void exportPdfProof() }} disabled={!batchResult || isGenerating || isExportingSheet || Boolean(batchResult?.failures.length)} loading={isExportingSheet}>
+                        Download {sheetProfile.label} PDF proof
+                      </Button>
+                      {sheetError && <p role="alert">{sheetError}</p>}
+                    </section>
                     <Button onClick={() => { void generateBadges() }} disabled={isGenerating || includedCount === 0 || Boolean(batchResult)} loading={isGenerating}>
                       Generate selected badges (.zip)
                     </Button>

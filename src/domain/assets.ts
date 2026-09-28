@@ -54,7 +54,7 @@ const imageScales = [1, 2] as const satisfies readonly ExportScale[]
 // the current 800×1200 badge canvas maps exactly to 80×120 mm at 254 DPI (nearest-pixel rounding).
 // Decision: use 80×120 mm trim, 254 DPI, 3 mm bleed and 5 mm safe area, marked configurable and not print-ready.
 // To revert: replace this profile metadata with another validated input; social profiles are unaffected.
-const speakerBadgePrintGeometry: PrintGeometry = {
+export const speakerBadgePrintGeometry: PrintGeometry = {
   widthMm: 80,
   heightMm: 120,
   dpi: 254,
