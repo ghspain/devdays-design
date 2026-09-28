@@ -18,7 +18,7 @@ import { resolveCatalogQRDestination } from '../lib/qrDestinationResolver'
 import { validateAttendeeRows, type ValidatedAttendeeRow } from '../lib/attendeeValidation'
 import { selectRepresentativeAttendees } from '../lib/attendeePreviews'
 import { buildAttendeeBadgePack, type AttendeeBatchProgress, type AttendeeBatchResult } from '../lib/exportPack'
-import { BADGE_SHEET_PROFILES, buildBadgeSheetPdf, getBadgeSheetProfile, planBadgeSheet } from '../lib/printSheets'
+import { BADGE_SHEET_PROFILES, buildBadgeSheetPdf, DUPLEX_FLIP_MODES, getBadgeSheetProfile, hasDuplexBadgePair, planDuplexBadgeSheet, type DuplexFlipMode } from '../lib/printSheets'
 import { buildDefaultState } from '../lib/history'
 import { QRDestinationControls } from './QRDestinationControls'
 import AttendeeBadgePreview from './AttendeeBadgePreview'
@@ -53,6 +53,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const [batchRows, setBatchRows] = useState<ValidatedAttendeeRow[] | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [sheetProfileId, setSheetProfileId] = useState<'a4' | 'a3'>('a4')
+  const [sheetFlipMode, setSheetFlipMode] = useState<DuplexFlipMode>('long-edge')
   const [isExportingSheet, setIsExportingSheet] = useState(false)
   const [sheetError, setSheetError] = useState('')
   const launcherRef = useRef<HTMLButtonElement>(null)
@@ -165,7 +166,8 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const sheetBadgeCount = batchResult ? generatedFrontCount : includedCount
   const sheetBadgeLabel = batchResult ? 'generated front badge' : 'selected front badge'
   const sheetProfile = getBadgeSheetProfile(sheetProfileId)
-  const sheetPlan = planBadgeSheet(sheetBadgeCount, speakerBadgePrintGeometry, sheetProfile)
+  const sheetHasDuplex = batchResult ? hasDuplexBadgePair(batchResult.files) : false
+  const sheetPlan = planDuplexBadgeSheet(sheetBadgeCount, speakerBadgePrintGeometry, sheetProfile, sheetFlipMode)
   const representativeRows = useMemo(() => selectRepresentativeAttendees(
     validatedRows?.filter((row) => row.status !== 'error' && (selectedRows?.has(row.sourceRowNumber) ?? true)) ?? [],
   ), [validatedRows, selectedRows])
@@ -224,7 +226,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
     setIsExportingSheet(true)
     setSheetError('')
     try {
-      const pdf = await buildBadgeSheetPdf(batchResult.files, speakerBadgePrintGeometry, sheetProfileId)
+      const pdf = await buildBadgeSheetPdf(batchResult.files, speakerBadgePrintGeometry, sheetProfileId, sheetFlipMode)
       const url = URL.createObjectURL(pdf.blob)
       const link = document.createElement('a')
       link.href = url
@@ -431,9 +433,29 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
                           {BADGE_SHEET_PROFILES.map((profile) => <option key={profile.id} value={profile.id}>{profile.label} · {profile.widthMm} × {profile.heightMm} mm</option>)}
                         </select>
                       </FormControl>
+                      {sheetHasDuplex && (
+                        <FormControl id="attendee-sheet-flip-mode">
+                          <FormControl.Label>Duplex flip behavior</FormControl.Label>
+                          <select aria-label="Duplex flip behavior" value={sheetFlipMode} onChange={(event) => setSheetFlipMode(event.target.value as DuplexFlipMode)}>
+                            {DUPLEX_FLIP_MODES.map((mode) => <option key={mode} value={mode}>{mode === 'long-edge' ? 'Long edge (mirror columns)' : 'Short edge (mirror rows)'}</option>)}
+                          </select>
+                          <FormControl.Caption>Back sheets are paired with the matching front and mirrored on the selected axis.</FormControl.Caption>
+                        </FormControl>
+                      )}
                       <p aria-live="polite" aria-label="PDF proof layout summary">
-                        {sheetProfile.label} PDF proof · {sheetBadgeCount} {sheetBadgeLabel}{sheetBadgeCount === 1 ? '' : 's'} · {sheetPlan.perPage} per sheet · {sheetPlan.pageCount} page{sheetPlan.pageCount === 1 ? '' : 's'} · {sheetProfile.marginMm} mm margins · {sheetProfile.gapMm} mm gaps · crop marks on trim · front only · calibration pending #145.
+                        {sheetProfile.label} PDF proof · {sheetBadgeCount} {sheetBadgeLabel}{sheetBadgeCount === 1 ? '' : 's'} · {sheetPlan.front.perPage} per sheet · {sheetPlan.front.pageCount} page{sheetPlan.front.pageCount === 1 ? '' : 's'} · {sheetProfile.marginMm} mm margins · {sheetProfile.gapMm} mm gaps · crop marks on trim · {sheetHasDuplex ? `front + matching back sheets · ${sheetFlipMode} (${sheetPlan.flipAxis} mirror)` : 'front only'} · calibration pending #145.
                       </p>
+                      {sheetHasDuplex && batchResult && (
+                        <div aria-label="PDF proof duplex diagnostic">
+                          <p>Front sheet 1 ↔ matching back sheet 1; badge positions after the {sheetFlipMode} flip:</p>
+                          <ul>
+                            {sheetPlan.front.placements.filter((placement) => placement.pageIndex === 0).map((placement) => {
+                              const back = sheetPlan.backPlacements.find((candidate) => candidate.index === placement.index)
+                              return <li key={placement.index}>Badge {placement.index + 1}: front ({placement.leftMm}, {placement.topMm}) mm → back ({back?.leftMm ?? 'blank'}, {back?.topMm ?? 'blank'}) mm</li>
+                            })}
+                          </ul>
+                        </div>
+                      )}
                       <Button onClick={() => { void exportPdfProof() }} disabled={!batchResult || isGenerating || isExportingSheet || Boolean(batchResult?.failures.length)} loading={isExportingSheet}>
                         Download {sheetProfile.label} PDF proof
                       </Button>
