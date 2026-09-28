@@ -18,7 +18,7 @@ The projection is limited to these public identity fields:
 | `linkedin` | `linkedin` | Optional public profile destination for speaker details and future QR assets. |
 | `x` | `x` | Optional public profile destination for speaker details and future QR assets. |
 | `website` | `website` | Optional public website destination for speaker details and future QR assets. |
-| `avatar_url` | `avatar_url` | Optional portrait used on speaker assets; a local upload remains the fallback if a remote image is unavailable or cannot be exported because of CORS. |
+| `avatar_url` | `avatar_url` | Optional portrait used on speaker assets only when reuse is authorized; a public URL or successful CORS export does not grant image rights. A local upload remains the fallback if an authorized remote image is unavailable or cannot be exported. |
 | `professional_title` | `professional_title` | Optional public subtitle for speaker assets and future badges; it is not inferred from an event role. |
 | `last_verified` | `last_verified` | Optional ISO date shown as the source's last verification signal for profile fields that age. |
 
