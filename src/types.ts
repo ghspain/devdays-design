@@ -1,3 +1,5 @@
+import type { QRDestination } from './domain/qrDestination'
+
 export type BannerFormat =
   | 'speaker_square'
   | 'speaker_banner'
@@ -86,6 +88,9 @@ export interface BannerState {
   speakersPerCard: SpeakersPerCard
   speakerBannerPairLayout: SpeakerBannerPairLayout
   partners: PartnerLogo[]
+  /** Omitted when the selected template still uses its declared QR default. */
+  qrDestination?: QRDestination
+  qrReadableText?: boolean
   export: {
     type: ExportType
     scale: ExportScale

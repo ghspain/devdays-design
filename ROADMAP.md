@@ -195,9 +195,9 @@ Goal: make QR codes a reusable asset element rather than a speaker-specific URL 
 
 ### Work
 
-- [ ] QR destinations resolve independently from the asset that uses them. (#114)
-- [ ] Templates can render deterministic QR elements entirely in the browser. (#115)
-- [ ] Organizers can choose and validate a QR destination before export. (#116)
+- [x] QR destinations resolve independently from the asset that uses them. (#114)
+- [x] Templates can render deterministic QR elements entirely in the browser. (#115)
+- [x] Organizers can choose and validate a QR destination before export. (#116)
 - Generate QR codes client-side.
 - Allow template defaults and per-asset override.
 - Allow optional human-readable handle/URL text.

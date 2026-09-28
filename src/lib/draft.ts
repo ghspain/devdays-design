@@ -1,4 +1,5 @@
 import type { BannerState } from '../types'
+import { isQRDestination } from '../domain/qrDestination'
 import { EVENT_THEMES, formatOptions } from '../constants'
 
 const DRAFT_DB_NAME = 'devdays-banner-draft'
@@ -42,6 +43,8 @@ function isSupportedState(value: unknown): value is BannerState {
   if (value.partners !== undefined && (!Array.isArray(value.partners) || value.partners.some((partner) =>
     !isRecord(partner) || typeof partner.id !== 'string' || typeof partner.imageDataUrl !== 'string' ||
     (partner.name !== undefined && typeof partner.name !== 'string')))) return false
+  if (value.qrDestination !== undefined && !isQRDestination(value.qrDestination)) return false
+  if (value.qrReadableText !== undefined && typeof value.qrReadableText !== 'boolean') return false
   if (value.export !== undefined && (!isRecord(value.export) ||
     (value.export.type !== undefined && value.export.type !== 'png' && value.export.type !== 'jpg') ||
     (value.export.scale !== undefined && value.export.scale !== 1 && value.export.scale !== 2))) return false

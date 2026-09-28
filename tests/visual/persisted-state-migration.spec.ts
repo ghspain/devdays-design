@@ -115,3 +115,22 @@ test('newer draft data is preserved and explains the reset fallback', async ({ p
   await page.getByRole('button', { name: 'Clear draft' }).click()
   await expect(page.getByLabel('Event title')).toHaveValue('Dev Days')
 })
+
+test('QR destination overrides and readable-text settings survive draft restore', async ({ page }) => {
+  await page.goto('/')
+  const state = {
+    ...legacyState,
+    qrDestination: { kind: 'custom-url', url: 'https://event.example/agenda' },
+    qrReadableText: false,
+  }
+  await writeDraftRecord(page, { version: 2, state, savedAt: '2026-01-01T00:00:00.000Z' })
+  await page.reload()
+  await expect(page.locator('.draft-status')).toContainText('Saved')
+  expect(await readDraftRecord(page)).toMatchObject({ state: { qrDestination: state.qrDestination, qrReadableText: false } })
+
+  const malformed = { version: 2, state: { ...state, qrDestination: { kind: 'future-destination' } }, marker: 'preserve-invalid-qr' }
+  await writeDraftRecord(page, malformed)
+  await page.reload()
+  await expect(page.locator('.draft-status')).toContainText('not supported')
+  expect(await readDraftRecord(page)).toMatchObject(malformed)
+})

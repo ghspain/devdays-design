@@ -9,6 +9,7 @@ export type ValidationCode =
   | 'speakers-dropped'
   | 'low-contrast'
   | 'safe-area'
+  | 'invalid-qr-destination'
 
 export interface ValidationFinding {
   code: ValidationCode
