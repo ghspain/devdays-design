@@ -18,6 +18,7 @@ import { resolveCatalogQRDestination } from '../lib/qrDestinationResolver'
 import { validateAttendeeRows } from '../lib/attendeeValidation'
 import { selectRepresentativeAttendees } from '../lib/attendeePreviews'
 import { buildAttendeeBadgePack, type AttendeeBatchProgress } from '../lib/exportPack'
+import type { BatchRenderFailure } from '../lib/renderQueue'
 import { buildDefaultState } from '../lib/history'
 import { QRDestinationControls } from './QRDestinationControls'
 import AttendeeBadgePreview from './AttendeeBadgePreview'
@@ -47,7 +48,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
   const [error, setError] = useState('')
   const [batchProgress, setBatchProgress] = useState<AttendeeBatchProgress | null>(null)
   const [batchError, setBatchError] = useState('')
-  const [batchResult, setBatchResult] = useState<{ fileCount: number; failures: number } | null>(null)
+  const [batchResult, setBatchResult] = useState<{ fileCount: number; failures: BatchRenderFailure[] } | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const launcherRef = useRef<HTMLButtonElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -173,7 +174,7 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
       link.download = pack.fileName
       link.click()
       window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-      setBatchResult({ fileCount: pack.fileCount, failures: pack.failures.length })
+      setBatchResult({ fileCount: pack.fileCount, failures: pack.failures })
     } catch {
       setBatchError('Could not generate the selected badges. Try again.')
     } finally {
@@ -371,9 +372,20 @@ export default function AttendeeCsvImport({ theme, colors, event }: AttendeeCsvI
                     )}
                     {batchError && <p role="alert">{batchError}</p>}
                     {batchResult && (
-                      <p role="status">
-                        Generated {batchResult.fileCount} file{batchResult.fileCount === 1 ? '' : 's'}{batchResult.failures ? `; ${batchResult.failures} job${batchResult.failures === 1 ? '' : 's'} failed.` : '.'}
-                      </p>
+                      <>
+                        <p role="status">
+                          Generated {batchResult.fileCount} file{batchResult.fileCount === 1 ? '' : 's'}{batchResult.failures.length ? `; ${batchResult.failures.length} job${batchResult.failures.length === 1 ? '' : 's'} failed.` : '.'}
+                        </p>
+                        {batchResult.failures.length > 0 && (
+                          <ul aria-label="Badge batch failures">
+                            {batchResult.failures.map((failure) => (
+                              <li key={failure.id}>
+                                Row {failure.subject.sourceRowNumber ?? 'unknown'} · {failure.side === 'front' ? 'Front' : 'Back'} · {failure.template}: {failure.message}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </>
                     )}
                   </section>
                 )}

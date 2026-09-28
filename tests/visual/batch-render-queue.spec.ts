@@ -39,3 +39,20 @@ test('badge generation uses only selected valid rows and reports both sides', as
   await expect(dialog.getByRole('status', { name: 'Badge batch progress' })).toContainText('Complete · 4/4 · 100%')
   await expect(dialog).toContainText('Generated 4 files.')
 })
+
+test('badge generation reports failed attendee rows and sides without row details', async ({ page }) => {
+  const dialog = await importCsv(page)
+  await page.evaluate(() => {
+    HTMLCanvasElement.prototype.toBlob = (callback) => callback(null)
+  })
+  const downloadPromise = page.waitForEvent('download')
+  await dialog.getByRole('button', { name: 'Generate selected badges (.zip)' }).click()
+  await downloadPromise
+  const failures = dialog.getByRole('list', { name: 'Badge batch failures' })
+  await expect(failures).toContainText('Row 2 · Front · speaker-badge-front: Could not create PNG file.')
+  await expect(failures).toContainText('Row 2 · Back · speaker-badge-front: Could not create PNG file.')
+  await expect(failures).toContainText('Row 4 · Front · speaker-badge-front: Could not create PNG file.')
+  await expect(failures).toContainText('Row 4 · Back · speaker-badge-front: Could not create PNG file.')
+  await expect(failures).not.toContainText('Ada Example')
+  await expect(failures).not.toContainText('Grace Hopper')
+})
