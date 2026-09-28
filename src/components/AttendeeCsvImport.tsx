@@ -38,7 +38,16 @@ export default function AttendeeCsvImport() {
 
   return (
     <>
-      <Button ref={launcherRef} onClick={() => setIsOpen(true)}>Import attendee CSV</Button>
+      <Button
+        ref={launcherRef}
+        className="attendee-csv-launcher"
+        aria-label="Import attendee CSV"
+        title="Import attendee CSV"
+        onClick={() => setIsOpen(true)}
+      >
+        <span className="attendee-csv-wide-label">Import attendee CSV</span>
+        <span aria-hidden="true" className="attendee-csv-compact-label">CSV</span>
+      </Button>
       {isOpen && (
         <Dialog
           title="Import attendee CSV"

@@ -50,6 +50,7 @@ import { buildEventPack, type EventPackProgress } from './lib/exportPack'
 import { readDraft, writeDraft, clearDraft } from './lib/draft'
 
 const EDITOR_GUIDE_STORAGE_KEY = 'devdays-editor-guide-dismissed-v1'
+type ShellMode = 'light' | 'dark'
 
 function shouldShowEditorGuide() {
   try {
@@ -69,7 +70,7 @@ function getSpeakerCardsForState(input: BannerState, enabled: boolean): Speaker[
   return cards
 }
 
-function App() {
+function App({ shellMode, onToggleShellMode }: { shellMode: ShellMode; onToggleShellMode: () => void }) {
   const [backgroundFailed, setBackgroundFailed] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileView, setMobileView] = useState<'fields' | 'preview'>('fields')
@@ -875,7 +876,7 @@ function App() {
   }
 
   return (
-    <div className="editor-shell" data-mobile-view={mobileView}>
+    <div className="editor-shell" data-color-mode={shellMode} data-mobile-view={mobileView}>
       <header className="topbar">
         <div className="topbar-left">
           <span className="topbar-icon" aria-hidden="true">
@@ -885,6 +886,15 @@ function App() {
         </div>
 
         <div className="topbar-actions">
+          <button
+            className="topbar-theme-toggle"
+            type="button"
+            aria-label={`Switch to ${shellMode === 'light' ? 'dark' : 'light'} theme`}
+            aria-pressed={shellMode === 'dark'}
+            onClick={onToggleShellMode}
+          >
+            {shellMode === 'light' ? 'Dark' : 'Light'}
+          </button>
           <AttendeeCsvImport />
           <IconButton
             as="a"
