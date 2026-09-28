@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { formatOptions } from '../constants'
 import type { AttendeeBadgeInput } from '../domain/attendee'
+import { attendeeBadgeSubject } from '../domain/badgeSubject'
 import { buildDefaultState } from '../lib/history'
 import { renderBanner } from '../lib/renderBanner'
 import type { BannerState, EventThemeId } from '../types'
@@ -28,20 +29,13 @@ export default function AttendeeBadgePreview({ sourceRowNumber, attendee, reason
     state.theme = theme
     state.colors = colors
     state.event = event
-    state.speakers = [{
-      ...state.speakers[0],
-      name: attendee.name,
-      role: attendee.role,
-      badgeHandle: attendee.githubHandle,
-      badgeShowHandle: Boolean(attendee.githubHandle),
-    }]
-    void renderBanner(canvas, state, format, false, 1)
+    void renderBanner(canvas, state, format, false, 1, undefined, attendeeBadgeSubject(attendee))
   }, [attendee, colors, event, theme])
 
   return (
     <article className="attendee-badge-preview" aria-label={`Row ${sourceRowNumber}: ${attendee.name}`}>
       <h4>{attendee.name}</h4>
-      <canvas ref={canvasRef} role="img" aria-label={`Speaker Badge front preview for ${attendee.name}`} />
+      <canvas ref={canvasRef} role="img" aria-label={`Attendee Badge front preview for ${attendee.name}`} />
       <p>Row {sourceRowNumber}</p>
       <ul aria-label="Preview reasons">
         {reasons.map((reason) => <li key={reason}>{reason}</li>)}

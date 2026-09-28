@@ -8,6 +8,7 @@ import { resolveCatalogQRDestination } from '../qrDestinationResolver'
 import { renderQRCode } from './qrCode'
 import type { RenderInfo } from '../validate'
 import { constrainSpeakerNameOffset } from '../../domain/templateManipulation'
+import { speakerBadgeSubject, type BadgeSubject } from '../../domain/badgeSubject'
 
 const generations = new WeakMap<HTMLCanvasElement, number>()
 
@@ -25,6 +26,7 @@ export async function renderSpeakerBadge(
   _backgroundFailed: boolean,
   scale: ExportScale,
   renderInfo?: RenderInfo,
+  subjectOverride?: BadgeSubject,
 ) {
   canvas.width = format.width * scale
   canvas.height = format.height * scale
@@ -38,8 +40,7 @@ export async function renderSpeakerBadge(
   const speaker = state.speakers[0]
   const profile = speaker?.personId ? getCatalogPublicProfile(speaker.personId) : undefined
   const publicHandle = getCatalogPublicHandle(profile)
-  const handle = speaker?.badgeHandle ?? publicHandle
-  const showHandle = speaker?.badgeShowHandle ?? Boolean(handle)
+  const subject = subjectOverride ?? speakerBadgeSubject(speaker, publicHandle)
   const nameOffset = constrainSpeakerNameOffset(state.elementOffsets?.['speaker-name'] ?? { x: 0, y: 0 })
   const width = format.width
   const height = format.height
@@ -149,8 +150,8 @@ export async function renderSpeakerBadge(
 
   ctx.fillStyle = state.colors.accent
   ctx.font = '800 24px "Mona Sans", sans-serif'
-  ctx.fillText('SPEAKER', left, 224)
-  track('Speaker role marker', state.colors.accent, left, 199, contentWidth, 32)
+  ctx.fillText(subject.roleMarker, left, 224)
+  track(subject.kind === 'speaker' ? 'Speaker role marker' : 'Attendee role marker', state.colors.accent, left, 199, contentWidth, 32)
 
   const avatarSize = Math.round(width * 0.49)
   const avatarX = (width - avatarSize) / 2
@@ -163,9 +164,9 @@ export async function renderSpeakerBadge(
   ctx.fillStyle = theme.id === 'online_github' ? '#f6f8fa' : '#21262d'
   ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize)
 
-  if (speaker?.photoDataUrl) {
+  if (subject.photoDataUrl) {
     try {
-      const avatar = await loadImage(speaker.photoDataUrl)
+      const avatar = await loadImage(subject.photoDataUrl)
       if (isStale()) {
         ctx.restore()
         return
@@ -187,26 +188,31 @@ export async function renderSpeakerBadge(
     ctx.font = `700 ${Math.round(avatarSize * 0.3)}px "Mona Sans", sans-serif`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(getInitials(speaker?.name ?? ''), width / 2, avatarY + avatarSize / 2)
+    ctx.fillText(getInitials(subject.name), width / 2, avatarY + avatarSize / 2)
     ctx.textAlign = 'start'
     ctx.textBaseline = 'alphabetic'
   }
   ctx.restore()
 
-  const name = speaker?.name.trim() || 'Speaker name'
+  const name = subject.name.trim() || 'Speaker name'
   const nameSize = SPEAKER_BADGE_TEXT_LAYOUT.name.fontSize
   const nameY = 800 + nameOffset.y
   const nameLines = wrapped('Speaker name', name, left + nameOffset.x, nameY, contentWidth, SPEAKER_BADGE_TEXT_LAYOUT.name.maxLines, nameSize, primary, 66)
   const nameRegion = renderInfo?.textRegions.find((region) => region.field === 'Speaker name')
   if (nameRegion) nameRegion.elementId = 'speaker-name'
-  const role = speaker?.role?.trim()
+  const role = subject.title?.trim()
   let nextY = nameY + nameLines * 66 + 12
   if (role) {
     const roleLines = wrapped('Speaker title', role, left, nextY, contentWidth, SPEAKER_BADGE_TEXT_LAYOUT.role.maxLines, SPEAKER_BADGE_TEXT_LAYOUT.role.fontSize, muted, 38)
     nextY += roleLines * 38 + 12
   }
-  if (showHandle && handle) {
-    wrapped('Networking handle', handle, left, Math.min(nextY, 1010), contentWidth, SPEAKER_BADGE_TEXT_LAYOUT.githubHandle.maxLines, SPEAKER_BADGE_TEXT_LAYOUT.githubHandle.fontSize, state.colors.accent, 32)
+  const organization = subject.organization?.trim()
+  if (organization) {
+    const organizationLines = wrapped('Attendee organization', organization, left, Math.min(nextY, 980), contentWidth, 1, 23, muted, 30)
+    nextY += organizationLines * 30 + 10
+  }
+  if (subject.showNetworkingHandle && subject.networkingHandle) {
+    wrapped('Networking handle', subject.networkingHandle, left, Math.min(nextY, 1010), contentWidth, SPEAKER_BADGE_TEXT_LAYOUT.githubHandle.maxLines, SPEAKER_BADGE_TEXT_LAYOUT.githubHandle.fontSize, state.colors.accent, 32)
   }
 
   const eventTitle = state.event.title.trim() || theme.fixedEventTitle

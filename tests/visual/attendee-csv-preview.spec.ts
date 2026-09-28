@@ -59,6 +59,7 @@ test('organizers see bounded representative badge previews that follow included 
   await expect(previewSection.locator('[aria-label="Row 6: No GitHub"]')).toContainText('missing GitHub profile')
   await expect(previewSection.locator('canvas').first()).toHaveAttribute('width', '800')
   await expect(previewSection.locator('canvas').first()).toHaveAttribute('height', '1200')
+  await expect(previewSection.locator('canvas').first()).toHaveAttribute('aria-label', 'Attendee Badge front preview for Ada Sample')
   const initialAccent = await previewSection.locator('canvas').first().evaluate((element) =>
     Array.from((element as HTMLCanvasElement).getContext('2d')!.getImageData(400, 38, 1, 1).data),
   )

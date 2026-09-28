@@ -1,4 +1,35 @@
 import { expect, test } from '@playwright/test'
+import { attendeeBadgeSubject, speakerBadgeSubject } from '../../src/domain/badgeSubject'
+
+test('speakers and imported attendees map to one badge display contract without inventing optional values', () => {
+  expect(speakerBadgeSubject({ id: 'speaker-1', name: 'Ada Sample', role: 'Platform Engineer' }, 'ada')).toEqual({
+    kind: 'speaker',
+    name: 'Ada Sample',
+    roleMarker: 'SPEAKER',
+    title: 'Platform Engineer',
+    networkingHandle: 'ada',
+    showNetworkingHandle: true,
+    photoDataUrl: undefined,
+  })
+  expect(attendeeBadgeSubject({ name: 'Sam Sample' })).toEqual({
+    kind: 'attendee',
+    name: 'Sam Sample',
+    roleMarker: 'ATTENDEE',
+    organization: undefined,
+    title: undefined,
+    networkingHandle: undefined,
+    showNetworkingHandle: false,
+  })
+  expect(attendeeBadgeSubject({ name: 'Sam Sample', organization: 'GHSpain', role: 'Volunteer', githubHandle: 'sam' })).toEqual({
+    kind: 'attendee',
+    name: 'Sam Sample',
+    roleMarker: 'ATTENDEE',
+    organization: 'GHSpain',
+    title: 'Volunteer',
+    networkingHandle: 'sam',
+    showNetworkingHandle: true,
+  })
+})
 import { assetCatalog } from '../../src/domain/assets'
 import { publicProfileHandle } from '../../src/domain/publicHandle'
 import { openSection, selectFormat, selectTheme, showPreviewForViewport } from './helpers'
