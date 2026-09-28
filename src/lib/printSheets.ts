@@ -2,7 +2,7 @@ import type { AssetSide } from '../domain/assets'
 import type { PrintGeometry } from '../domain/printGeometry'
 import { mmToPixels } from '../domain/printGeometry'
 
-/** Reversible page profiles: print calibration is intentionally out of scope for #143/#145. */
+/** Reversible page profiles: physical calibration remains a manual gate for #145. */
 export interface BadgeSheetProfile {
   readonly id: 'a4' | 'a3'
   readonly label: string

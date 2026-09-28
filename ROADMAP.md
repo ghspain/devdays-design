@@ -490,7 +490,7 @@ Support template/export metadata such as:
 - [x] Badge export profiles can declare configurable trim width/height in millimetres, target DPI, bleed and safe area.
 - [x] Raster trim pixels use deterministic nearest-integer mm-to-pixel conversion; existing social profiles remain pixel-only.
 - [x] Editor format cards show the selected badge's physical profile and explicitly keep it outside the print-ready claim until calibration (#145).
-- [ ] Duplex alignment remains follow-up phase (#144); calibration remains the physical-production gate (#145).
+- [x] Duplex alignment is delivered in #144; calibration remains the physical-production gate (#145).
 
 The initial badge example is 80 × 120 mm at 254 DPI with 3 mm bleed and 5 mm safe area. It is
 configurable metadata, not a universal stock or printer guarantee; the current 800 × 1200
@@ -508,6 +508,19 @@ pixel trim is preserved until print calibration validates a physical workflow.
 - [x] Selected attendee rows compose into deterministic A4/A3 sheets with physical mm geometry, margins, gaps and crop marks.
 - [x] The proof summary shows selected count and predictable page count before export; rendered PNGs retain the 800 × 1200 source density required by the 254 DPI profile.
 - [x] Output is explicitly front-only and calibration-pending; duplex imposition remains #144 and physical validation remains #145.
+
+### Phase 9.4 - Print calibration gate (#145)
+
+- [x] Organizers can download a synthetic two-page front/back A4 calibration fixture with numbered markers, 80 × 120 mm trim, 5 mm safe area and a 100 mm ruler reference.
+- [x] The fixture and badge-sheet UI document 100% / Actual size printing, warn against Fit to page, and keep automated geometry checks separate from the manual physical-printer gate.
+- [x] A conservative ±1 mm starting tolerance and adjustment/retry procedure are documented; no physical printer evidence is bundled, so profiles remain proof / calibration pending rather than print-ready.
+
+🧭 DECISION — conservative physical calibration tolerance
+- **Question**: What tolerance should the synthetic fixture recommend before printer-specific evidence exists?
+- **Options**: omit a default / allow ±2 mm / start at ±1 mm and require profile-specific evidence.
+- **Investigation**: PDF geometry is deterministic, but printer feed, margins, scaling and duplex registration are environment-specific; no measured physical printer evidence is available in this repository.
+- **Decision**: recommend ±1 mm as a reversible, conservative starting gate and keep every profile explicitly proof / calibration pending.
+- **To revert**: update `PRINT_CALIBRATION.toleranceMm` and the procedure in `docs/print-calibration.md` after recording physical measurements for a selected printer/profile.
 
 ### Exports
 
