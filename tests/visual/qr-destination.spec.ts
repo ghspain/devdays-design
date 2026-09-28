@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { resolveQRDestination, type QRDestinationContext } from '../../src/domain/qrDestination'
+import { defaultQRDestination } from '../../src/lib/qrDestinationControls'
 
 const context: QRDestinationContext = {
   getPublicProfile: (personId) => personId === 'person-1' ? {
@@ -17,6 +18,26 @@ const context: QRDestinationContext = {
 
 test('none resolves without content', () => {
   expect(resolveQRDestination({ kind: 'none' }, context)).toEqual({ status: 'none' })
+})
+
+test('speaker badge default prefers GitHub, then website, LinkedIn, and X; no profile falls back to none', () => {
+  const profile = (personId: string, kinds: Array<'github' | 'website' | 'linkedin' | 'x'>) => ({
+    personId,
+    name: 'Synthetic Speaker',
+    displayRole: 'Speaker',
+    avatarUrl: '',
+    lastVerified: '2026-01-01',
+    destinations: kinds.map((kind) => ({ kind, url: `https://${kind}.example/synthetic` })),
+  })
+  const linkedinFirst = profile('linkedin-first', ['linkedin', 'website', 'github'])
+  expect(defaultQRDestination('person-profile', [linkedinFirst], [])).toEqual({
+    kind: 'person-profile', personId: 'linkedin-first', profileKind: 'github',
+  })
+  const onlyWebsite = profile('website-only', ['website'])
+  expect(defaultQRDestination('person-profile', [onlyWebsite], [])).toEqual({
+    kind: 'person-profile', personId: 'website-only', profileKind: 'website',
+  })
+  expect(defaultQRDestination('person-profile', [], [], true)).toEqual({ kind: 'none' })
 })
 
 test('person profile resolves through the normalized public-profile API contract', () => {

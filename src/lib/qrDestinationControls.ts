@@ -1,18 +1,21 @@
 import type { QRDestination, QRDestinationResolution } from '../domain/qrDestination'
-import type { CatalogPublicProfile, CatalogSponsor } from './catalog'
+import type { CatalogPublicProfile, CatalogSponsor, PublicProfileKind } from './catalog'
 
 export function defaultQRDestination(
   kind: QRDestination['kind'],
   profiles: readonly CatalogPublicProfile[],
   sponsors: readonly CatalogSponsor[],
+  allowNoneFallback = false,
 ): QRDestination {
   if (kind === 'none') return { kind: 'none' }
   if (kind === 'person-profile') {
-    const profile = profiles.find(({ destinations }) => destinations.length > 0)
-    const destination = profile?.destinations[0]
-    return profile && destination
-      ? { kind, personId: profile.personId, profileKind: destination.kind }
-      : { kind, personId: '', profileKind: 'github' }
+    const priorities: PublicProfileKind[] = ['github', 'website', 'linkedin', 'x']
+    const match = priorities.flatMap((profileKind) => profiles
+      .filter(({ destinations }) => destinations.some((destination) => destination.kind === profileKind))
+      .map((profile) => ({ profile, profileKind })))[0]
+    return match
+      ? { kind, personId: match.profile.personId, profileKind: match.profileKind }
+      : allowNoneFallback ? { kind: 'none' } : { kind, personId: '', profileKind: 'github' }
   }
   if (kind === 'event-agenda' || kind === 'event-page') return { kind, url: '' }
   if (kind === 'sponsor-website') return { kind, sponsorId: sponsors[0]?.id ?? '' }

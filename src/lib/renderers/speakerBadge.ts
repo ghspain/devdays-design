@@ -4,6 +4,8 @@ import { roundedRectPath, wrapText, type TruncatedFlag } from '../canvasText'
 import { getCatalogPublicHandle, getCatalogPublicProfile } from '../catalog'
 import { getInitials } from '../format'
 import { loadImage } from '../image'
+import { resolveCatalogQRDestination } from '../qrDestinationResolver'
+import { renderQRCode } from './qrCode'
 import type { RenderInfo } from '../validate'
 
 const generations = new WeakMap<HTMLCanvasElement, number>()
@@ -67,6 +69,65 @@ export async function renderSpeakerBadge(
     track(field, color, x, y - size, maxWidth, size * maxLines)
     lines.forEach((line, index) => ctx.fillText(line, x, y + index * lineHeight))
     return lines.length
+  }
+
+  if (state.activeSide === 'back') {
+    const primary = theme.id === 'online_github' ? '#1f2328' : '#f0f6fc'
+    const muted = theme.id === 'online_github' ? '#59636e' : '#8b949e'
+    ctx.fillStyle = state.colors.accent
+    ctx.font = '700 25px "Mona Sans", sans-serif'
+    ctx.fillText('GITHUB COPILOT', left, 116)
+    track('Event identity', state.colors.accent, left, 91, contentWidth, 32)
+    ctx.fillStyle = muted
+    ctx.font = '500 21px "Mona Sans", sans-serif'
+    ctx.fillText('DEV DAYS', left, 151)
+    ctx.fillStyle = primary
+    ctx.font = '700 32px "Mona Sans", sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText('CONNECT WITH THE SPEAKER', width / 2, 233)
+    track('QR heading', primary, left, 201, contentWidth, 40)
+    ctx.textAlign = 'start'
+    const resolution = state.qrDestination ? resolveCatalogQRDestination(state.qrDestination) : { status: 'none' as const }
+    if (resolution.status === 'resolved') {
+      const qr = renderQRCode(resolution.content, { maxSizePx: 540, errorCorrectionLevel: 'quartile' })
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect((width - qr.width) / 2 - 8, 274 - 8, qr.width + 16, qr.height + 16)
+      ctx.drawImage(qr, (width - qr.width) / 2, 274)
+      if (state.qrReadableText ?? true) {
+        const readable = resolution.content
+        ctx.font = '600 19px "Mona Sans", sans-serif'
+        ctx.fillStyle = primary
+        const truncated: TruncatedFlag = { value: false }
+        const lines = wrapText(ctx, readable, contentWidth, 2, truncated)
+        if (truncated.value && renderInfo && !renderInfo.truncatedFields.includes('QR destination text')) renderInfo.truncatedFields.push('QR destination text')
+        track('QR destination text', primary, left, 825, contentWidth, 50)
+        lines.forEach((line, index) => {
+          ctx.textAlign = 'center'
+          ctx.fillText(line, width / 2, 825 + index * 25)
+        })
+        ctx.textAlign = 'start'
+      }
+    } else if (resolution.status === 'invalid') {
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(width / 2 - 250, 330, 500, 430)
+      ctx.fillStyle = '#59636e'
+      ctx.font = '600 22px "Mona Sans", sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText('Choose a valid QR destination', width / 2, 550)
+      ctx.textAlign = 'start'
+    }
+
+    const eventTitle = state.event.title.trim() || theme.fixedEventTitle
+    const eventY = height - inset - 31
+    ctx.fillStyle = muted
+    ctx.font = '500 19px "Mona Sans", sans-serif'
+    ctx.fillText('GHSPAIN · EVENT IDENTITY', left, eventY - 33)
+    wrapped('Event title', eventTitle, left, eventY, contentWidth, 1, 25, primary, 31)
+    if (renderInfo) {
+      renderInfo.logoCap = 0
+      renderInfo.speakerCap = 1
+    }
+    return
   }
 
   ctx.fillStyle = state.colors.accent
