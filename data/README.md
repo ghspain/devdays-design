@@ -46,6 +46,26 @@ must not block catalogue selection or be presented as current.
 have no concrete need for it. Do not copy email, phone, private notes, or other
 non-public metadata into this repository.
 
+### Refreshing the public people projection
+
+At maintainer time, obtain `data/people.csv` from `ghspain/Planning` and run:
+
+```sh
+npm run sync:people -- --source /path/to/Planning/data/people.csv
+npm run sync:people -- --source /path/to/Planning/data/people.csv --check
+```
+
+The first command updates this repository's `people.csv`; `--check` reports
+drift without writing. The refresh keeps the existing local roster/order and
+legacy `role` labels, joins only by `person_id`, and copies only fields listed
+above. Planning columns such as `bio`, email, or other unapproved data are
+ignored. Missing optional profile values stay empty; a missing identity fails
+instead of silently dropping a speaker. The browser uses the committed local
+catalogue and never calls Planning or needs a token at runtime.
+Rows with an inconsistent CSV column count produce a warning and retain the
+existing local name/avatar while leaving new profile fields blank; correct the
+source row before expecting those fields to refresh.
+
 🧭 DECISION — keep the first person projection minimal and source-dated
 - **Question**: Should Event Studio include the public bio and enforce its own staleness cutoff for profile data?
 - **Options**: Project bio and invent a local freshness TTL now; or use only fields with a direct asset/profile-destination use and retain Planning's verification date without a second policy.

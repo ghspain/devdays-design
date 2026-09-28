@@ -1,17 +1,17 @@
-person_id,name,role,avatar_url
-sergio-valverde,Sergio Valverde,"Platform Engineer · GitHub Star",https://avatars.githubusercontent.com/svg153
-luis-fraile,Luis Fraile,"CTO · DevOps and ALM Consultant",https://avatars.githubusercontent.com/lfraile
-alberto-diaz-martin,Alberto Diaz Martin,"CTIO · Microsoft Regional Director",
-rodrigo-liberoff,Rodrigo Liberoff,"Cloud and Software Senior Architect",
-jorge-fernandez-sanchez,Jorge Fernández Sánchez,"Technical Lead · AI and context engineering",
-borja-piris-de-castro,Borja Piris de Castro,"Head of AI Platform Engineering",
-ramon-palomares,Ramon Palomares,,
-erika-cepeda,Érika Cepeda,"Copilot Sales Specialist · Microsoft MVP",https://avatars.githubusercontent.com/ErikaCepedaSanabria
-alba-catoira,Alba Catoira,,
-unai-zorrilla,Unai Zorrilla,,
-diego-loira,Diego Loira,,
-diego-varela,Diego Varela,,
-bruno-capuano,Bruno Capuano,,
-roberto-arocha,Roberto Arocha,,https://avatars.githubusercontent.com/rarocha
-roberto-navarro-matesanz,Roberto Navarro Matesanz,,
-diego-zapico,Diego Zapico,,
+person_id,name,role,avatar_url,github,linkedin,x,website,professional_title,last_verified
+sergio-valverde,Sergio Valverde,Platform Engineer · GitHub Star,https://avatars.githubusercontent.com/svg153,svg153,https://www.linkedin.com/in/svg153,,,Ingeniero de Plataforma en Lunik · GitHub Star · Organizador de GitHub Community Spain,2026-09-16
+luis-fraile,Luis Fraile,CTO · DevOps and ALM Consultant,https://avatars.githubusercontent.com/lfraile,lfraile,,https://x.com/lfraile,,CTO en B!Play · Consultor DevOps y ALM en Plain Concepts · Microsoft MVP,2026-09-16
+alberto-diaz-martin,Alberto Diaz Martin,CTIO · Microsoft Regional Director,,,,,,CTIO en ENCAMINA · Microsoft Regional Director,2026-09-16
+rodrigo-liberoff,Rodrigo Liberoff,Cloud and Software Senior Architect,,,,,,Cloud & Software Senior Architect en ENCAMINA · Microsoft MVP,2026-09-16
+jorge-fernandez-sanchez,Jorge Fernández Sánchez,Technical Lead · AI and context engineering,,,https://sessionize.com/jorgefdezsa/,,,Technical Lead en Devoteam · Microsoft MVP,2026-09-16
+borja-piris-de-castro,Borja Piris de Castro,Head of AI Platform Engineering,,,https://www.linkedin.com/in/borja-piris,,,Head of AI Platform Engineering & Principal Tech Lead en ENCAMINA,2026-09-16
+ramon-palomares,Ramon Palomares,,,,,,,,2026-09-16
+erika-cepeda,Érika Cepeda,Copilot Sales Specialist · Microsoft MVP,https://avatars.githubusercontent.com/ErikaCepedaSanabria,ErikaCepedaSanabria,,,,Copilot Sales Specialist en Devoteam · Microsoft MVP · Organizadora de GitHub Community Spain,2026-09-16
+alba-catoira,Alba Catoira,,,,,https://x.com/albacatoira,,,2026-09-16
+unai-zorrilla,Unai Zorrilla,,,,,https://x.com/_unaizc_,,,2026-09-16
+diego-loira,Diego Loira,,,,,,,,2026-09-16
+diego-varela,Diego Varela,,,,,,,,2026-09-16
+bruno-capuano,Bruno Capuano,,,,,https://x.com/elbruno,,,2026-09-16
+roberto-arocha,Roberto Arocha,,https://avatars.githubusercontent.com/rarocha,,,,,,
+roberto-navarro-matesanz,Roberto Navarro Matesanz,,,,,https://x.com/NavarroRoberto_,,,2026-09-16
+diego-zapico,Diego Zapico,,,,,https://x.com/dzapic0,,,2026-09-16
