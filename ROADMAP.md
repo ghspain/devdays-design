@@ -346,7 +346,7 @@ Upload CSV
 ### Delivery phases
 
 - [x] Attendee CSV files are parsed locally without persisting rows by default. (#129)
-- [ ] Organizers can map arbitrary CSV columns to the attendee badge contract. (#130)
+- [x] Organizers can map arbitrary CSV columns to the attendee badge contract. (#130)
 - [ ] Imported attendees are validated row by row before badge generation. (#131)
 - [ ] Organizers preview representative attendee badges and can clear imported data explicitly. (#132)
 

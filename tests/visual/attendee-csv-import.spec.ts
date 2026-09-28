@@ -43,9 +43,11 @@ test('attendee CSV import parses local quoted data and keeps it out of durable s
     buffer: Buffer.from('name,email,notes\r\n"Zoë Alvarez",zoe@example.test,"Talk, keynote"\r\n"Sam Lee",sam@example.test,Volunteer\r\n'),
   })
 
-  await expect(dialog.getByText('2 attendee rows', { exact: true })).toBeVisible()
-  await expect(dialog.getByRole('list', { name: 'CSV headers' }).getByRole('listitem'))
-    .toHaveText(['name', 'email', 'notes'])
+  await expect(dialog.getByRole('status')).toContainText('2 attendee rows ready for badge fields')
+  await expect(dialog.getByLabel('Map column name')).toHaveValue('name')
+  await expect(dialog.getByLabel('Map column email')).toHaveValue('ignore')
+  await expect(dialog.getByLabel('Map column notes')).toHaveValue('ignore')
+  await expect(dialog.getByRole('status')).toContainText('2 attendee rows ready for badge fields')
   await expect(dialog).not.toContainText('zoe@example.test')
   await expect(page.evaluate(() => window.__attendeeCsvPersisted)).resolves.toBe(false)
   await expect.poll(() => requests.length).toBe(requestsBeforeImport)
@@ -56,6 +58,30 @@ test('attendee CSV import parses local quoted data and keeps it out of durable s
   expect(consoleErrors).toEqual([])
 })
 
+test('organizers can remap renamed headers and cannot create duplicate or missing required badge fields', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
+  await page.getByRole('button', { name: 'Import attendee CSV' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Import attendee CSV' })
+  await dialog.getByLabel('Choose a CSV file').setInputFiles({
+    name: 'renamed.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('participant,team,job,private_note\nAlex Example,GHSpain,Engineer,synthetic-only\n'),
+  })
+  const name = dialog.getByLabel('Map column participant')
+  await expect(name).toHaveValue('ignore')
+  await expect(dialog.getByRole('alert')).toContainText('required field: Name')
+  await name.selectOption('name')
+  await dialog.getByLabel('Map column team').selectOption('organization')
+  await dialog.getByLabel('Map column job').selectOption('role')
+  await expect(dialog.getByRole('status')).toContainText('1 attendee row ready for badge fields')
+  await expect(dialog.getByLabel('Map column private_note')).toHaveValue('ignore')
+
+  const organization = dialog.getByLabel('Map column team')
+  await expect(organization.locator('option[value="name"]')).toBeDisabled()
+  await expect(dialog).not.toContainText('synthetic-only')
+})
+
 test('replacing an imported file discards prior rows and malformed input exposes no raw content', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Dev Days' })).toBeVisible()
@@ -64,7 +90,7 @@ test('replacing an imported file discards prior rows and malformed input exposes
   const file = dialog.getByLabel('Choose a CSV file')
 
   await file.setInputFiles({ name: 'valid.csv', mimeType: 'text/csv', buffer: Buffer.from('name\nPat Example\n') })
-  await expect(dialog.getByText('1 attendee row', { exact: true })).toBeVisible()
+  await expect(dialog.getByRole('status')).toContainText('1 attendee row ready for badge fields')
   await file.setInputFiles({ name: 'invalid.csv', mimeType: 'text/csv', buffer: Buffer.from('name,notes\n"private raw value,missing quote') })
   await expect(dialog.getByRole('alert')).toHaveText('This file could not be read as CSV. Check the file format and try another file.')
   await expect(dialog).not.toContainText('Pat Example')
@@ -78,7 +104,7 @@ test('organizers can explicitly clear imported attendee data', async ({ page }) 
   const dialog = page.getByRole('dialog', { name: 'Import attendee CSV' })
   const file = dialog.getByLabel('Choose a CSV file')
   await file.setInputFiles({ name: 'valid.csv', mimeType: 'text/csv', buffer: Buffer.from('name\nTaylor Sample\n') })
-  await expect(dialog.getByText('1 attendee row', { exact: true })).toBeVisible()
+  await expect(dialog.getByRole('status')).toContainText('1 attendee row ready for badge fields')
   await dialog.getByRole('button', { name: 'Clear imported data' }).click()
   await expect(dialog.getByText('No attendee data imported.', { exact: true })).toBeVisible()
   await expect(file).toHaveValue('')

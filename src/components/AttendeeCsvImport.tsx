@@ -1,12 +1,21 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { Button, Dialog, FormControl } from '@primer/react'
-import { parseAttendeeCsv, type AttendeeCsvDataset } from '../lib/attendeeCsv'
+import {
+  getDuplicateAttendeeMappings,
+  getUnmappedRequiredAttendeeFields,
+  mapAttendeeCsvRows,
+  parseAttendeeCsv,
+  suggestAttendeeCsvMapping,
+  type AttendeeCsvDataset,
+} from '../lib/attendeeCsv'
+import { attendeeBadgeFields, type AttendeeCsvColumnMapping } from '../domain/attendee'
 
 const INVALID_CSV_MESSAGE = 'This file could not be read as CSV. Check the file format and try another file.'
 
 export default function AttendeeCsvImport() {
   const [isOpen, setIsOpen] = useState(false)
   const [dataset, setDataset] = useState<AttendeeCsvDataset | null>(null)
+  const [mapping, setMapping] = useState<AttendeeCsvColumnMapping>({})
   const [error, setError] = useState('')
   const launcherRef = useRef<HTMLButtonElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -15,6 +24,7 @@ export default function AttendeeCsvImport() {
   const clearData = () => {
     readId.current += 1
     setDataset(null)
+    setMapping({})
     setError('')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
@@ -25,16 +35,26 @@ export default function AttendeeCsvImport() {
 
     const currentRead = ++readId.current
     setDataset(null)
+    setMapping({})
     setError('')
 
     try {
       if (!file.name.toLowerCase().endsWith('.csv')) throw new Error('Not a CSV file')
       const parsed = parseAttendeeCsv(await file.text())
-      if (currentRead === readId.current) setDataset(parsed)
+      if (currentRead === readId.current) {
+        setDataset(parsed)
+        setMapping(suggestAttendeeCsvMapping(parsed.headers))
+      }
     } catch {
       if (currentRead === readId.current) setError(INVALID_CSV_MESSAGE)
     }
   }
+
+  const missingRequired = getUnmappedRequiredAttendeeFields(mapping)
+  const duplicateTargets = getDuplicateAttendeeMappings(mapping)
+  const normalizedRows = dataset && missingRequired.length === 0 && duplicateTargets.length === 0
+    ? mapAttendeeCsvRows(dataset, mapping)
+    : null
 
   return (
     <>
@@ -74,13 +94,29 @@ export default function AttendeeCsvImport() {
             {error && <p role="alert">{error}</p>}
             {dataset ? (
               <section aria-label="Imported attendee CSV">
-                <p role="status">
-                  {dataset.rows.length} attendee row{dataset.rows.length === 1 ? '' : 's'}
-                </p>
-                <h3>Detected columns</h3>
-                <ul aria-label="CSV headers">
-                  {dataset.headers.map((header, index) => <li key={`${header}-${index}`}>{header}</li>)}
-                </ul>
+                <h3>Map columns to badge fields</h3>
+                <p>Choose one source column for each field. Unmapped columns are ignored.</p>
+                {missingRequired.length > 0 && <p role="alert">Map a column to required field: {missingRequired.map((id) => attendeeBadgeFields.find((field) => field.id === id)?.label).join(', ')}.</p>}
+                {duplicateTargets.length > 0 && <p role="alert">Each badge field can use only one source column. Choose a different field or ignore a duplicate.</p>}
+                <div className="attendee-csv-mapping">
+                  {dataset.headers.map((header, index) => (
+                    <FormControl key={`${header}-${index}`} id={`attendee-csv-column-${index}`}>
+                      <FormControl.Label>{header || `Column ${index + 1}`}</FormControl.Label>
+                      <select
+                        aria-label={`Map column ${header || index + 1}`}
+                        value={mapping[index] ?? 'ignore'}
+                        onChange={(event) => setMapping((current) => ({ ...current, [index]: event.target.value as AttendeeCsvColumnMapping[number] }))}
+                      >
+                        <option value="ignore">Ignore column</option>
+                        {attendeeBadgeFields.map((field) => {
+                          const usedElsewhere = Object.entries(mapping).some(([otherIndex, target]) => Number(otherIndex) !== index && target === field.id)
+                          return <option key={field.id} value={field.id} disabled={usedElsewhere}>{field.label}{field.required ? ' (required)' : ''}</option>
+                        })}
+                      </select>
+                    </FormControl>
+                  ))}
+                </div>
+                {normalizedRows ? <p role="status">{normalizedRows.length} attendee row{normalizedRows.length === 1 ? '' : 's'} ready for badge fields.</p> : null}
                 <Button onClick={clearData}>Clear imported data</Button>
               </section>
             ) : !error ? (
