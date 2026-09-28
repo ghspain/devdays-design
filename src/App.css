@@ -175,6 +175,13 @@
   display: none;
 }
 
+.attendee-csv-mapping {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  margin-block: 16px;
+}
+
 .topbar-theme-toggle {
   min-height: 44px;
   padding: 0 0.65rem;
