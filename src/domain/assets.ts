@@ -21,6 +21,8 @@ export interface AssetTemplateDefinition {
   readonly exportProfiles: readonly ExportProfile[]
   /** Renderer implementation selected by the rendering registry. */
   readonly rendererId: string
+  /** Elements that this template explicitly permits organizers to move. */
+  readonly movableElementIds?: readonly string[]
   /** Transitional adapter for the editor/export flow's current BannerState.format identity. */
   readonly legacyFormat?: BannerFormat
   /** Optional QR controls supported by this template; existing social templates opt out. */
@@ -114,6 +116,7 @@ export const assetCatalog: readonly AssetDefinition[] = [
           allowReadableText: true,
           defaultReadableText: true,
         },
+        movableElementIds: ['speaker-name'],
         // PNG-oriented canvas metadata only; physical size is defined by #142.
         exportProfiles: [{ id: 'speaker-badge-front-image', width: 800, height: 1200, types: imageTypes, scales: imageScales }],
       },

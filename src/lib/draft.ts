@@ -32,6 +32,8 @@ function isSupportedSpeaker(value: unknown): boolean {
 function isSupportedState(value: unknown): value is BannerState {
   if (!isRecord(value)) return false
   if (value.activeSide !== undefined && value.activeSide !== 'front' && value.activeSide !== 'back') return false
+  if (value.elementOffsets !== undefined && (!isRecord(value.elementOffsets) || Object.values(value.elementOffsets).some((offset) =>
+    !isRecord(offset) || typeof offset.x !== 'number' || !Number.isFinite(offset.x) || typeof offset.y !== 'number' || !Number.isFinite(offset.y)))) return false
   if (value.sideStates !== undefined) {
     if (!isRecord(value.sideStates)) return false
     for (const [side, sideState] of Object.entries(value.sideStates)) {
@@ -42,6 +44,8 @@ function isSupportedState(value: unknown): value is BannerState {
         (partner.name !== undefined && typeof partner.name !== 'string')))) return false
       if (sideState.qrDestination !== undefined && sideState.qrDestination !== null && !isQRDestination(sideState.qrDestination)) return false
       if (sideState.qrReadableText !== undefined && sideState.qrReadableText !== null && typeof sideState.qrReadableText !== 'boolean') return false
+      if (sideState.elementOffsets !== undefined && (!isRecord(sideState.elementOffsets) || Object.values(sideState.elementOffsets).some((offset) =>
+        !isRecord(offset) || typeof offset.x !== 'number' || !Number.isFinite(offset.x) || typeof offset.y !== 'number' || !Number.isFinite(offset.y)))) return false
     }
   }
   if (value.format !== undefined && !formatOptions.some(({ id }) => id === value.format)) return false

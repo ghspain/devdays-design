@@ -25,6 +25,7 @@ export interface ValidationFinding {
  * to sample the canvas. Coordinates are in logical (pre-scale) canvas space. */
 export interface TextRegion {
   field: string
+  elementId?: string
   x: number
   y: number
   w: number

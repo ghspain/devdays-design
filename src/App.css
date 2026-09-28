@@ -1423,6 +1423,61 @@ input[type='file']::file-selector-button:hover {
   pointer-events: auto;
 }
 
+.artboard-selection-target.is-movable {
+  cursor: move;
+  touch-action: none;
+}
+
+@media (pointer: coarse) {
+  .artboard-selection-target.is-movable {
+    touch-action: auto;
+  }
+}
+
+.element-position-controls {
+  margin: 0 0 0.85rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--surface-subtle);
+}
+
+.element-position-controls h2 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.element-position-controls p {
+  margin: 0.35rem 0 0.7rem;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.element-position-inputs {
+  display: flex;
+  align-items: end;
+  gap: 0.45rem;
+}
+
+.element-position-inputs label {
+  display: grid;
+  gap: 0.2rem;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.element-position-inputs input {
+  width: 4.6rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  background: var(--surface-default);
+  color: var(--text-primary);
+  font: inherit;
+}
+
 .artboard-selection-target:hover,
 .artboard-selection-target[aria-pressed='true'] {
   border-color: var(--action-primary);

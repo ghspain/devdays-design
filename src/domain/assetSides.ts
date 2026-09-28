@@ -7,16 +7,18 @@ function pickSideState(state: BannerState): AssetSideState {
     partners: state.partners,
     qrDestination: state.qrDestination ?? null,
     qrReadableText: state.qrReadableText ?? null,
+    elementOffsets: state.elementOffsets,
   }
 }
 
 /** Return the current editable view, applying side-specific values over shared state. */
 export function stateForSide(state: BannerState, side: AssetSide = state.activeSide ?? 'front'): BannerState {
   const sideState = state.sideStates?.[side]
-  const { qrDestination, qrReadableText, ...content } = sideState ?? {}
+  const { qrDestination, qrReadableText, elementOffsets, ...content } = sideState ?? {}
   return {
     ...state,
     ...content,
+    elementOffsets: sideState ? elementOffsets ?? {} : state.activeSide === side ? state.elementOffsets ?? {} : {},
     ...(qrDestination === null ? { qrDestination: undefined } : qrDestination ? { qrDestination } : {}),
     ...(qrReadableText === null ? { qrReadableText: undefined } : typeof qrReadableText === 'boolean' ? { qrReadableText } : {}),
     activeSide: side,
